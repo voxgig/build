@@ -1,0 +1,9 @@
+
+sys: @'../../../../node_modules/@voxgig/model/model/config/sys.jsonic'
+
+sys: model: builders: {
+  srv_yml: {
+    load: 'build/srv_yml'
+  }
+}
+

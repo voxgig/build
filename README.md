@@ -1,7 +1,5 @@
-# Model
-
-A framework for universal application modeling.
+# Build
 
 PROTOTYPE.
 
-INSPIRED BY: http://cuelang.org
+

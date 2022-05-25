@@ -1,0 +1,17 @@
+{
+  "sys": {
+    "shape": {
+      "builder": {
+        "x": 1
+      }
+    },
+    "model": {
+      "build": {},
+      "builders": {
+        "srv_yml": {
+          "load": "build/srv_yml"
+        }
+      }
+    }
+  }
+}

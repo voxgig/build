@@ -1,0 +1,20 @@
+
+shape: srv: env: lambda: true
+
+
+main: srv: { &: .shape.srv }
+
+
+main: msg: {
+  aim: foo: color: red: {}
+  aim: bar: element: hydrogen: {}
+}
+
+
+main: srv: mercury: {
+  in: aim: foo: {} 
+}
+
+main: srv: venus: {
+  in: aim: bar: {}
+}

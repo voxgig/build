@@ -1,0 +1,47 @@
+{
+  "shape": {
+    "srv": {
+      "env": {
+        "lambda": true
+      }
+    }
+  },
+  "main": {
+    "srv": {
+      "mercury": {
+        "in": {
+          "aim": {
+            "foo": {}
+          }
+        },
+        "env": {
+          "lambda": true
+        }
+      },
+      "venus": {
+        "in": {
+          "aim": {
+            "bar": {}
+          }
+        },
+        "env": {
+          "lambda": true
+        }
+      }
+    },
+    "msg": {
+      "aim": {
+        "foo": {
+          "color": {
+            "red": {}
+          }
+        },
+        "bar": {
+          "element": {
+            "hydrogen": {}
+          }
+        }
+      }
+    }
+  }
+}
