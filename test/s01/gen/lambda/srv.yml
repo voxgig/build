@@ -5,12 +5,3 @@ mercury:
         path: "/api/public/mercury"
         method: POST
         cors: true
-
-
-venus:
-  handler: src/handlers/venus.handler
-  events:
-    - http:
-        path: "/api/public/venus"
-        method: POST
-        cors: true

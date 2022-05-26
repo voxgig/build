@@ -1,8 +1,10 @@
 {
-  "shape": {
-    "srv": {
-      "env": {
-        "lambda": true
+  "sys": {
+    "shape": {
+      "srv": {
+        "env": {
+          "lambda": false
+        }
       }
     }
   },
@@ -25,7 +27,7 @@
           }
         },
         "env": {
-          "lambda": true
+          "lambda": false
         }
       }
     },

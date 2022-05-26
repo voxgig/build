@@ -1,8 +1,9 @@
 
-shape: srv: env: lambda: true
+sys: @"../../../node_modules/@voxgig/model/model/sys.jsonic"
+main: srv: { &: .sys.shape.srv }
 
-
-main: srv: { &: .shape.srv }
+# shape: srv: env: lambda: true
+# main: srv: { &: .shape.srv }
 
 
 main: msg: {
@@ -12,7 +13,8 @@ main: msg: {
 
 
 main: srv: mercury: {
-  in: aim: foo: {} 
+  in: aim: foo: {}
+  env: { lambda: true }
 }
 
 main: srv: venus: {
