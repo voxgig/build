@@ -1,0 +1,4 @@
+
+srv: { &: .sys.shape.srv }
+
+

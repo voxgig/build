@@ -2,8 +2,57 @@
   "sys": {
     "shape": {
       "srv": {
+        "in": {},
+        "deps": {},
+        "api": {
+          "web": {
+            "active": true,
+            "path": {
+              "prefix": "/",
+              "area": ""
+            },
+            "method": "POST",
+            "cors": {
+              "active": false
+            }
+          }
+        },
         "env": {
-          "lambda": false
+          "lambda": {
+            "active": false,
+            "handler": {
+              "path": {
+                "prefix": "src/",
+                "suffix": ".handler"
+              }
+            }
+          }
+        }
+      },
+      "app": {},
+      "part": {
+        "img": {}
+      }
+    },
+    "app": {
+      "web": {
+        "basic": {
+          "name": "basic",
+          "layout": "BasicAdmin",
+          "parts": {
+            "head": {
+              "part": "BasicHead"
+            },
+            "side": {
+              "part": "BasicSide"
+            },
+            "main": {
+              "part": "BasicMain"
+            },
+            "foot": {
+              "part": "BasicFoot"
+            }
+          }
         }
       }
     }
@@ -17,8 +66,30 @@
           }
         },
         "env": {
-          "lambda": true
-        }
+          "lambda": {
+            "active": true,
+            "handler": {
+              "path": {
+                "prefix": "/src/handlers/",
+                "suffix": ".handler"
+              }
+            }
+          }
+        },
+        "api": {
+          "web": {
+            "path": {
+              "prefix": "/api/",
+              "area": "general/"
+            },
+            "cors": {
+              "active": true
+            },
+            "active": true,
+            "method": "POST"
+          }
+        },
+        "deps": {}
       },
       "venus": {
         "in": {
@@ -26,8 +97,30 @@
             "bar": {}
           }
         },
+        "deps": {},
+        "api": {
+          "web": {
+            "active": true,
+            "path": {
+              "prefix": "/",
+              "area": ""
+            },
+            "method": "POST",
+            "cors": {
+              "active": false
+            }
+          }
+        },
         "env": {
-          "lambda": false
+          "lambda": {
+            "active": false,
+            "handler": {
+              "path": {
+                "prefix": "src/",
+                "suffix": ".handler"
+              }
+            }
+          }
         }
       }
     },

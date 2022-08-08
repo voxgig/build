@@ -12,19 +12,36 @@ const EnvLambda = {
 
     let content = Object
       .entries(model.main.srv)
-      .filter((entry: any) => entry[1].env?.lambda)
+      .filter((entry: any) => entry[1].env?.lambda?.active)
       .map((entry: any) => {
         const name = entry[0]
-        // const srv = entry[1]
-        return `${name}:
-  handler: src/handlers/${name}.handler
+        const srv = entry[1]
+
+        const lambda = srv.env.lambda
+        const handler = lambda.handler
+
+        let srvyml = `${name}:
+  handler: ${handler.path.prefix}${name}${handler.path.suffix}
   events:
-    - http:
-        path: "/api/public/${name}"
-        method: POST
-        cors: true
 `
-      }).join('\n\n')
+        const web = srv.api.web
+
+        console.log(web)
+
+        if (web.active) {
+          let prefix = web.path.prefix
+          let area = web.path.area
+          let method = web.method
+          let cors = web.cors.active ? 'true' : 'false'
+          srvyml += `    - http:
+        path: "${prefix}${area}${name}"
+        method: ${method}
+        cors: ${cors}
+`
+        }
+
+        return srvyml
+      }).join('\n\n\n')
 
     Fs.writeFileSync(srv_yml_path, content)
   },

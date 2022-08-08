@@ -1,7 +1,7 @@
 mercury:
-  handler: src/handlers/mercury.handler
+  handler: /src/handlers/mercury.handler
   events:
     - http:
-        path: "/api/public/mercury"
+        path: "/api/general/mercury"
         method: POST
         cors: true
