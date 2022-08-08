@@ -23,7 +23,6 @@ const EnvLambda = {
   events:
 `;
             const web = srv.api.web;
-            console.log(web);
             if (web.active) {
                 let prefix = web.path.prefix;
                 let area = web.path.area;
