@@ -7,6 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EnvLambda = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const model_1 = require("@voxgig/model");
 const EnvLambda = {
     srv_yml: (model, spec) => {
         let srv_yml_path = path_1.default.join(spec.folder, 'srv.yml');
@@ -80,6 +81,40 @@ exports.handler = async (event, context) => {
             }
         });
     },
+    resources_yml: (model, spec) => {
+        let resources_yml_path = path_1.default.join(spec.folder, 'resources.yml');
+        let content = (0, model_1.dive)(model.main.ent).map(entry => {
+            var _a;
+            // console.log('DYNAMO', entry)
+            let path = entry[0];
+            let ent = entry[1];
+            if (ent && ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
+                let name = path.join('');
+                let fullname = ent.dynamo.prefix +
+                    name +
+                    ent.dynamo.suffix;
+                return `${name}:
+  Type: AWS::DynamoDB::Table
+  Properties:
+    TableName: ${fullname}
+    BillingMode: "PAY_PER_REQUEST"
+    PointInTimeRecoverySpecification:
+      PointInTimeRecoveryEnabled: "true"
+    AttributeDefinitions:
+      - AttributeName: "${ent.id.field}"
+        AttributeType: "S"
+    KeySchema:
+      - AttributeName: "${ent.id.field}"
+        KeyType: HASH
+`;
+            }
+            return '';
+        }).join('\n\n\n');
+        if (spec.custom) {
+            content = fs_1.default.readFileSync(spec.custom).toString() + '\n\n\n' + content;
+        }
+        fs_1.default.writeFileSync(resources_yml_path, content);
+    }
 };
 exports.EnvLambda = EnvLambda;
 function empty(o) {

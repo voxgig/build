@@ -3,6 +3,8 @@
 import Fs from 'fs'
 import Path from 'path'
 
+import { dive } from '@voxgig/model'
+
 const EnvLambda = {
 
   srv_yml: (model: any, spec: {
@@ -95,6 +97,49 @@ exports.handler = async (event, context) => {
         }
       })
   },
+
+
+  resources_yml: (model: any, spec: {
+    folder: string
+    custom: string
+  }) => {
+    let resources_yml_path = Path.join(spec.folder, 'resources.yml')
+
+    let content = dive(model.main.ent).map(entry => {
+      // console.log('DYNAMO', entry)
+      let path = entry[0]
+      let ent = entry[1]
+
+      if (ent && ent.dynamo?.active) {
+        let name = path.join('')
+        let fullname = ent.dynamo.prefix +
+          name +
+          ent.dynamo.suffix
+
+        return `${name}:
+  Type: AWS::DynamoDB::Table
+  Properties:
+    TableName: ${fullname}
+    BillingMode: "PAY_PER_REQUEST"
+    PointInTimeRecoverySpecification:
+      PointInTimeRecoveryEnabled: "true"
+    AttributeDefinitions:
+      - AttributeName: "${ent.id.field}"
+        AttributeType: "S"
+    KeySchema:
+      - AttributeName: "${ent.id.field}"
+        KeyType: HASH
+`
+      }
+      return ''
+    }).join('\n\n\n')
+
+    if (spec.custom) {
+      content = Fs.readFileSync(spec.custom).toString() + '\n\n\n' + content
+    }
+
+    Fs.writeFileSync(resources_yml_path, content)
+  }
 
 }
 

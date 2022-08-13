@@ -41,7 +41,7 @@
   "dependencies": {},
   "devDependencies": {
     "@types/jest": "^28.1.6",
-    "@voxgig/model": "^0.7.0",
+    "@voxgig/model": "^0.8.0",
     "@voxgig/system": "^0.4.1",
     "esbuild": "^0.15.2",
     "esbuild-jest": "^0.5.0",
