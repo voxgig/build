@@ -20,6 +20,12 @@ const EnvLambda = {
         const lambda = srv.env.lambda
         const handler = lambda.handler
 
+        // NOTE: gen.custom covention: allows for complete overwrite
+        // as a get-out-of-jail
+        if (srv.gen?.custom?.lambda?.srv_yml) {
+          return srv.gen.custom.lambda.srv_yml
+        }
+
         let srvyml = `${name}:
   handler: ${handler.path.prefix}${name}${handler.path.suffix}
   events:
@@ -30,11 +36,27 @@ const EnvLambda = {
           let prefix = web.path.prefix
           let area = web.path.area
           let method = web.method
-          let cors = web.cors.active ? 'true' : 'false'
+          let corsflag = 'false'
+          let corsprops = ''
+
+          if (web.cors.active) {
+            corsflag = 'true'
+            if (web.cors.props && !empty(web.cors.props)) {
+              corsflag = ''
+              corsprops = Object
+                .entries(web.cors.props)
+                .reduce(((a: any, nv: any) => (
+                  a += `          ${nv[0]}: ${nv[1]}\n`
+                  , a)), '')
+            }
+          }
+
+
           srvyml += `    - http:
         path: "${prefix}${area}${name}"
         method: ${method}
-        cors: ${cors}
+        cors: ${corsflag}
+${corsprops}
 `
         }
 
@@ -75,6 +97,12 @@ exports.handler = async (event, context) => {
   },
 
 }
+
+
+function empty(o: any) {
+  return null == o ? true : 0 === Object.keys(o).length
+}
+
 
 export {
   EnvLambda

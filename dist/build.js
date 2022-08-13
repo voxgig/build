@@ -14,10 +14,16 @@ const EnvLambda = {
             .entries(model.main.srv)
             .filter((entry) => { var _a, _b; return (_b = (_a = entry[1].env) === null || _a === void 0 ? void 0 : _a.lambda) === null || _b === void 0 ? void 0 : _b.active; })
             .map((entry) => {
+            var _a, _b, _c;
             const name = entry[0];
             const srv = entry[1];
             const lambda = srv.env.lambda;
             const handler = lambda.handler;
+            // NOTE: gen.custom covention: allows for complete overwrite
+            // as a get-out-of-jail
+            if ((_c = (_b = (_a = srv.gen) === null || _a === void 0 ? void 0 : _a.custom) === null || _b === void 0 ? void 0 : _b.lambda) === null || _c === void 0 ? void 0 : _c.srv_yml) {
+                return srv.gen.custom.lambda.srv_yml;
+            }
             let srvyml = `${name}:
   handler: ${handler.path.prefix}${name}${handler.path.suffix}
   events:
@@ -27,11 +33,23 @@ const EnvLambda = {
                 let prefix = web.path.prefix;
                 let area = web.path.area;
                 let method = web.method;
-                let cors = web.cors.active ? 'true' : 'false';
+                let corsflag = 'false';
+                let corsprops = '';
+                if (web.cors.active) {
+                    corsflag = 'true';
+                    if (web.cors.props && !empty(web.cors.props)) {
+                        corsflag = '';
+                        corsprops = Object
+                            .entries(web.cors.props)
+                            .reduce(((a, nv) => (a += `          ${nv[0]}: ${nv[1]}\n`
+                            , a)), '');
+                    }
+                }
                 srvyml += `    - http:
         path: "${prefix}${area}${name}"
         method: ${method}
-        cors: ${cors}
+        cors: ${corsflag}
+${corsprops}
 `;
             }
             return srvyml;
@@ -64,4 +82,7 @@ exports.handler = async (event, context) => {
     },
 };
 exports.EnvLambda = EnvLambda;
+function empty(o) {
+    return null == o ? true : 0 === Object.keys(o).length;
+}
 //# sourceMappingURL=build.js.map
