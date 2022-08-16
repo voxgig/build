@@ -37,6 +37,7 @@ const EnvLambda = {
 
         if (web.active) {
           let prefix = web.path.prefix
+          let suffix = web.path.suffix
           let area = web.path.area
           let method = web.method
           let corsflag = 'false'
@@ -56,7 +57,7 @@ const EnvLambda = {
 
 
           srvyml += `    - http:
-        path: "${prefix}${area}${name}"
+        path: "${prefix}${area}${name}${suffix}"
         method: ${method}
         cors: ${corsflag}
 ${corsprops}
