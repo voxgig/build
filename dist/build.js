@@ -27,6 +27,7 @@ const EnvLambda = {
             }
             let srvyml = `${name}:
   handler: ${handler.path.prefix}${name}${handler.path.suffix}
+  timeout: ${lambda.timeout}
   events:
 `;
             const web = srv.api.web;
