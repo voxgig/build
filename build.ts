@@ -28,13 +28,46 @@ const EnvLambda = {
           return srv.gen.custom.lambda.srv_yml
         }
 
+
+        // TODO: this should be a JSON structure exported as YAML
         let srvyml = `${name}:
   handler: ${handler.path.prefix}${name}${handler.path.suffix}
   timeout: ${lambda.timeout}
-  events:
 `
         const web = srv.api.web
 
+        let events = ''
+
+        let onEvents = srv.on
+
+        if (onEvents) {
+          Object.entries(onEvents).forEach((entry: any[]) => {
+            let name = entry[0]
+            let spec = entry[1]
+
+            if ('aws' === spec.provider) {
+              spec.events.forEach((ev: any) => {
+                if ('s3' === ev.source) {
+                  events += TM(`
+    - s3:
+      bucket: ${ev.bucket}
+      event: ${ev.event}
+`)
+                }
+                else if ('schedule' === ev.source) {
+                  events += TM(`
+    - schedule:
+      rate:
+        - ${ev.recur}
+`)
+
+                }
+              })
+            }
+          })
+        }
+
+        // TODO: move to `on`
         if (web.active) {
           let prefix = web.path.prefix
           let suffix = web.path.suffix
@@ -56,13 +89,24 @@ const EnvLambda = {
           }
 
 
-          srvyml += `    - http:
+          events += TM(`
+    - http:
         path: "${prefix}${area}${name}${suffix}"
         method: ${method}
         cors: ${corsflag}
 ${corsprops}
-`
+`)
         }
+
+
+
+        if ('' !== events) {
+          srvyml += TM(`
+  events:
+${events}
+`)
+        }
+
 
         return srvyml
       }).join('\n\n\n')
@@ -80,23 +124,40 @@ ${corsprops}
       .filter((entry: any) => entry[1].env?.lambda)
       .forEach((entry: any) => {
         const name = entry[0]
-        // const srv = entry[1]
+        const srv = entry[1]
         let srv_handler_path = Path.join(spec.folder, name + '.js')
+
+        let handler = 'handler'
+        let modify = ''
+
+        if (!srv.api.web.active) {
+          if (srv.on && 0 < Object.keys(srv.on).length) {
+            handler = 'eventhandler'
+            modify = `
+  event = {
+    ...event,
+    // TODO: @voxgig/system? util needed to handle this dynamically
+    msg: '${srv.on[Object.keys(srv.on)[0]].events[0].msg}',
+}
+          `
+          }
+        }
 
         let content = `
 const getSeneca = require('../../env/lambda/setup')
 
 exports.handler = async (event, context) => {
-  let seneca = await getSeneca()
-  let handler = seneca.export('gateway-lambda/handler')
+  ${modify}
+  let seneca = await getSeneca('${name}')
+  let handler = seneca.export('gateway-lambda/${handler}')
   let res = await handler(event, context)
   return res
 }
 `
 
-        if (!Fs.existsSync(srv_handler_path)) {
-          Fs.writeFileSync(srv_handler_path, content)
-        }
+        // TODO: make this an option
+        //if (!Fs.existsSync(srv_handler_path)) {
+        Fs.writeFileSync(srv_handler_path, content)
       })
   },
 
@@ -119,19 +180,19 @@ exports.handler = async (event, context) => {
           ent.dynamo.suffix
 
         return `${name}:
-  Type: AWS::DynamoDB::Table
-  Properties:
-    TableName: ${fullname}
-    BillingMode: "PAY_PER_REQUEST"
-    PointInTimeRecoverySpecification:
-      PointInTimeRecoveryEnabled: "true"
-    AttributeDefinitions:
-      - AttributeName: "${ent.id.field}"
-        AttributeType: "S"
-    KeySchema:
-      - AttributeName: "${ent.id.field}"
-        KeyType: HASH
-`
+          Type: AWS:: DynamoDB:: Table
+          Properties:
+          TableName: ${fullname}
+          BillingMode: "PAY_PER_REQUEST"
+          PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: "true"
+          AttributeDefinitions:
+          - AttributeName: "${ent.id.field}"
+          AttributeType: "S"
+          KeySchema:
+          - AttributeName: "${ent.id.field}"
+          KeyType: HASH
+            `
       }
       return ''
     }).join('\n\n\n')
@@ -149,6 +210,12 @@ exports.handler = async (event, context) => {
 function empty(o: any) {
   return null == o ? true : 0 === Object.keys(o).length
 }
+
+// Strip inital newline
+function TM(str: string) {
+  return str.replace(/^\n/, '')
+}
+
 
 
 export {
