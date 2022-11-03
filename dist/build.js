@@ -134,7 +134,7 @@ exports.handler = async (event, context) => {
     },
     resources_yml: (model, spec) => {
         let resources_yml_path = path_1.default.join(spec.folder, 'resources.yml');
-        let content = (0, model_1.dive)(model.main.ent).map(entry => {
+        let content = (0, model_1.dive)(model.main.ent).map((entry) => {
             var _a;
             // console.log('DYNAMO', entry)
             let path = entry[0];
@@ -145,18 +145,18 @@ exports.handler = async (event, context) => {
                     name +
                     ent.dynamo.suffix;
                 return `${name}:
-          Type: AWS:: DynamoDB:: Table
-          Properties:
-          TableName: ${fullname}
-          BillingMode: "PAY_PER_REQUEST"
-          PointInTimeRecoverySpecification:
-          PointInTimeRecoveryEnabled: "true"
-          AttributeDefinitions:
-          - AttributeName: "${ent.id.field}"
-          AttributeType: "S"
-          KeySchema:
-          - AttributeName: "${ent.id.field}"
-          KeyType: HASH
+  Type: AWS::DynamoDB::Table
+  Properties:
+    TableName: ${fullname}
+    BillingMode: "PAY_PER_REQUEST"
+    PointInTimeRecoverySpecification:
+      PointInTimeRecoveryEnabled: "true"
+    AttributeDefinitions:
+      - AttributeName: "${ent.id.field}"
+        AttributeType: "S"
+    KeySchema:
+      - AttributeName: "${ent.id.field}"
+        KeyType: HASH
             `;
             }
             return '';
