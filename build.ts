@@ -50,8 +50,8 @@ const EnvLambda = {
                 if ('s3' === ev.source) {
                   events += TM(`
     - s3:
-      bucket: ${ev.bucket}
-      event: ${ev.event}
+        bucket: ${ev.bucket}
+        event: ${ev.event}
 `)
                 }
                 else if ('schedule' === ev.source) {
