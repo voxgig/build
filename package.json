@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/build",
-  "version": "0.9.2",
+  "version": "0.10.0",
   "main": "dist/build.js",
   "type": "commonjs",
   "types": "dist/build.d.ts",
@@ -40,7 +40,7 @@
   ],
   "dependencies": {},
   "devDependencies": {
-    "@types/jest": "^29.2.1",
+    "@types/jest": "^29.2.2",
     "@voxgig/model": "^0.12.0",
     "@voxgig/system": "^0.4.2",
     "esbuild": "^0.15.13",

@@ -52,13 +52,19 @@ const EnvLambda = {
     - s3:
         bucket: ${ev.bucket}
         event: ${ev.event}
+        existing: true
 `)
                 }
                 else if ('schedule' === ev.source) {
-                  events += TM(`
+                  let entries =
+                    'string' === typeof ev.recur ? [ev.recur] : (ev.recur || [])
+                  let recur = entries.map((entry: string) => `
     - schedule:
-      rate:
-        - ${ev.recur}
+        rate: ${entry}
+`)
+
+                  events += TM(`
+${recur}
 `)
 
                 }
@@ -137,8 +143,8 @@ ${events}
   event = {
     ...event,
     // TODO: @voxgig/system? util needed to handle this dynamically
-    msg: '${srv.on[Object.keys(srv.on)[0]].events[0].msg}',
-}
+    seneca$: { msg: '${srv.on[Object.keys(srv.on)[0]].events[0].msg}' },
+  }
           `
           }
         }
