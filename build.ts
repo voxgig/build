@@ -54,6 +54,22 @@ const EnvLambda = {
         event: ${ev.event}
         existing: true
 `)
+                  if (ev.rules) {
+                    events += TM(`
+        rules:
+`)
+                    if (ev.rules.prefix) {
+                      events += TM(`
+          - prefix: ${ev.rules.prefix}
+`)
+                    }
+
+                    if (ev.rules.suffix) {
+                      events += TM(`
+          - suffix: ${ev.rules.suffix}
+`)
+                    }
+                  }
                 }
                 else if ('schedule' === ev.source) {
                   let entries =
