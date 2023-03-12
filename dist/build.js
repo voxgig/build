@@ -118,9 +118,12 @@ ${events}
             .entries(model.main.srv)
             .filter((entry) => { var _a; return (_a = entry[1].env) === null || _a === void 0 ? void 0 : _a.lambda; })
             .forEach((entry) => {
+            var _a;
             const name = entry[0];
             const srv = entry[1];
             let srv_handler_path = path_1.default.join(spec.folder, name + '.js');
+            let start = spec.start || 'setup';
+            let envFolder = ((_a = spec.env) === null || _a === void 0 ? void 0 : _a.folder) || '../../env/lambda';
             let handler = 'handler';
             let modify = '';
             if (!srv.api.web.active) {
@@ -136,7 +139,7 @@ ${events}
                 }
             }
             let content = `
-const getSeneca = require('../../env/lambda/setup')
+const getSeneca = require('${envFolder}/${start}')
 
 exports.handler = async (event, context) => {
   ${modify}

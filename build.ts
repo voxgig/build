@@ -140,6 +140,10 @@ ${events}
   // Only create if does not exist
   srv_handler: (model: any, spec: {
     folder: string
+    start?: string
+    env?: {
+      folder: string
+    }
   }) => {
     Object
       .entries(model.main.srv)
@@ -148,6 +152,9 @@ ${events}
         const name = entry[0]
         const srv = entry[1]
         let srv_handler_path = Path.join(spec.folder, name + '.js')
+
+        let start = spec.start || 'setup'
+        let envFolder = spec.env?.folder || '../../env/lambda'
 
         let handler = 'handler'
         let modify = ''
@@ -166,7 +173,7 @@ ${events}
         }
 
         let content = `
-const getSeneca = require('../../env/lambda/setup')
+const getSeneca = require('${envFolder}/${start}')
 
 exports.handler = async (event, context) => {
   ${modify}
