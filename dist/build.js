@@ -15,7 +15,7 @@ const EnvLambda = {
             .entries(model.main.srv)
             .filter((entry) => { var _a, _b; return (_b = (_a = entry[1].env) === null || _a === void 0 ? void 0 : _a.lambda) === null || _b === void 0 ? void 0 : _b.active; })
             .map((entry) => {
-            var _a, _b, _c;
+            var _a, _b, _c, _d;
             const name = entry[0];
             const srv = entry[1];
             const lambda = srv.env.lambda;
@@ -94,13 +94,22 @@ ${recur}
                             , a)), '');
                     }
                 }
-                events += TM(`
+                if ('v2' === ((_d = web.lambda) === null || _d === void 0 ? void 0 : _d.gateway)) {
+                    events += TM(`
+    - httpApi:
+        path: "${prefix}${area}${name}${suffix}"
+        method: ${method}
+`);
+                }
+                else {
+                    events += TM(`
     - http:
         path: "${prefix}${area}${name}${suffix}"
         method: ${method}
         cors: ${corsflag}
 ${corsprops}
 `);
+                }
             }
             if ('' !== events) {
                 srvyml += TM(`

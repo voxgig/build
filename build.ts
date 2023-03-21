@@ -110,14 +110,24 @@ ${recur}
             }
           }
 
+          if ('v2' === web.lambda?.gateway) {
+            events += TM(`
+    - httpApi:
+        path: "${prefix}${area}${name}${suffix}"
+        method: ${method}
+`)
 
-          events += TM(`
+          }
+          else {
+
+            events += TM(`
     - http:
         path: "${prefix}${area}${name}${suffix}"
         method: ${method}
         cors: ${corsflag}
 ${corsprops}
 `)
+          }
         }
 
 
