@@ -144,14 +144,23 @@ ${events}
     env?: {
       folder: string
     }
+    lang?: string
   }) => {
+    let lang = spec.lang || 'js'
+    let TS = 'ts' === lang
+
     Object
       .entries(model.main.srv)
       .filter((entry: any) => entry[1].env?.lambda)
       .forEach((entry: any) => {
         const name = entry[0]
         const srv = entry[1]
-        let srv_handler_path = Path.join(spec.folder, name + '.js')
+
+        if ('custom' === srv.env.lambda.kind) {
+          return
+        }
+
+        let srv_handler_path = Path.join(spec.folder, name + '.' + lang)
 
         let start = spec.start || 'setup'
         let envFolder = spec.env?.folder || '../../env/lambda'
@@ -172,10 +181,17 @@ ${events}
           }
         }
 
-        let content = `
-const getSeneca = require('${envFolder}/${start}')
+        let content =
+          TS ? `import getSeneca from '${envFolder}/${start}'`
+            :
+            `const getSeneca = require('${envFolder}/${start}')`
 
-exports.handler = async (event, context) => {
+        content += `
+
+exports.handler = async (
+  event${TS ? ':any' : ''},
+  context${TS ? ':any' : ''}
+) => {
   ${modify}
   let seneca = await getSeneca('${name}')
   let handler = seneca.export('gateway-lambda/${handler}')
@@ -192,10 +208,12 @@ exports.handler = async (event, context) => {
 
 
   resources_yml: (model: any, spec: {
-    folder: string
-    custom: string
+    folder: string,
+    filename: string
+    custom: string,
   }) => {
-    let resources_yml_path = Path.join(spec.folder, 'resources.yml')
+    let filename = spec.filename || 'resources.yml'
+    let resources_yml_path = Path.join(spec.folder, filename)
 
     let content = dive(model.main.ent).map((entry: any) => {
       // console.log('DYNAMO', entry)

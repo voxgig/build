@@ -8,9 +8,11 @@ declare const EnvLambda: {
         env?: {
             folder: string;
         };
+        lang?: string;
     }) => void;
     resources_yml: (model: any, spec: {
         folder: string;
+        filename: string;
         custom: string;
     }) => void;
 };

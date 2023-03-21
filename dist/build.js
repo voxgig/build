@@ -114,6 +114,8 @@ ${events}
     },
     // Only create if does not exist
     srv_handler: (model, spec) => {
+        let lang = spec.lang || 'js';
+        let TS = 'ts' === lang;
         Object
             .entries(model.main.srv)
             .filter((entry) => { var _a; return (_a = entry[1].env) === null || _a === void 0 ? void 0 : _a.lambda; })
@@ -121,7 +123,10 @@ ${events}
             var _a;
             const name = entry[0];
             const srv = entry[1];
-            let srv_handler_path = path_1.default.join(spec.folder, name + '.js');
+            if ('custom' === srv.env.lambda.kind) {
+                return;
+            }
+            let srv_handler_path = path_1.default.join(spec.folder, name + '.' + lang);
             let start = spec.start || 'setup';
             let envFolder = ((_a = spec.env) === null || _a === void 0 ? void 0 : _a.folder) || '../../env/lambda';
             let handler = 'handler';
@@ -138,10 +143,15 @@ ${events}
           `;
                 }
             }
-            let content = `
-const getSeneca = require('${envFolder}/${start}')
+            let content = TS ? `import getSeneca from '${envFolder}/${start}'`
+                :
+                    `const getSeneca = require('${envFolder}/${start}')`;
+            content += `
 
-exports.handler = async (event, context) => {
+exports.handler = async (
+  event${TS ? ':any' : ''},
+  context${TS ? ':any' : ''}
+) => {
   ${modify}
   let seneca = await getSeneca('${name}')
   let handler = seneca.export('gateway-lambda/${handler}')
@@ -155,7 +165,8 @@ exports.handler = async (event, context) => {
         });
     },
     resources_yml: (model, spec) => {
-        let resources_yml_path = path_1.default.join(spec.folder, 'resources.yml');
+        let filename = spec.filename || 'resources.yml';
+        let resources_yml_path = path_1.default.join(spec.folder, filename);
         let content = (0, model_1.dive)(model.main.ent).map((entry) => {
             var _a;
             // console.log('DYNAMO', entry)
