@@ -74,10 +74,17 @@ const EnvLambda = {
                 else if ('schedule' === ev.source) {
                   let entries =
                     'string' === typeof ev.recur ? [ev.recur] : (ev.recur || [])
-                  let recur = entries.map((entry: string) => `
+                  let recur = entries.map((entry: string) => {
+                    let schedule = `
     - schedule:
-        rate: ${entry}
-`)
+        rate: ${entry}`
+                    if (ev.msg) {
+                      schedule += `
+        input:
+          msg: ${JSON.stringify(ev.msg)} `
+                    }
+                    return schedule
+                  })
 
                   events += TM(`
 ${recur}
@@ -238,11 +245,13 @@ exports.handler = async (
 
         return `${name}:
   Type: AWS::DynamoDB::Table
+  DeletionPolicy: Retain
   Properties:
     TableName: ${fullname}
     BillingMode: "PAY_PER_REQUEST"
     PointInTimeRecoverySpecification:
       PointInTimeRecoveryEnabled: "true"
+    DeletionProtectionEnabled: true
     AttributeDefinitions:
       - AttributeName: "${ent.id.field}"
         AttributeType: "S"
