@@ -91,6 +91,8 @@ ${recur}
                 let method = web.method;
                 let corsflag = 'false';
                 let corsprops = '';
+                let methods = method.split(',');
+                console.log('METHODS', methods);
                 if (web.cors.active) {
                     corsflag = 'true';
                     if (web.cors.props && !empty(web.cors.props)) {
@@ -102,20 +104,24 @@ ${recur}
                     }
                 }
                 if ('v2' === ((_d = web.lambda) === null || _d === void 0 ? void 0 : _d.gateway)) {
-                    events += TM(`
+                    for (let method of methods) {
+                        events += TM(`
     - httpApi:
         path: "${prefix}${area}${name}${suffix}"
         method: ${method}
 `);
+                    }
                 }
                 else {
-                    events += TM(`
+                    for (let method of methods) {
+                        events += TM(`
     - http:
         path: "${prefix}${area}${name}${suffix}"
         method: ${method}
         cors: ${corsflag}
 ${corsprops}
 `);
+                    }
                 }
             }
             if ('' !== events) {
