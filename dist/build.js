@@ -20,7 +20,7 @@ const EnvLambda = {
             const srv = entry[1];
             const lambda = srv.env.lambda;
             const handler = lambda.handler;
-            // NOTE: gen.custom covention: allows for complete overwrite
+            // NOTE: gen.custom convention: allows for complete overwrite
             // as a get-out-of-jail
             if ((_c = (_b = (_a = srv.gen) === null || _a === void 0 ? void 0 : _a.custom) === null || _b === void 0 ? void 0 : _b.lambda) === null || _c === void 0 ? void 0 : _c.srv_yml) {
                 return srv.gen.custom.lambda.srv_yml;
@@ -35,7 +35,7 @@ const EnvLambda = {
             let onEvents = srv.on;
             if (onEvents) {
                 Object.entries(onEvents).forEach((entry) => {
-                    let name = entry[0];
+                    // let name = entry[0]
                     let spec = entry[1];
                     if ('aws' === spec.provider) {
                         spec.events.forEach((ev) => {
@@ -92,7 +92,7 @@ ${recur}
                 let corsflag = 'false';
                 let corsprops = '';
                 let methods = method.split(',');
-                console.log('METHODS', methods);
+                // console.log('METHODS', methods)
                 if (web.cors.active) {
                     corsflag = 'true';
                     if (web.cors.props && !empty(web.cors.props)) {
@@ -196,14 +196,16 @@ exports.handler = async (
             let ent = entry[1];
             if (ent && ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
                 let name = path.join('');
+                let stage_suffix = ent.stage.active ? '.${self:provider.stage,"dev"}' : '';
                 let fullname = ent.dynamo.prefix +
                     name +
-                    ent.dynamo.suffix;
+                    ent.dynamo.suffix +
+                    stage_suffix;
                 return `${name}:
   Type: AWS::DynamoDB::Table
   DeletionPolicy: Retain
   Properties:
-    TableName: ${fullname}
+    TableName: '${fullname}'
     BillingMode: "PAY_PER_REQUEST"
     PointInTimeRecoverySpecification:
       PointInTimeRecoveryEnabled: "true"

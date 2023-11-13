@@ -22,12 +22,11 @@ const EnvLambda = {
         const lambda = srv.env.lambda
         const handler = lambda.handler
 
-        // NOTE: gen.custom covention: allows for complete overwrite
+        // NOTE: gen.custom convention: allows for complete overwrite
         // as a get-out-of-jail
         if (srv.gen?.custom?.lambda?.srv_yml) {
           return srv.gen.custom.lambda.srv_yml
         }
-
 
         // TODO: this should be a JSON structure exported as YAML
         let srvyml = `${name}:
@@ -42,7 +41,7 @@ const EnvLambda = {
 
         if (onEvents) {
           Object.entries(onEvents).forEach((entry: any[]) => {
-            let name = entry[0]
+            // let name = entry[0]
             let spec = entry[1]
 
             if ('aws' === spec.provider) {
@@ -106,7 +105,7 @@ ${recur}
           let corsprops = ''
 
           let methods = method.split(',')
-          console.log('METHODS', methods)
+          // console.log('METHODS', methods)
 
           if (web.cors.active) {
             corsflag = 'true'
@@ -244,15 +243,19 @@ exports.handler = async (
 
       if (ent && ent.dynamo?.active) {
         let name = path.join('')
+
+        let stage_suffix = ent.stage.active ? '.${self:provider.stage,"dev"}' : ''
+
         let fullname = ent.dynamo.prefix +
           name +
-          ent.dynamo.suffix
+          ent.dynamo.suffix +
+          stage_suffix
 
         return `${name}:
   Type: AWS::DynamoDB::Table
   DeletionPolicy: Retain
   Properties:
-    TableName: ${fullname}
+    TableName: '${fullname}'
     BillingMode: "PAY_PER_REQUEST"
     PointInTimeRecoverySpecification:
       PointInTimeRecoveryEnabled: "true"
