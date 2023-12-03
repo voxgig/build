@@ -158,7 +158,7 @@ ${events}
             }
             let srv_handler_path = path_1.default.join(spec.folder, name + '.' + lang);
             let start = spec.start || 'setup';
-            let envFolder = ((_a = spec.env) === null || _a === void 0 ? void 0 : _a.folder) || '../../env/lambda';
+            let envFolder = ((_a = spec.env) === null || _a === void 0 ? void 0 : _a.folder) || '../../../env/lambda';
             let handler = 'handler';
             let modify = '';
             if (!srv.api.web.active) {
@@ -173,7 +173,7 @@ ${events}
           `;
                 }
             }
-            let content = TS ? `import getSeneca from '${envFolder}/${start}'`
+            let content = TS ? `import { getSeneca } from '${envFolder}/${start}'`
                 :
                     `const getSeneca = require('${envFolder}/${start}')`;
             content += `

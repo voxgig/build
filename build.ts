@@ -196,7 +196,7 @@ ${events}
         let srv_handler_path = Path.join(spec.folder, name + '.' + lang)
 
         let start = spec.start || 'setup'
-        let envFolder = spec.env?.folder || '../../env/lambda'
+        let envFolder = spec.env?.folder || '../../../env/lambda'
 
         let handler = 'handler'
         let modify = ''
@@ -215,7 +215,7 @@ ${events}
         }
 
         let content =
-          TS ? `import getSeneca from '${envFolder}/${start}'`
+          TS ? `import { getSeneca } from '${envFolder}/${start}'`
             :
             `const getSeneca = require('${envFolder}/${start}')`
 
