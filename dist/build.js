@@ -197,19 +197,26 @@ exports.handler = async (
     resources_yml: (model, spec) => {
         let filename = spec.filename || 'resources.yml';
         let resources_yml_path = path_1.default.join(spec.folder, filename);
-        let content = (0, model_1.dive)(model.main.ent).map((entry) => {
-            var _a;
-            // console.log('DYNAMO', entry)
-            let path = entry[0];
-            let ent = entry[1];
-            if (ent && ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
-                let name = path.join('');
-                let stage_suffix = ent.stage.active ? '.${self:provider.stage,"dev"}' : '';
-                let fullname = ent.dynamo.prefix +
-                    name +
-                    ent.dynamo.suffix +
-                    stage_suffix;
-                return `${name}:
+        let resources_yml_prefix_path = path_1.default.join(spec.folder, 'srv.prefix.yml');
+        let resources_yml_suffix_path = path_1.default.join(spec.folder, 'srv.suffix.yml');
+        let prefixContent = fs_1.default.existsSync(resources_yml_prefix_path) ?
+            fs_1.default.readFileSync(resources_yml_prefix_path) : '';
+        let suffixContent = fs_1.default.existsSync(resources_yml_suffix_path) ?
+            fs_1.default.readFileSync(resources_yml_suffix_path) : '';
+        let content = prefixContent +
+            (0, model_1.dive)(model.main.ent).map((entry) => {
+                var _a;
+                // console.log('DYNAMO', entry)
+                let path = entry[0];
+                let ent = entry[1];
+                if (ent && ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
+                    let name = path.join('');
+                    let stage_suffix = ent.stage.active ? '.${self:provider.stage,"dev"}' : '';
+                    let fullname = ent.dynamo.prefix +
+                        name +
+                        ent.dynamo.suffix +
+                        stage_suffix;
+                    return `${name}:
   Type: AWS::DynamoDB::Table
   DeletionPolicy: Retain
   Properties:
@@ -225,12 +232,13 @@ exports.handler = async (
       - AttributeName: "${ent.id.field}"
         KeyType: HASH
             `;
-            }
-            return '';
-        }).join('\n\n\n');
+                }
+                return '';
+            }).join('\n\n\n');
         if (spec.custom) {
             content = fs_1.default.readFileSync(spec.custom).toString() + '\n\n\n' + content;
         }
+        content += suffixContent;
         fs_1.default.writeFileSync(resources_yml_path, content);
     }
 };
