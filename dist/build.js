@@ -197,8 +197,8 @@ exports.handler = async (
     resources_yml: (model, spec) => {
         let filename = spec.filename || 'resources.yml';
         let resources_yml_path = path_1.default.join(spec.folder, filename);
-        let resources_yml_prefix_path = path_1.default.join(spec.folder, 'srv.prefix.yml');
-        let resources_yml_suffix_path = path_1.default.join(spec.folder, 'srv.suffix.yml');
+        let resources_yml_prefix_path = path_1.default.join(spec.folder, 'res.prefix.yml');
+        let resources_yml_suffix_path = path_1.default.join(spec.folder, 'res.suffix.yml');
         let prefixContent = fs_1.default.existsSync(resources_yml_prefix_path) ?
             fs_1.default.readFileSync(resources_yml_prefix_path) : '';
         let suffixContent = fs_1.default.existsSync(resources_yml_suffix_path) ?

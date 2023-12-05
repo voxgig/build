@@ -248,8 +248,8 @@ exports.handler = async (
     let filename = spec.filename || 'resources.yml'
     let resources_yml_path = Path.join(spec.folder, filename)
 
-    let resources_yml_prefix_path = Path.join(spec.folder, 'srv.prefix.yml')
-    let resources_yml_suffix_path = Path.join(spec.folder, 'srv.suffix.yml')
+    let resources_yml_prefix_path = Path.join(spec.folder, 'res.prefix.yml')
+    let resources_yml_suffix_path = Path.join(spec.folder, 'res.suffix.yml')
 
     let prefixContent = Fs.existsSync(resources_yml_prefix_path) ?
       Fs.readFileSync(resources_yml_prefix_path) : ''
