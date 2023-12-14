@@ -271,22 +271,33 @@ exports.handler = async (
     let filename = spec.filename || 'resources.yml'
     let resources_yml_path = Path.join(spec.folder, filename)
 
-    let content = dive(model.main.ent).map((entry: any) => {
-      // console.log('DYNAMO', entry)
-      let path = entry[0]
-      let ent = EntShape(entry[1])
+    let resources_yml_prefix_path = Path.join(spec.folder, 'res.prefix.yml')
+    let resources_yml_suffix_path = Path.join(spec.folder, 'res.suffix.yml')
 
-      if (ent && ent.dynamo?.active) {
-        let name = path.join('')
+    let prefixContent = Fs.existsSync(resources_yml_prefix_path) ?
+      Fs.readFileSync(resources_yml_prefix_path) : ''
+    let suffixContent = Fs.existsSync(resources_yml_suffix_path) ?
+      Fs.readFileSync(resources_yml_suffix_path) : ''
 
-        let stage_suffix = ent.stage?.active ? '.${self:provider.stage,"dev"}' : ''
+    let content =
+      prefixContent +
 
-        let fullname = ent.dynamo.prefix +
-          name +
-          ent.dynamo.suffix +
-          stage_suffix
+      dive(model.main.ent).map((entry: any) => {
+        // console.log('DYNAMO', entry)
+        let path = entry[0]
+        let ent = EntShape(entry[1])
 
-        return `${name}:
+        if (ent && ent.dynamo?.active) {
+          let name = path.join('')
+
+          let stage_suffix = ent.stage?.active ? '.${self:provider.stage,"dev"}' : ''
+
+          let fullname = ent.dynamo.prefix +
+            name +
+            ent.dynamo.suffix +
+            stage_suffix
+
+          return `${name}:
   Type: AWS::DynamoDB::Table
   DeletionPolicy: Retain
   Properties:
@@ -302,13 +313,15 @@ exports.handler = async (
       - AttributeName: "${ent.id.field}"
         KeyType: HASH
             `
-      }
-      return ''
-    }).join('\n\n\n')
+        }
+        return ''
+      }).join('\n\n\n')
 
     if (spec.custom) {
       content = Fs.readFileSync(spec.custom).toString() + '\n\n\n' + content
     }
+
+    content += suffixContent
 
     Fs.writeFileSync(resources_yml_path, content)
   }
