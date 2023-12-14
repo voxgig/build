@@ -3,7 +3,30 @@
 import Fs from 'fs'
 import Path from 'path'
 
+import { Gubu } from 'gubu'
 import { dive } from '@voxgig/model'
+
+
+const { Open, Skip } = Gubu
+
+
+const EntShape = Gubu({
+  id: {
+    field: 'id'
+  },
+  field: Open({}).Child({
+  }),
+  dynamo: Open({
+    active: false,
+    prefix: '',
+    suffix: '',
+  }),
+  stage: Open({
+    active: false
+  }),
+  custom: Skip(String),
+})
+
 
 const EnvLambda = {
 
@@ -251,12 +274,12 @@ exports.handler = async (
     let content = dive(model.main.ent).map((entry: any) => {
       // console.log('DYNAMO', entry)
       let path = entry[0]
-      let ent = entry[1]
+      let ent = EntShape(entry[1])
 
       if (ent && ent.dynamo?.active) {
         let name = path.join('')
 
-        let stage_suffix = ent.stage.active ? '.${self:provider.stage,"dev"}' : ''
+        let stage_suffix = ent.stage?.active ? '.${self:provider.stage,"dev"}' : ''
 
         let fullname = ent.dynamo.prefix +
           name +

@@ -7,7 +7,24 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EnvLambda = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const gubu_1 = require("gubu");
 const model_1 = require("@voxgig/model");
+const { Open, Skip } = gubu_1.Gubu;
+const EntShape = (0, gubu_1.Gubu)({
+    id: {
+        field: 'id'
+    },
+    field: Open({}).Child({}),
+    dynamo: Open({
+        active: false,
+        prefix: '',
+        suffix: '',
+    }),
+    stage: Open({
+        active: false
+    }),
+    custom: Skip(String),
+});
 const EnvLambda = {
     srv_yml: (model, spec) => {
         let srv_yml_path = path_1.default.join(spec.folder, 'srv.yml');
@@ -198,13 +215,13 @@ exports.handler = async (
         let filename = spec.filename || 'resources.yml';
         let resources_yml_path = path_1.default.join(spec.folder, filename);
         let content = (0, model_1.dive)(model.main.ent).map((entry) => {
-            var _a;
+            var _a, _b;
             // console.log('DYNAMO', entry)
             let path = entry[0];
-            let ent = entry[1];
+            let ent = EntShape(entry[1]);
             if (ent && ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
                 let name = path.join('');
-                let stage_suffix = ent.stage.active ? '.${self:provider.stage,"dev"}' : '';
+                let stage_suffix = ((_b = ent.stage) === null || _b === void 0 ? void 0 : _b.active) ? '.${self:provider.stage,"dev"}' : '';
                 let fullname = ent.dynamo.prefix +
                     name +
                     ent.dynamo.suffix +
