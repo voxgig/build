@@ -15,6 +15,9 @@ const EntShape = (0, gubu_1.Gubu)({
         field: 'id'
     },
     field: Open({}).Child({}),
+    resource: Open({
+        name: ''
+    }),
     dynamo: Open({
         active: false,
         prefix: '',
@@ -222,13 +225,14 @@ exports.handler = async (
             fs_1.default.readFileSync(resources_yml_suffix_path) : '';
         let content = prefixContent +
             (0, model_1.dive)(model.main.ent).map((entry) => {
-                var _a, _b;
+                var _a, _b, _c;
                 // console.log('DYNAMO', entry)
                 let path = entry[0];
                 let ent = EntShape(entry[1]);
                 if (ent && ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
-                    let name = path.join('');
-                    let stage_suffix = ((_b = ent.stage) === null || _b === void 0 ? void 0 : _b.active) ? '.${self:provider.stage,"dev"}' : '';
+                    let pathname = path.join('');
+                    let name = ((_b = ent.resource) === null || _b === void 0 ? void 0 : _b.name) || pathname;
+                    let stage_suffix = ((_c = ent.stage) === null || _c === void 0 ? void 0 : _c.active) ? '.${self:provider.stage,"dev"}' : '';
                     let fullname = ent.dynamo.prefix +
                         name +
                         ent.dynamo.suffix +

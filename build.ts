@@ -16,6 +16,9 @@ const EntShape = Gubu({
   },
   field: Open({}).Child({
   }),
+  resource: Open({
+    name: ''
+  }),
   dynamo: Open({
     active: false,
     prefix: '',
@@ -288,7 +291,8 @@ exports.handler = async (
         let ent = EntShape(entry[1])
 
         if (ent && ent.dynamo?.active) {
-          let name = path.join('')
+          let pathname = path.join('')
+          let name = ent.resource?.name || pathname
 
           let stage_suffix = ent.stage?.active ? '.${self:provider.stage,"dev"}' : ''
 
