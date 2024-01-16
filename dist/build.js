@@ -338,7 +338,7 @@ exports.handler = async (
         content += `# Lambda IAM role\n\n`;
         // Lambda IAM role
         content += `\n\nresource "aws_iam_role" "lambda_exec_role" {
-  name = "tf01-vxg01-lambda-exec-role"
+  name = "\${var.stage}-vxg01-lambda-exec-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -403,7 +403,7 @@ resource "aws_iam_role_policy_attachment" "lambda_attach_cloudwatch" {
         content += `# S3 bucket for Lambda code\n\n`;
         // S3 bucket for Lambda code
         content += `resource "aws_s3_bucket" "lambda_bucket" {
-  bucket = "vxg01-tf01-lambda-bucket"
+  bucket = "vxg01-\${var.stage}-lambda-bucket"
 }
 
 resource "aws_s3_bucket_ownership_controls" "lambda_bucket" {
@@ -423,14 +423,14 @@ resource "aws_s3_bucket_acl" "lambda_bucket" {
 
 resource "aws_s3_object" "lambda_s3_object" {
   bucket = aws_s3_bucket.lambda_bucket.bucket
-  key    = "lambda/vxg01-tf01-lambda-bucket.zip"
+  key    = "lambda/vxg01-\${var.stage}-lambda-bucket.zip"
   source = "\${path.root}/../backend.zip"
   etag   = filemd5("\${path.root}/../backend.zip")
 }\n\n`;
         content += `# S3 bucket for user uploads\n\n`;
         // S3 bucket for user uploads
         content += `resource "aws_s3_bucket" "user_uploads" {
-  bucket = "vxg01-backend01-file02-tf01"
+  bucket = "vxg01-backend01-file02-\${var.stage}"
 }
 
 resource "aws_s3_bucket_cors_configuration" "user_uploads" {
@@ -472,30 +472,30 @@ resource "aws_iam_role_policy_attachment" "lambda_attach_s3_" {
 }\n\n`;
         content += `# API Gateway resources\n\n`;
         // API Gateway resources
-        content += `resource "aws_api_gateway_rest_api" "tf01_vxg01_backend01" {
-  name = "tf01-vxg01-backend01"
+        content += `resource "aws_api_gateway_rest_api" "\${var.stage}_vxg01_backend01" {
+  name = "\${var.stage}-vxg01-backend01"
 }
 
 resource "aws_api_gateway_resource" "api" {
-  rest_api_id = aws_api_gateway_rest_api.tf01_vxg01_backend01.id
-  parent_id   = aws_api_gateway_rest_api.tf01_vxg01_backend01.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.\${var.stage}_vxg01_backend01.id
+  parent_id   = aws_api_gateway_rest_api.\${var.stage}_vxg01_backend01.root_resource_id
   path_part   = "api"
 }
 
 resource "aws_api_gateway_resource" "web" {
-  rest_api_id = aws_api_gateway_rest_api.tf01_vxg01_backend01.id
+  rest_api_id = aws_api_gateway_rest_api.\${var.stage}_vxg01_backend01.id
   parent_id   = aws_api_gateway_resource.api.id
   path_part   = "web"
 }
 
 resource "aws_api_gateway_resource" "private" {
-  rest_api_id = aws_api_gateway_rest_api.tf01_vxg01_backend01.id
+  rest_api_id = aws_api_gateway_rest_api.\${var.stage}_vxg01_backend01.id
   parent_id   = aws_api_gateway_resource.web.id
   path_part   = "private"
 }
 
 resource "aws_api_gateway_resource" "public" {
-  rest_api_id = aws_api_gateway_rest_api.tf01_vxg01_backend01.id
+  rest_api_id = aws_api_gateway_rest_api.\${var.stage}_vxg01_backend01.id
   parent_id   = aws_api_gateway_resource.web.id
   path_part   = "public"
 }\n\n`;
@@ -507,14 +507,18 @@ resource "aws_api_gateway_resource" "public" {
             const name = entry[0];
             const srv = entry[1];
             console.log('SRV', name, srv);
-            return `module "${name}_lambda" {
+            const web = srv.api.web;
+            if (web.active) {
+                return `module "${name}_lambda" {
   source = "./modules/lambda_module"
-  function_name = "bbmfox01-backend01-tf01-${name}"
+  function_name = "vxg01-backend01-\${var.stage}-${name}"
   handler = "dist/handler/${name}.handler"
   role_arn = aws_iam_role.lambda_exec_role.arn
   s3_bucket = aws_s3_bucket.lambda_bucket.bucket
   s3_key = aws_s3_object.lambda_s3_object.key
 }`;
+            }
+            return '';
         })
             .join('\n\n');
         fs_1.default.writeFileSync(main_tf_path, content);
