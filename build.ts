@@ -376,6 +376,8 @@ exports.handler = async (
   default = "dev"
 }\n\n`
 
+    content += `# DynamoDB tables\n\n`
+
     // DynamoDB tables
     content += dive(model.main.ent)
       .map((entry: any) => {
@@ -414,6 +416,8 @@ exports.handler = async (
         return ''
       })
       .join('\n\n\n')
+
+    content += `# Lambda IAM role\n\n`
 
     // Lambda IAM role
     content += `\n\nresource "aws_iam_role" "lambda_exec_role" {
@@ -480,6 +484,8 @@ resource "aws_iam_role_policy_attachment" "lambda_attach_cloudwatch" {
   policy_arn = aws_iam_policy.cloudwatch_policy.arn
 }\n\n`
 
+    content += `# S3 bucket for Lambda code\n\n`
+
     // S3 bucket for Lambda code
     content += `resource "aws_s3_bucket" "lambda_bucket" {
   bucket = "vxg01-tf01-lambda-bucket"
@@ -507,6 +513,8 @@ resource "aws_s3_object" "lambda_s3_object" {
   etag   = filemd5("\${path.root}/../backend.zip")
 }\n\n`
 
+    content += `# S3 bucket for user uploads\n\n`
+
     // S3 bucket for user uploads
     content += `resource "aws_s3_bucket" "user_uploads" {
   bucket = "vxg01-backend01-file02-tf01"
@@ -518,7 +526,7 @@ resource "aws_s3_bucket_cors_configuration" "user_uploads" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["PUT", "POST"]
-    allowed_origins = ["https://dh9bnxeiea032.cloudfront.net"]
+    allowed_origins = ["*.cloudfront.net"]
     expose_headers  = ["ETag"]
     max_age_seconds = 3000
   }
@@ -550,12 +558,57 @@ resource "aws_iam_role_policy_attachment" "lambda_attach_s3_" {
   policy_arn = aws_iam_policy.user_uploads_policy.arn
 }\n\n`
 
-    Object.entries(model.main.srv)
+    content += `# API Gateway resources\n\n`
+
+    // API Gateway resources
+    content += `resource "aws_api_gateway_rest_api" "tf01_vxg01_backend01" {
+  name = "tf01-vxg01-backend01"
+}
+
+resource "aws_api_gateway_resource" "api" {
+  rest_api_id = aws_api_gateway_rest_api.tf01_vxg01_backend01.id
+  parent_id   = aws_api_gateway_rest_api.tf01_vxg01_backend01.root_resource_id
+  path_part   = "api"
+}
+
+resource "aws_api_gateway_resource" "web" {
+  rest_api_id = aws_api_gateway_rest_api.tf01_vxg01_backend01.id
+  parent_id   = aws_api_gateway_resource.api.id
+  path_part   = "web"
+}
+
+resource "aws_api_gateway_resource" "private" {
+  rest_api_id = aws_api_gateway_rest_api.tf01_vxg01_backend01.id
+  parent_id   = aws_api_gateway_resource.web.id
+  path_part   = "private"
+}
+
+resource "aws_api_gateway_resource" "public" {
+  rest_api_id = aws_api_gateway_rest_api.tf01_vxg01_backend01.id
+  parent_id   = aws_api_gateway_resource.web.id
+  path_part   = "public"
+}\n\n`
+
+    content += `# Lambda functions\n\n`
+
+    // Lambda functions
+    content += Object.entries(model.main.srv)
       .filter((entry: any) => entry[1].env?.lambda?.active)
       .map((entry: any) => {
         const name = entry[0]
         const srv = entry[1]
+        console.log('SRV', name, srv)
+
+        return `module "${name}_lambda" {
+  source = "./modules/lambda_module"
+  function_name = "bbmfox01-backend01-tf01-${name}"
+  handler = "dist/handler/${name}.handler"
+  role_arn = aws_iam_role.lambda_exec_role.arn
+  s3_bucket = aws_s3_bucket.lambda_bucket.bucket
+  s3_key = aws_s3_object.lambda_s3_object.key
+}`
       })
+      .join('\n\n')
 
     Fs.writeFileSync(main_tf_path, content)
   }
