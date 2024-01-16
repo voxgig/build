@@ -517,7 +517,7 @@ resource "aws_s3_object" "lambda_s3_object" {
 
     // S3 bucket for user uploads
     content += `resource "aws_s3_bucket" "user_uploads" {
-  bucket = "vxg01-backend01-file02-\${var.stage}"
+  bucket = "vxg01-backend01-file02-tf01"
 }
 
 resource "aws_s3_bucket_cors_configuration" "user_uploads" {
@@ -561,30 +561,30 @@ resource "aws_iam_role_policy_attachment" "lambda_attach_s3_" {
     content += `# API Gateway resources\n\n`
 
     // API Gateway resources
-    content += `resource "aws_api_gateway_rest_api" "\${var.stage}_vxg01_backend01" {
+    content += `resource "aws_api_gateway_rest_api" "gw_rest_api" {
   name = "\${var.stage}-vxg01-backend01"
 }
 
 resource "aws_api_gateway_resource" "api" {
-  rest_api_id = aws_api_gateway_rest_api.\${var.stage}_vxg01_backend01.id
-  parent_id   = aws_api_gateway_rest_api.\${var.stage}_vxg01_backend01.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
+  parent_id   = aws_api_gateway_rest_api.gw_rest_api.root_resource_id
   path_part   = "api"
 }
 
 resource "aws_api_gateway_resource" "web" {
-  rest_api_id = aws_api_gateway_rest_api.\${var.stage}_vxg01_backend01.id
+  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
   parent_id   = aws_api_gateway_resource.api.id
   path_part   = "web"
 }
 
 resource "aws_api_gateway_resource" "private" {
-  rest_api_id = aws_api_gateway_rest_api.\${var.stage}_vxg01_backend01.id
+  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
   parent_id   = aws_api_gateway_resource.web.id
   path_part   = "private"
 }
 
 resource "aws_api_gateway_resource" "public" {
-  rest_api_id = aws_api_gateway_rest_api.\${var.stage}_vxg01_backend01.id
+  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
   parent_id   = aws_api_gateway_resource.web.id
   path_part   = "public"
 }\n\n`
@@ -597,12 +597,8 @@ resource "aws_api_gateway_resource" "public" {
       .map((entry: any) => {
         const name = entry[0]
         const srv = entry[1]
-        console.log('SRV', name, srv)
 
-        const web = srv.api.web
-
-        if (web.active) {
-          return `module "${name}_lambda" {
+        return `module "${name}_lambda" {
   source = "./modules/lambda_module"
   function_name = "vxg01-backend01-\${var.stage}-${name}"
   handler = "dist/handler/${name}.handler"
@@ -610,6 +606,32 @@ resource "aws_api_gateway_resource" "public" {
   s3_bucket = aws_s3_bucket.lambda_bucket.bucket
   s3_key = aws_s3_object.lambda_s3_object.key
 }`
+      })
+      .join('\n\n')
+
+    // FIXME: add aws_lambda_permission and aws_s3_bucket_notification
+
+    content += `\n\n# API Gateway endpoints`
+
+    // API Gateway endpoints
+    content += Object.entries(model.main.srv)
+      .filter((entry: any) => entry[1].env?.lambda?.active)
+      .map((entry: any) => {
+        const name = entry[0]
+        const srv = entry[1]
+
+        const web = srv.api.web
+
+        if (web.active) {
+          return `module "gw_auth_lambda" {
+  source = "./modules/gw_module"
+  function_name = module.auth_lambda.function_name
+  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
+  parent_id = aws_api_gateway_resource.public.id
+  path_part = "auth"
+  invoke_arn = module.auth_lambda.invoke_arn
+}
+`
         }
         return ''
       })
