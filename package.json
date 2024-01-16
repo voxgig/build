@@ -23,6 +23,7 @@
     "test-some": "jest -t",
     "test-watch": "jest --coverage --watchAll",
     "watch": "tsc -w -d",
+    "prettier": "prettier --write --no-semi --single-quote *.ts test/*.ts",
     "build": "tsc -d",
     "clean": "rm -rf node_modules yarn.lock package-lock.json",
     "reset": "npm run clean && npm i && npm run build && npm test",
@@ -50,6 +51,7 @@
     "jest": "^29.7.0",
     "tinyify": "^4.0.0",
     "ts-jest": "^29.1.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "prettier": "^3.1.1"
   }
 }
