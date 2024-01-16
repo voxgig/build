@@ -366,7 +366,7 @@ exports.handler = async (
 
     // Variables
     content += `variable "stage" {
-  type = "string"
+  type = string
   default = "tf02"
 }\n\n`
 
@@ -503,8 +503,8 @@ resource "aws_s3_bucket_acl" "lambda_bucket" {
 resource "aws_s3_object" "lambda_s3_object" {
   bucket = aws_s3_bucket.lambda_bucket.bucket
   key    = "lambda/vxg01-\${var.stage}-lambda-bucket.zip"
-  source = "\${path.root}/../backend.zip"
-  etag   = filemd5("\${path.root}/../backend.zip")
+  source = "\${path.root}/../../../backend.zip"
+  etag   = filemd5("\${path.root}/../../../backend.zip")
 }\n\n`
 
     content += `# S3 bucket for user uploads\n\n`
@@ -615,22 +615,36 @@ resource "aws_api_gateway_resource" "public" {
 }`
 
               let events = ''
+              let prefix = ''
+              let suffix = ''
 
-              spec.events.forEach((ev: any) => {
-                if ('s3' === ev.source) {
-                  events += TM(`ev.event`)
+              lambdaConfig += `\n\nresource "aws_s3_bucket_notification" "bucket_notification" {
+  bucket = aws_s3_bucket.user_uploads.id
 
+  lambda_function {
+    lambda_function_arn = module.upload_lambda.arn`
+
+              spec.events
+                .filter((ev: any) => ev.source === 's3')
+                .forEach((ev: any) => {
+                  events += `"${ev.event}",`
                   if (ev.rules) {
-                    if (ev.rules.prefix) {
-                    }
-
-                    if (ev.rules.suffix) {
-                    }
+                    prefix = ev.rules.prefix || prefix
+                    suffix = ev.rules.suffix || suffix
                   }
-                }
-              })
+                })
 
-              console.log('EVENTS', events)
+              if (prefix !== '') {
+                lambdaConfig += `\n\t\tfilter_prefix = "${prefix}"`
+              }
+
+              if (suffix !== '') {
+                lambdaConfig += `\n\t\tfilter_suffix = "${suffix}"`
+              }
+
+              events = `[${events}]`
+              events = events.replace(',]', ']')
+              lambdaConfig += `\n\t\tevents = ${events}\n\t}\n}`
             }
           })
         }
@@ -642,6 +656,9 @@ resource "aws_api_gateway_resource" "public" {
     // FIXME: add aws_lambda_permission and aws_s3_bucket_notification
 
     content += `\n\n# API Gateway endpoints`
+
+    let dependsOn = ''
+    let triggers = ''
 
     // API Gateway endpoints
     content += Object.entries(model.main.srv)
@@ -659,6 +676,13 @@ resource "aws_api_gateway_resource" "public" {
           let resource = area.replace('/', '')
           let method = web.method
 
+          dependsOn += `
+          module.gw_${name}_lambda.gw_integration_id,`
+          triggers += `
+          module.gw_${name}_lambda.gw_integration_id,
+          module.gw_${name}_lambda.gw_method_id,
+          module.gw_${name}_lambda.gw_resource_id,`
+
           return `module "gw_${name}_lambda" {
   source = "./modules/gw_module"
   function_name = module.${name}_lambda.function_name
@@ -673,6 +697,28 @@ resource "aws_api_gateway_resource" "public" {
       })
       .join('\n\n')
 
+    dependsOn = `[${dependsOn}]`
+    dependsOn = dependsOn.replace(',]', '\n\t]')
+    triggers = `[${triggers}]`
+    triggers = triggers.replace(',]', '\n\t\t]')
+
+    // API Gateway deployment
+    content += `resource "aws_api_gateway_deployment" "gw_deployment" {
+
+  depends_on = ${dependsOn}
+
+  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
+
+  triggers = {
+    redeployment = sha1(jsonencode(${triggers}))
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}\n\n`
+
+    // API Gateway stage
     content += `resource "aws_api_gateway_stage" "gw_stage" {
   deployment_id = aws_api_gateway_deployment.gw_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.gw_rest_api.id
