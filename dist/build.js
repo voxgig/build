@@ -423,6 +423,7 @@ resource "aws_s3_object" "lambda_s3_object" {
 }\n\n`;
         content += `# S3 bucket for user uploads\n\n`;
         // S3 bucket for user uploads
+        // FIXME: create uploads bucket only if needed
         content += `resource "aws_s3_bucket" "user_uploads" {
   bucket = "vxg01-backend01-file02-\${var.stage}"
 }
@@ -552,7 +553,6 @@ resource "aws_api_gateway_resource" "public" {
             return lambdaConfig;
         })
             .join('\n\n');
-        // FIXME: add aws_lambda_permission and aws_s3_bucket_notification
         content += `\n\n# API Gateway endpoints`;
         let dependsOn = '';
         let triggers = '';
