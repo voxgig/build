@@ -114,3 +114,4 @@ yarn.lock
 
 test/coverage.html
 
+.vscode
