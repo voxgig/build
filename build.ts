@@ -362,18 +362,12 @@ exports.handler = async (
     // Provider
     content += `provider "aws" {
   region = "eu-west-1"
-
-  default_tags {
-    tags = {
-      vxg01-terraform = "cloudfront-distribution"
-    }
-  }
 }\n\n`
 
     // Variables
     content += `variable "stage" {
   type = "string"
-  default = "dev"
+  default = "tf02"
 }\n\n`
 
     content += `# DynamoDB tables\n\n`
@@ -517,7 +511,7 @@ resource "aws_s3_object" "lambda_s3_object" {
 
     // S3 bucket for user uploads
     content += `resource "aws_s3_bucket" "user_uploads" {
-  bucket = "vxg01-backend01-file02-tf01"
+  bucket = "vxg01-backend01-file02-\${var.stage}"
 }
 
 resource "aws_s3_bucket_cors_configuration" "user_uploads" {
@@ -593,19 +587,55 @@ resource "aws_api_gateway_resource" "public" {
 
     // Lambda functions
     content += Object.entries(model.main.srv)
-      .filter((entry: any) => entry[1].env?.lambda?.active)
       .map((entry: any) => {
         const name = entry[0]
         const srv = entry[1]
 
-        return `module "${name}_lambda" {
+        let lambdaConfig = `module "${name}_lambda" {
   source = "./modules/lambda_module"
   function_name = "vxg01-backend01-\${var.stage}-${name}"
   handler = "dist/handler/${name}.handler"
   role_arn = aws_iam_role.lambda_exec_role.arn
   s3_bucket = aws_s3_bucket.lambda_bucket.bucket
   s3_key = aws_s3_object.lambda_s3_object.key
+}\n\n`
+
+        let onEvents = srv.on
+        if (onEvents) {
+          Object.entries(onEvents).forEach((entry: any[]) => {
+            // let name = entry[0]
+            let spec = entry[1]
+            if ('aws' === spec.provider) {
+              lambdaConfig += `resource "aws_lambda_permission" "allow_${name}_uploads_bucket" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = module.${name}_lambda.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.user_uploads.arn
 }`
+
+              let events = ''
+
+              spec.events.forEach((ev: any) => {
+                if ('s3' === ev.source) {
+                  events += TM(`ev.event`)
+
+                  if (ev.rules) {
+                    if (ev.rules.prefix) {
+                    }
+
+                    if (ev.rules.suffix) {
+                    }
+                  }
+                }
+              })
+
+              console.log('EVENTS', events)
+            }
+          })
+        }
+
+        return lambdaConfig
       })
       .join('\n\n')
 
@@ -623,19 +653,31 @@ resource "aws_api_gateway_resource" "public" {
         const web = srv.api.web
 
         if (web.active) {
-          return `module "gw_auth_lambda" {
+          let prefix = web.path.prefix
+          let suffix = web.path.suffix
+          let area = web.path.area
+          let resource = area.replace('/', '')
+          let method = web.method
+
+          return `module "gw_${name}_lambda" {
   source = "./modules/gw_module"
-  function_name = module.auth_lambda.function_name
+  function_name = module.${name}_lambda.function_name
   rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
-  parent_id = aws_api_gateway_resource.public.id
-  path_part = "auth"
-  invoke_arn = module.auth_lambda.invoke_arn
+  parent_id = aws_api_gateway_resource.${resource}.id
+  path_part = "${name}"
+  invoke_arn = module.${name}_lambda.invoke_arn
 }
 `
         }
         return ''
       })
       .join('\n\n')
+
+    content += `resource "aws_api_gateway_stage" "gw_stage" {
+  deployment_id = aws_api_gateway_deployment.gw_deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.gw_rest_api.id
+  stage_name    = "\${var.stage}"
+}\n\n`
 
     Fs.writeFileSync(main_tf_path, content)
   }
