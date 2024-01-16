@@ -292,7 +292,7 @@ exports.handler = async (
 
   default_tags {
     tags = {
-      bbmfox01-terraform = "cloudfront-distribution"
+      vxg01-terraform = "cloudfront-distribution"
     }
   }
 }\n\n`;
@@ -336,7 +336,7 @@ exports.handler = async (
             .join('\n\n\n');
         // Lambda IAM role
         content += `\n\nresource "aws_iam_role" "lambda_exec_role" {
-  name = "tf01-bbmfox01-lambda-exec-role"
+  name = "tf01-vxg01-lambda-exec-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -400,7 +400,7 @@ resource "aws_iam_role_policy_attachment" "lambda_attach_cloudwatch" {
 }\n\n`;
         // S3 bucket for Lambda code
         content += `resource "aws_s3_bucket" "lambda_bucket" {
-  bucket = "bbmfox01-tf01-lambda-bucket"
+  bucket = "vxg01-tf01-lambda-bucket"
 }
 
 resource "aws_s3_bucket_ownership_controls" "lambda_bucket" {
@@ -420,13 +420,13 @@ resource "aws_s3_bucket_acl" "lambda_bucket" {
 
 resource "aws_s3_object" "lambda_s3_object" {
   bucket = aws_s3_bucket.lambda_bucket.bucket
-  key    = "lambda/bbmfox01-tf01-lambda-bucket.zip"
+  key    = "lambda/vxg01-tf01-lambda-bucket.zip"
   source = "\${path.root}/../backend.zip"
   etag   = filemd5("\${path.root}/../backend.zip")
 }\n\n`;
         // S3 bucket for user uploads
         content += `resource "aws_s3_bucket" "user_uploads" {
-  bucket = "bbmfox01-backend01-file02-tf01"
+  bucket = "vxg01-backend01-file02-tf01"
 }
 
 resource "aws_s3_bucket_cors_configuration" "user_uploads" {
