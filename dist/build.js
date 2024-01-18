@@ -264,8 +264,11 @@ exports.handler = async (
         fs_1.default.writeFileSync(resources_yml_path, content);
     },
     main_tf: (model, spec) => {
-        let filename = 'main.tf';
+        // console.log('main_tf', spec)
+        let filename = spec.filename || 'main.tf';
         let main_tf_path = path_1.default.join(spec.folder, filename);
+        // TODO: add suffix when creating GW resources
+        // TODO: seed modules folder initially
         // Terraform
         let content = `terraform {
 
@@ -291,7 +294,7 @@ exports.handler = async (
   region = "eu-west-1"
 }\n\n`;
         // Variables
-        content += `variable "stage" {
+        content += `\n\nvariable "stage" {
   type = string
   default = "tf02"
 }\n\n`;
@@ -308,28 +311,28 @@ exports.handler = async (
                 let stage_suffix = ((_c = ent.stage) === null || _c === void 0 ? void 0 : _c.active) ? '.${var.stage}' : '';
                 let fullname = ent.dynamo.prefix + name + ent.dynamo.suffix + stage_suffix;
                 return `resource "aws_dynamodb_table" "${name}" {
-  name         = "${fullname}"
-  hash_key     = "${ent.id.field}"
-  billing_mode = "PAY_PER_REQUEST"
+    name         = "${fullname}"
+    hash_key     = "${ent.id.field}"
+    billing_mode = "PAY_PER_REQUEST"
 
-  point_in_time_recovery {
-    enabled = true
-  }
+    point_in_time_recovery {
+      enabled = true
+    }
 
-  attribute {
-    name = "${ent.id.field}"
-    type = "S"
-  }
+    attribute {
+      name = "${ent.id.field}"
+      type = "S"
+    }
 
-  lifecycle {
-    prevent_destroy = true
-  }
+    lifecycle {
+      prevent_destroy = true
+    }
 }`;
             }
             return '';
         })
-            .join('\n\n\n');
-        content += `# Lambda IAM role\n\n`;
+            .join('\n\n');
+        content += `\n\n# Lambda IAM role`;
         // Lambda IAM role
         content += `\n\nresource "aws_iam_role" "lambda_exec_role" {
   name = "\${var.stage}-vxg01-lambda-exec-role"
@@ -421,93 +424,27 @@ resource "aws_s3_object" "lambda_s3_object" {
   source = "\${path.root}/../../../backend.zip"
   etag   = filemd5("\${path.root}/../../../backend.zip")
 }\n\n`;
-        content += `# S3 bucket for user uploads\n\n`;
-        // S3 bucket for user uploads
-        // FIXME: create uploads bucket only if needed
-        content += `resource "aws_s3_bucket" "user_uploads" {
-  bucket = "vxg01-backend01-file02-\${var.stage}"
-}
-
-resource "aws_s3_bucket_cors_configuration" "user_uploads" {
-  bucket = aws_s3_bucket.user_uploads.id
-
-  cors_rule {
-    allowed_headers = ["*"]
-    allowed_methods = ["PUT", "POST"]
-    allowed_origins = ["*.cloudfront.net"]
-    expose_headers  = ["ETag"]
-    max_age_seconds = 3000
-  }
-}
-
-resource "aws_iam_policy" "user_uploads_policy" {
-  name        = "user_uploads_policy"
-  policy      = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          "\${aws_s3_bucket.user_uploads.arn}",
-          "\${aws_s3_bucket.user_uploads.arn}/*"
-        ]
-      },
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_attach_s3_" {
-  role       = aws_iam_role.lambda_exec_role.name
-  policy_arn = aws_iam_policy.user_uploads_policy.arn
-}\n\n`;
-        content += `# API Gateway resources\n\n`;
-        // API Gateway resources
-        content += `resource "aws_api_gateway_rest_api" "gw_rest_api" {
-  name = "\${var.stage}-vxg01-backend01"
-}
-
-resource "aws_api_gateway_resource" "api" {
-  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
-  parent_id   = aws_api_gateway_rest_api.gw_rest_api.root_resource_id
-  path_part   = "api"
-}
-
-resource "aws_api_gateway_resource" "web" {
-  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
-  parent_id   = aws_api_gateway_resource.api.id
-  path_part   = "web"
-}
-
-resource "aws_api_gateway_resource" "private" {
-  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
-  parent_id   = aws_api_gateway_resource.web.id
-  path_part   = "private"
-}
-
-resource "aws_api_gateway_resource" "public" {
-  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
-  parent_id   = aws_api_gateway_resource.web.id
-  path_part   = "public"
-}\n\n`;
         content += `# Lambda functions\n\n`;
-        // Lambda functions
+        // Create Lambda functions
         content += Object.entries(model.main.srv)
             .map((entry) => {
             const name = entry[0];
             const srv = entry[1];
+            const lambda = srv.env.lambda;
+            const handler = lambda.handler;
+            const prefix = handler.path.prefix;
+            const suffix = handler.path.suffix;
+            // Define lambda module
             let lambdaConfig = `module "${name}_lambda" {
   source = "./modules/lambda_module"
   function_name = "vxg01-backend01-\${var.stage}-${name}"
-  handler = "dist/handler/${name}.handler"
+  handler = "${prefix}/${name}${suffix}"
   role_arn = aws_iam_role.lambda_exec_role.arn
   s3_bucket = aws_s3_bucket.lambda_bucket.bucket
   s3_key = aws_s3_object.lambda_s3_object.key
+  timeout = ${lambda.timeout}
 }\n\n`;
+            // Define cloud events if srv.on
             let onEvents = srv.on;
             if (onEvents) {
                 Object.entries(onEvents).forEach((entry) => {
@@ -554,6 +491,72 @@ resource "aws_api_gateway_resource" "public" {
         })
             .join('\n\n');
         content += `\n\n# API Gateway endpoints`;
+        content += `# API Gateway resources\n\n`;
+        // API Gateway resources
+        content += `resource "aws_api_gateway_rest_api" "gw_rest_api" {
+  name = "\${var.stage}-vxg01-backend01"
+}\n\n`;
+        let gwResources = [];
+        content += Object.entries(model.main.srv)
+            .filter((entry) => { var _a, _b; return (_b = (_a = entry[1].env) === null || _a === void 0 ? void 0 : _a.lambda) === null || _b === void 0 ? void 0 : _b.active; })
+            .map((entry) => {
+            const name = entry[0];
+            const srv = entry[1];
+            const web = srv.api.web;
+            let gwResStr = '';
+            if (web.active) {
+                let prefix = web.path.prefix;
+                let suffix = web.path.suffix;
+                let area = web.path.area;
+                let method = web.method;
+                let corsflag = 'false';
+                let corsprops = '';
+                let resource = area.replace('/', '');
+                let methods = method.split(',');
+                // split prefix into parts and remove empty parts
+                let parts = prefix.split('/').filter((part) => part !== '');
+                // console.log('parts:', parts)
+                let root = parts[0];
+                let parent = parts[0];
+                // create nested resources
+                parts.forEach((part) => {
+                    // console.log('part:', part, 'root:', root, 'parent:', parent)
+                    if (part == root && !gwResources.includes(part)) {
+                        gwResStr += `resource "aws_api_gateway_resource" "${part}" {
+  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
+  parent_id   = aws_api_gateway_rest_api.gw_rest_api.root_resource_id
+  path_part   = "${part}"
+}\n\n`;
+                        // add part to gwResources
+                        gwResources.push(part);
+                        // check part not in gwResources
+                    }
+                    else if (!gwResources.includes(part)) {
+                        gwResStr += `resource "aws_api_gateway_resource" "${part}" {
+  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
+  parent_id   = aws_api_gateway_resource.${parent}.id
+  path_part   = "${part}"
+}\n\n`;
+                        // add part to gwResources
+                        gwResources.push(part);
+                    }
+                    parent = part;
+                });
+                // remove / from area
+                area = area.replace('/', '');
+                if (area !== '' && !gwResources.includes(area)) {
+                    gwResStr += `resource "aws_api_gateway_resource" "${area}" {
+  rest_api_id = aws_api_gateway_rest_api.gw_rest_api.id
+  parent_id   = aws_api_gateway_resource.${parent}.id
+  path_part   = "${area}"
+}`;
+                }
+                gwResources.push(area);
+                return gwResStr;
+            }
+            return '';
+        })
+            .join('\n\n');
         let dependsOn = '';
         let triggers = '';
         // API Gateway endpoints
@@ -567,8 +570,12 @@ resource "aws_api_gateway_resource" "public" {
                 let prefix = web.path.prefix;
                 let suffix = web.path.suffix;
                 let area = web.path.area;
-                let resource = area.replace('/', '');
                 let method = web.method;
+                let corsflag = 'false';
+                let corsprops = '';
+                let resource = area.replace('/', '');
+                let methods = method.split(',');
+                // console.log('method:', methods)
                 dependsOn += `
           module.gw_${name}_lambda.gw_integration_id,`;
                 triggers += `
@@ -615,6 +622,17 @@ resource "aws_api_gateway_resource" "public" {
 }\n\n`;
         fs_1.default.writeFileSync(main_tf_path, content);
     }
+    // modules_tf: (
+    //   model: any,
+    //   spec: {
+    //     folder: any
+    //     filename: string
+    //   }
+    // ) => {
+    //   // copy modules folder to project
+    //   let filename = spec.filename || 'main.tf'
+    //   let main_tf_path = Path.join(spec.folder, filename)
+    // }
 };
 exports.EnvLambda = EnvLambda;
 function empty(o) {
