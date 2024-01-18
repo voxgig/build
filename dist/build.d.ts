@@ -19,5 +19,9 @@ declare const EnvLambda: {
         folder: any;
         filename: string;
     }) => void;
+    modules_tf: (model: any, spec: {
+        folder: any;
+        filename: string;
+    }) => void;
 };
 export { EnvLambda };

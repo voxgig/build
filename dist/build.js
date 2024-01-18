@@ -621,20 +621,29 @@ resource "aws_s3_object" "lambda_s3_object" {
   stage_name    = "\${var.stage}"
 }\n\n`;
         fs_1.default.writeFileSync(main_tf_path, content);
+    },
+    modules_tf: (model, spec) => {
+        // console.log('modules_tf', spec)
+        let filename = spec.filename || 'modules.tf';
+        let modules_src_path = path_1.default.join(__dirname, 'terraform', 'modules');
+        let modules_dest_path = path_1.default.join(spec.folder, 'modules');
+        copyDirectory(modules_src_path, modules_dest_path);
     }
-    // modules_tf: (
-    //   model: any,
-    //   spec: {
-    //     folder: any
-    //     filename: string
-    //   }
-    // ) => {
-    //   // copy modules folder to project
-    //   let filename = spec.filename || 'main.tf'
-    //   let main_tf_path = Path.join(spec.folder, filename)
-    // }
 };
 exports.EnvLambda = EnvLambda;
+function copyDirectory(src, dest) {
+    if (!fs_1.default.existsSync(dest)) {
+        fs_1.default.mkdirSync(dest, { recursive: true });
+    }
+    let entries = fs_1.default.readdirSync(src, { withFileTypes: true });
+    for (let entry of entries) {
+        let srcPath = path_1.default.join(src, entry.name);
+        let destPath = path_1.default.join(dest, entry.name);
+        entry.isDirectory()
+            ? copyDirectory(srcPath, destPath)
+            : fs_1.default.copyFileSync(srcPath, destPath);
+    }
+}
 function empty(o) {
     return null == o ? true : 0 === Object.keys(o).length;
 }
