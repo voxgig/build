@@ -27,7 +27,17 @@ const EntShape = (0, gubu_1.Gubu)({
         active: false
     }),
     custom: Skip(String),
-});
+}, { prefix: 'Entity' });
+// Contents of '$' leaf
+const MsgMetaShape = (0, gubu_1.Gubu)({
+    file: Skip(String),
+    params: Skip({}),
+    transport: Skip({
+        queue: {
+            active: false
+        }
+    }),
+}, { prefix: 'MsgMeta' });
 const EnvLambda = {
     srv_yml: (model, spec) => {
         let srv_yml_path = path_1.default.join(spec.folder, 'srv.yml');
@@ -181,18 +191,63 @@ ${events}
             let envFolder = ((_a = spec.env) === null || _a === void 0 ? void 0 : _a.folder) || '../../../env/lambda';
             let handler = 'handler';
             let modify = '';
-            if (!srv.api.web.active) {
-                if (srv.on && 0 < Object.keys(srv.on).length) {
-                    handler = 'eventhandler';
-                    modify = `
-  event = {
-    ...event,
-    // TODO: @voxgig/system? util needed to handle this dynamically
-    seneca$: { msg: '${srv.on[Object.keys(srv.on)[0]].events[0].msg}' },
-  }
-          `;
+            //       if (!srv.api.web.active) {
+            //         if (srv.on && 0 < Object.keys(srv.on).length) {
+            //           handler = 'eventhandler'
+            //           modify = `
+            // event = {
+            //   ...event,
+            //   // TODO: @voxgig/system? util needed to handle this dynamically
+            //   seneca$: { msg: '${srv.on[Object.keys(srv.on)[0]].events[0].msg}' },
+            // }
+            //         `
+            //         }
+            //       }
+            let prepare = '';
+            (0, model_1.dive)(model.main.msg.aim[name], 128).map((entry) => {
+                var _a, _b;
+                let path = ['aim', name, ...entry[0]];
+                let msgMeta = MsgMetaShape(entry[1]);
+                let pin = (0, model_1.pinify)(path);
+                if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
+                    prepare += `
+  seneca.listen({type:'sqs',pin:'${pin}'})
+`;
                 }
-            }
+            });
+            (0, model_1.dive)(model.main.srv[name].out, 128).map((entry) => {
+                var _a, _b;
+                let path = entry[0];
+                let msgMetaMaybe = (0, model_1.get)(model.main.msg, path);
+                // console.log(name, path, msgMetaMaybe)
+                if (msgMetaMaybe === null || msgMetaMaybe === void 0 ? void 0 : msgMetaMaybe.$) {
+                    let msgMeta = MsgMetaShape(msgMetaMaybe === null || msgMetaMaybe === void 0 ? void 0 : msgMetaMaybe.$);
+                    let pin = (0, model_1.pinify)(path);
+                    if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
+                        prepare += `
+  seneca.client({type:'sqs',pin:'${pin}'})
+`;
+                    }
+                }
+            });
+            let makeGatewayHandler = false;
+            let onlist = model.main.srv[name].on || {};
+            Object.entries(onlist).map((onitem) => {
+                onitem[1].events.map((event) => {
+                    if ('s3' === event.source) {
+                        if (!makeGatewayHandler) {
+                            prepare += `
+  const makeGatewayHandler = seneca.export('s3-store/makeGatewayHandler')
+`;
+                        }
+                        prepare += `
+  seneca
+    .act('sys:gateway,kind:lambda,add:hook,hook:handler', {
+       handler: makeGatewayHandler('${event.msg}') })
+`;
+                    }
+                });
+            });
             let content = TS ? `import { getSeneca } from '${envFolder}/${start}'`
                 :
                     `const getSeneca = require('${envFolder}/${start}')`;
@@ -204,6 +259,7 @@ exports.handler = async (
 ) => {
   ${modify}
   let seneca = await getSeneca('${name}')
+  ${prepare}
   let handler = seneca.export('gateway-lambda/${handler}')
   let res = await handler(event, context)
   return res
@@ -225,23 +281,26 @@ exports.handler = async (
             fs_1.default.readFileSync(resources_yml_suffix_path) : '';
         let content = prefixContent +
             (0, model_1.dive)(model.main.ent).map((entry) => {
-                var _a, _b, _c;
-                // console.log('DYNAMO', entry)
+                var _a, _b, _c, _d;
                 let path = entry[0];
                 let ent = EntShape(entry[1]);
-                if (ent && ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
-                    let pathname = path.join('');
+                // console.log('DYNAMO', path, ent)
+                if (ent && false !== ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
+                    let pathname = path
+                        .map((p) => (p[0] + '').toUpperCase() + p.substring(1))
+                        .join('');
                     let name = ((_b = ent.resource) === null || _b === void 0 ? void 0 : _b.name) || pathname;
-                    let stage_suffix = ((_c = ent.stage) === null || _c === void 0 ? void 0 : _c.active) ? '.${self:provider.stage,"dev"}' : '';
-                    let fullname = ent.dynamo.prefix +
+                    let resname = ((_c = ent.resource) === null || _c === void 0 ? void 0 : _c.name) || 'Table' + pathname;
+                    let stage_suffix = ((_d = ent.stage) === null || _d === void 0 ? void 0 : _d.active) ? '.${self:provider.stage,"dev"}' : '';
+                    let tablename = ent.dynamo.prefix +
                         name +
                         ent.dynamo.suffix +
                         stage_suffix;
-                    return `${name}:
+                    return `${resname}:
   Type: AWS::DynamoDB::Table
   DeletionPolicy: Retain
   Properties:
-    TableName: '${fullname}'
+    TableName: '${tablename}'
     BillingMode: "PAY_PER_REQUEST"
     PointInTimeRecoverySpecification:
       PointInTimeRecoveryEnabled: "true"
@@ -252,7 +311,34 @@ exports.handler = async (
     KeySchema:
       - AttributeName: "${ent.id.field}"
         KeyType: HASH
-            `;
+`;
+                }
+                return '';
+            }).join('\n\n\n') +
+            (0, model_1.dive)(model.main.msg, 128).map((entry) => {
+                var _a, _b, _c;
+                let path = entry[0];
+                let msgMeta = MsgMetaShape(entry[1].$);
+                let pathname = path
+                    .map((p) => (p[0] + '').toUpperCase() + p.substring(1))
+                    .join('');
+                if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
+                    // console.log('MM', path, msgMeta)
+                    let queue = msgMeta.transport.queue;
+                    let name = queue.name || pathname;
+                    // TODO: aontu should do this, but needs recursive child conjuncts
+                    let stage_suffix = (false === ((_c = queue.stage) === null || _c === void 0 ? void 0 : _c.active)) ? '' : '-${self:provider.stage,"dev"}';
+                    let resname = 'Queue' + name;
+                    let queueName = (queue.prefix || '') +
+                        path.reduce((s, p, i) => (s += p + (i % 2 ?
+                            (i == path.length - 1 ? '' : '-') : '_')), '') +
+                        (queue.suffix || '') +
+                        (stage_suffix || '');
+                    return `${resname}:
+  Type: "AWS::SQS::Queue"
+  Properties:
+    QueueName: '${queueName}'
+`;
                 }
                 return '';
             }).join('\n\n\n');
