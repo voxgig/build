@@ -9,6 +9,7 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const gubu_1 = require("gubu");
 const model_1 = require("@voxgig/model");
+const resources_1 = require("./templates/terraform/resources");
 const { Open, Skip } = gubu_1.Gubu;
 const EntShape = (0, gubu_1.Gubu)({
     id: {
@@ -270,34 +271,7 @@ exports.handler = async (
         // TODO: add suffix when creating GW resources
         // TODO: seed modules folder initially
         // Terraform
-        let content = `terraform {
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.31.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.6.0"
-    }
-    archive = {
-      source  = "hashicorp/archive"
-      version = "~> 2.4.1"
-    }
-  }
-
-  required_version = "~> 1.6.6"
-} \n\n`;
-        // Provider
-        content += `provider "aws" {
-  region = "eu-west-1"
-}\n\n`;
-        // Variables
-        content += `\n\nvariable "stage" {
-  type = string
-  default = "tf02"
-}\n\n`;
+        let content = (0, resources_1.provider)({});
         content += `# DynamoDB tables\n\n`;
         // DynamoDB tables
         content += (0, model_1.dive)(model.main.ent)
@@ -310,24 +284,13 @@ exports.handler = async (
                 let name = ((_b = ent.resource) === null || _b === void 0 ? void 0 : _b.name) || pathname;
                 let stage_suffix = ((_c = ent.stage) === null || _c === void 0 ? void 0 : _c.active) ? '.${var.stage}' : '';
                 let fullname = ent.dynamo.prefix + name + ent.dynamo.suffix + stage_suffix;
-                return `resource "aws_dynamodb_table" "${name}" {
-    name         = "${fullname}"
-    hash_key     = "${ent.id.field}"
-    billing_mode = "PAY_PER_REQUEST"
-
-    point_in_time_recovery {
-      enabled = true
-    }
-
-    attribute {
-      name = "${ent.id.field}"
-      type = "S"
-    }
-
-    lifecycle {
-      prevent_destroy = true
-    }
-}`;
+                return (0, resources_1.dynamodb_table)({
+                    ctx: {
+                        name: name,
+                        fullname: fullname,
+                        idField: ent.id.field
+                    }
+                });
             }
             return '';
         })
@@ -399,31 +362,7 @@ resource "aws_iam_role_policy_attachment" "lambda_attach_cloudwatch" {
 }\n\n`;
         content += `# S3 bucket for Lambda code\n\n`;
         // S3 bucket for Lambda code
-        content += `resource "aws_s3_bucket" "lambda_bucket" {
-  bucket = "vxg01-\${var.stage}-lambda-bucket"
-}
-
-resource "aws_s3_bucket_ownership_controls" "lambda_bucket" {
-  bucket = aws_s3_bucket.lambda_bucket.id
-
-  rule {
-    object_ownership = "BucketOwnerPreferred"
-  }
-}
-
-resource "aws_s3_bucket_acl" "lambda_bucket" {
-  depends_on = [aws_s3_bucket_ownership_controls.lambda_bucket]
-
-  bucket = aws_s3_bucket.lambda_bucket.id
-  acl    = "private"
-}
-
-resource "aws_s3_object" "lambda_s3_object" {
-  bucket = aws_s3_bucket.lambda_bucket.bucket
-  key    = "lambda/vxg01-\${var.stage}-lambda-bucket.zip"
-  source = "\${path.root}/../../../backend.zip"
-  etag   = filemd5("\${path.root}/../../../backend.zip")
-}\n\n`;
+        content += (0, resources_1.lambdaBucket)();
         content += `# Lambda functions\n\n`;
         // Create Lambda functions
         content += Object.entries(model.main.srv)
@@ -435,15 +374,12 @@ resource "aws_s3_object" "lambda_s3_object" {
             const prefix = handler.path.prefix;
             const suffix = handler.path.suffix;
             // Define lambda module
-            let lambdaConfig = `module "${name}_lambda" {
-  source = "./modules/lambda_module"
-  function_name = "vxg01-backend01-\${var.stage}-${name}"
-  handler = "${prefix}/${name}${suffix}"
-  role_arn = aws_iam_role.lambda_exec_role.arn
-  s3_bucket = aws_s3_bucket.lambda_bucket.bucket
-  s3_key = aws_s3_object.lambda_s3_object.key
-  timeout = ${lambda.timeout}
-}\n\n`;
+            let lambdaConfig = (0, resources_1.lambdaFunc)({
+                name: name,
+                prefix: prefix,
+                suffix: suffix,
+                timeout: lambda.timeout
+            });
             // Define cloud events if srv.on
             let onEvents = srv.on;
             if (onEvents) {
@@ -451,13 +387,9 @@ resource "aws_s3_object" "lambda_s3_object" {
                     // let name = entry[0]
                     let spec = entry[1];
                     if ('aws' === spec.provider) {
-                        lambdaConfig += `resource "aws_lambda_permission" "allow_${name}_uploads_bucket" {
-  statement_id  = "AllowExecutionFromS3Bucket"
-  action        = "lambda:InvokeFunction"
-  function_name = module.${name}_lambda.function_name
-  principal     = "s3.amazonaws.com"
-  source_arn    = aws_s3_bucket.user_uploads.arn
-}`;
+                        lambdaConfig += (0, resources_1.lambdaPermissions)({
+                            name: name
+                        });
                         let events = '';
                         let prefix = '';
                         let suffix = '';
@@ -623,7 +555,7 @@ resource "aws_s3_object" "lambda_s3_object" {
         fs_1.default.writeFileSync(main_tf_path, content);
     },
     modules_tf: (model, spec) => {
-        // console.log('modules_tf', spec)
+        console.log('modules_tf', spec.folder, spec.filename);
         let filename = spec.filename || 'modules.tf';
         let modules_src_path = path_1.default.join(__dirname, 'templates', 'terraform', 'modules');
         let modules_dest_path = path_1.default.join(spec.folder, 'modules');
