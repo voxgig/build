@@ -625,7 +625,7 @@ resource "aws_s3_object" "lambda_s3_object" {
     modules_tf: (model, spec) => {
         // console.log('modules_tf', spec)
         let filename = spec.filename || 'modules.tf';
-        let modules_src_path = path_1.default.join(__dirname, 'terraform', 'modules');
+        let modules_src_path = path_1.default.join(__dirname, 'templates', 'terraform', 'modules');
         let modules_dest_path = path_1.default.join(spec.folder, 'modules');
         copyDirectory(modules_src_path, modules_dest_path);
     }
