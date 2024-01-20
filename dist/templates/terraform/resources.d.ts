@@ -1,0 +1,10 @@
+export declare const provider: (ctx: any) => string;
+export declare const dynamoTable: (ctx: any) => string;
+export declare const iamRole: (ctx: any) => string;
+export declare const lambdaBucket: () => string;
+export declare const lambdaFunc: (ctx: any) => string;
+export declare const lambdaPermissions: (ctx: any) => string;
+export declare const gwResource: (ctx: any) => string;
+export declare const gwLambda: (ctx: any) => string;
+export declare const gwDeployment: (ctx: any) => string;
+export declare const gwStage: (ctx: any) => string;
