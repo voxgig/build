@@ -90,6 +90,7 @@ export declare const EntShape: {
         }>;
         custom: import("gubu").Node<StringConstructor>;
     }>;
+    stringify(shape?: any): string;
     toString(): string;
     gubu: {
         gubu$: symbol;

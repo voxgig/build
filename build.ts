@@ -4,29 +4,46 @@ import Fs from 'fs'
 import Path from 'path'
 
 import { Gubu } from 'gubu'
-import { dive } from '@voxgig/model'
+import { dive, get, pinify } from '@voxgig/model'
 import { main_tf, modules_tf } from './terraform'
 
 const { Open, Skip } = Gubu
 
-export const EntShape = Gubu({
-  id: {
-    field: 'id'
+export const EntShape = Gubu(
+  {
+    id: {
+      field: 'id'
+    },
+    field: Open({}).Child({}),
+    resource: Open({
+      name: ''
+    }),
+    dynamo: Open({
+      active: false,
+      prefix: '',
+      suffix: ''
+    }),
+    stage: Open({
+      active: false
+    }),
+    custom: Skip(String)
   },
-  field: Open({}).Child({}),
-  resource: Open({
-    name: ''
-  }),
-  dynamo: Open({
-    active: false,
-    prefix: '',
-    suffix: ''
-  }),
-  stage: Open({
-    active: false
-  }),
-  custom: Skip(String)
-})
+  { prefix: 'Entity' }
+)
+
+// Contents of '$' leaf
+const MsgMetaShape = Gubu(
+  {
+    file: Skip(String),
+    params: Skip({}),
+    transport: Skip({
+      queue: {
+        active: false
+      }
+    })
+  },
+  { prefix: 'MsgMeta' }
+)
 
 const EnvLambda = {
   srv_yml: (
@@ -223,18 +240,67 @@ ${events}
         let handler = 'handler'
         let modify = ''
 
-        if (!srv.api.web.active) {
-          if (srv.on && 0 < Object.keys(srv.on).length) {
-            handler = 'eventhandler'
-            modify = `
-  event = {
-    ...event,
-    // TODO: @voxgig/system? util needed to handle this dynamically
-    seneca$: { msg: '${srv.on[Object.keys(srv.on)[0]].events[0].msg}' },
-  }
-          `
+        //       if (!srv.api.web.active) {
+        //         if (srv.on && 0 < Object.keys(srv.on).length) {
+        //           handler = 'eventhandler'
+        //           modify = `
+        // event = {
+        //   ...event,
+        //   // TODO: @voxgig/system? util needed to handle this dynamically
+        //   seneca$: { msg: '${srv.on[Object.keys(srv.on)[0]].events[0].msg}' },
+        // }
+        //         `
+        //         }
+        //       }
+
+        let prepare = ''
+
+        dive(model.main.msg.aim[name], 128).map((entry: any) => {
+          let path = ['aim', name, ...entry[0]]
+          let msgMeta = MsgMetaShape(entry[1])
+          let pin = pinify(path)
+          if (msgMeta.transport?.queue?.active) {
+            prepare += `
+  seneca.listen({type:'sqs',pin:'${pin}'})
+`
           }
-        }
+        })
+
+        dive(model.main.srv[name].out, 128).map((entry: any) => {
+          let path = entry[0]
+          let msgMetaMaybe = get(model.main.msg, path)
+          // console.log(name, path, msgMetaMaybe)
+          if (msgMetaMaybe?.$) {
+            let msgMeta = MsgMetaShape(msgMetaMaybe?.$)
+            let pin = pinify(path)
+
+            if (msgMeta.transport?.queue?.active) {
+              prepare += `
+  seneca.client({type:'sqs',pin:'${pin}'})
+`
+            }
+          }
+        })
+
+        let makeGatewayHandler = false
+        let onlist = model.main.srv[name].on || {}
+        Object.entries(onlist).map((onitem: any) => {
+          onitem[1].events.map((event: any) => {
+            if ('s3' === event.source) {
+              if (!makeGatewayHandler) {
+                prepare += `
+  const makeGatewayHandler = seneca.export('s3-store/makeGatewayHandler')
+`
+              }
+
+              prepare += `
+  seneca
+    .act('sys:gateway,kind:lambda,add:hook,hook:handler', {
+       handler: makeGatewayHandler('${event.msg}') })
+`
+            }
+          })
+        })
 
         let content = TS
           ? `import { getSeneca } from '${envFolder}/${start}'`
@@ -248,6 +314,7 @@ exports.handler = async (
 ) => {
   ${modify}
   let seneca = await getSeneca('${name}')
+  ${prepare}
   let handler = seneca.export('gateway-lambda/${handler}')
   let res = await handler(event, context)
   return res
@@ -285,26 +352,29 @@ exports.handler = async (
       prefixContent +
       dive(model.main.ent)
         .map((entry: any) => {
-          // console.log('DYNAMO', entry)
           let path = entry[0]
           let ent = EntShape(entry[1])
+          // console.log('DYNAMO', path, ent)
 
-          if (ent && ent.dynamo?.active) {
-            let pathname = path.join('')
+          if (ent && false !== ent.dynamo?.active) {
+            let pathname = path
+              .map((p: string) => (p[0] + '').toUpperCase() + p.substring(1))
+              .join('')
             let name = ent.resource?.name || pathname
+            let resname = ent.resource?.name || 'Table' + pathname
 
             let stage_suffix = ent.stage?.active
               ? '.${self:provider.stage,"dev"}'
               : ''
 
-            let fullname =
+            let tablename =
               ent.dynamo.prefix + name + ent.dynamo.suffix + stage_suffix
 
-            return `${name}:
+            return `${resname}:
   Type: AWS::DynamoDB::Table
   DeletionPolicy: Retain
   Properties:
-    TableName: '${fullname}'
+    TableName: '${tablename}'
     BillingMode: "PAY_PER_REQUEST"
     PointInTimeRecoverySpecification:
       PointInTimeRecoveryEnabled: "true"
@@ -315,7 +385,48 @@ exports.handler = async (
     KeySchema:
       - AttributeName: "${ent.id.field}"
         KeyType: HASH
-            `
+`
+          }
+          return ''
+        })
+        .join('\n\n\n') +
+      dive(model.main.msg, 128)
+        .map((entry: any) => {
+          let path = entry[0]
+          let msgMeta = MsgMetaShape(entry[1].$)
+
+          let pathname = path
+            .map((p: string) => (p[0] + '').toUpperCase() + p.substring(1))
+            .join('')
+
+          if (msgMeta.transport?.queue?.active) {
+            // console.log('MM', path, msgMeta)
+            let queue = msgMeta.transport.queue
+            let name = queue.name || pathname
+
+            // TODO: aontu should do this, but needs recursive child conjuncts
+            let stage_suffix =
+              false === queue.stage?.active
+                ? ''
+                : '-${self:provider.stage,"dev"}'
+
+            let resname = 'Queue' + name
+
+            let queueName =
+              (queue.prefix || '') +
+              path.reduce(
+                (s: string, p: string, i: number) =>
+                  (s += p + (i % 2 ? (i == path.length - 1 ? '' : '-') : '_')),
+                ''
+              ) +
+              (queue.suffix || '') +
+              (stage_suffix || '')
+
+            return `${resname}:
+  Type: "AWS::SQS::Queue"
+  Properties:
+    QueueName: '${queueName}'
+`
           }
           return ''
         })
@@ -331,6 +442,7 @@ exports.handler = async (
   },
 
   main_tf: main_tf,
+
   modules_tf: modules_tf
 }
 
