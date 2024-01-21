@@ -293,6 +293,7 @@ ${events}
                 prepare += `
   const makeGatewayHandler = seneca.export('s3-store/makeGatewayHandler')
 `
+                makeGatewayHandler = true
               }
 
               prepare += `
