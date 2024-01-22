@@ -21,7 +21,7 @@ const main_tf = (model, spec) => {
     // DynamoDB tables
     content += (0, model_1.dive)(model.main.ent)
         .map((entry) => {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         let path = entry[0];
         let ent = (0, build_1.EntShape)(entry[1]);
         if (ent && ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
@@ -29,12 +29,21 @@ const main_tf = (model, spec) => {
             let name = ((_b = ent.resource) === null || _b === void 0 ? void 0 : _b.name) || pathname;
             let stage_suffix = ((_c = ent.stage) === null || _c === void 0 ? void 0 : _c.active) ? '.${var.stage}' : '';
             let fullname = ent.dynamo.prefix + name + ent.dynamo.suffix + stage_suffix;
+            let gsi = '';
+            if ((_d = ent.dynamo) === null || _d === void 0 ? void 0 : _d.index) {
+                // console.log('ent.dynamo.index:', ent.dynamo.index)
+                gsi += Object.entries(ent.dynamo.index).map((entry) => {
+                    let value = entry[1];
+                    return (0, resources_1.dynamoGSI)({
+                        index: value
+                    });
+                });
+            }
             return (0, resources_1.dynamoTable)({
-                ctx: {
-                    name: name,
-                    fullname: fullname,
-                    idField: ent.id.field
-                }
+                name: name,
+                fullname: fullname,
+                idField: ent.id.field,
+                gsi: gsi
             });
         }
         return '';
@@ -205,7 +214,7 @@ const main_tf = (model, spec) => {
 };
 exports.main_tf = main_tf;
 const modules_tf = (model, spec) => {
-    console.log('modules_tf', spec.folder, spec.filename);
+    // console.log('modules_tf', spec.folder, spec.filename)
     let filename = spec.filename || 'modules.tf';
     let modules_src_path = path_1.default.join(__dirname, 'templates', 'terraform', 'modules');
     let modules_dest_path = path_1.default.join(spec.folder, 'modules');

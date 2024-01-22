@@ -1,4 +1,5 @@
 export declare const provider: (ctx: any) => string;
+export declare const dynamoGSI: (ctx: any) => string;
 export declare const dynamoTable: (ctx: any) => string;
 export declare const iamRole: (ctx: any) => string;
 export declare const lambdaBucket: () => string;

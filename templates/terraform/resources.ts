@@ -32,6 +32,23 @@ variable "stage" {
   default = "tf02"
 }\n\n`
 
+export const dynamoGSI = (ctx: any) => `attribute {
+    name = "${ctx.index.partition_key.name}"
+    type = "${ctx.index.partition_key.kind}"
+  }
+
+  attribute {
+    name = "${ctx.index.sort_key.name}"
+    type = "${ctx.index.sort_key.kind}"
+  }
+
+  global_secondary_index {
+    name               = "${ctx.index.name}"
+    hash_key           = "${ctx.index.partition_key.name}"
+    range_key          = "${ctx.index.sort_key.name}"
+    projection_type    = "ALL"
+  }`
+
 export const dynamoTable = (
   ctx: any
 ) => `resource "aws_dynamodb_table" "${ctx.name}" {
@@ -51,6 +68,8 @@ export const dynamoTable = (
     lifecycle {
       prevent_destroy = true
     }
+
+    ${ctx.gsi}
 }`
 
 export const iamRole = (

@@ -5,6 +5,7 @@ import Path from 'path'
 
 import { dive } from '@voxgig/model'
 import {
+  dynamoGSI,
   dynamoTable,
   gwDeployment,
   gwLambda,
@@ -52,12 +53,24 @@ export const main_tf = (
         let fullname =
           ent.dynamo.prefix + name + ent.dynamo.suffix + stage_suffix
 
+        let gsi = ''
+
+        if (ent.dynamo?.index) {
+          // console.log('ent.dynamo.index:', ent.dynamo.index)
+          gsi += Object.entries(ent.dynamo.index).map((entry: any) => {
+            let value = entry[1]
+
+            return dynamoGSI({
+              index: value
+            })
+          })
+        }
+
         return dynamoTable({
-          ctx: {
-            name: name,
-            fullname: fullname,
-            idField: ent.id.field
-          }
+          name: name,
+          fullname: fullname,
+          idField: ent.id.field,
+          gsi: gsi
         })
       }
 
@@ -272,7 +285,7 @@ export const modules_tf = (
   model: any,
   spec: { folder: any; filename: string }
 ) => {
-  console.log('modules_tf', spec.folder, spec.filename)
+  // console.log('modules_tf', spec.folder, spec.filename)
   let filename = spec.filename || 'modules.tf'
   let modules_src_path = Path.join(
     __dirname,

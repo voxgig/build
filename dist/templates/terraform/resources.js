@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.gwStage = exports.gwDeployment = exports.gwLambda = exports.gwResource = exports.lambdaPermissions = exports.lambdaFunc = exports.lambdaBucket = exports.iamRole = exports.dynamoTable = exports.provider = void 0;
+exports.gwStage = exports.gwDeployment = exports.gwLambda = exports.gwResource = exports.lambdaPermissions = exports.lambdaFunc = exports.lambdaBucket = exports.iamRole = exports.dynamoTable = exports.dynamoGSI = exports.provider = void 0;
 const provider = (ctx) => `terraform {
 
   required_providers {
@@ -35,6 +35,23 @@ variable "stage" {
   default = "tf02"
 }\n\n`;
 exports.provider = provider;
+const dynamoGSI = (ctx) => `attribute {
+    name = "${ctx.index.partition_key.name}"
+    type = "${ctx.index.partition_key.kind}"
+  }
+
+  attribute {
+    name = "${ctx.index.sort_key.name}"
+    type = "${ctx.index.sort_key.kind}"
+  }
+
+  global_secondary_index {
+    name               = "${ctx.index.name}"
+    hash_key           = "${ctx.index.partition_key.name}"
+    range_key          = "${ctx.index.sort_key.name}"
+    projection_type    = "ALL"
+  }`;
+exports.dynamoGSI = dynamoGSI;
 const dynamoTable = (ctx) => `resource "aws_dynamodb_table" "${ctx.name}" {
     name         = "${ctx.fullname}"
     hash_key     = "${ctx.idField}"
@@ -52,6 +69,8 @@ const dynamoTable = (ctx) => `resource "aws_dynamodb_table" "${ctx.name}" {
     lifecycle {
       prevent_destroy = true
     }
+
+    ${ctx.gsi}
 }`;
 exports.dynamoTable = dynamoTable;
 const iamRole = (ctx) => `\n\nresource "aws_iam_role" "lambda_exec_role" {
