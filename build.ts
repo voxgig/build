@@ -289,7 +289,7 @@ ${events}
           onitem[1].events.map((event: any) => {
             if ('s3' === event.source) {
               if (!makeGatewayHandler) {
-                prepare += `
+                complete += `
 
   const makeGatewayHandler = seneca.export('s3-store/makeGatewayHandler')`
                 makeGatewayHandler = true
