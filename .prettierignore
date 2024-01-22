@@ -1,0 +1,6 @@
+dist
+**/*.md
+**/*.json
+**/*.yml
+**/*.config.js
+**/s01/*

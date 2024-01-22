@@ -5,64 +5,68 @@ import Path from 'path'
 
 import { Gubu } from 'gubu'
 import { dive, get, pinify } from '@voxgig/model'
-
+import { main_tf, modules_tf } from './terraform'
 
 const { Open, Skip } = Gubu
 
-
-const EntShape = Gubu({
-  id: {
-    field: 'id'
+export const EntShape = Gubu(
+  {
+    id: {
+      field: 'id'
+    },
+    field: Open({}).Child({}),
+    resource: Open({
+      name: ''
+    }),
+    dynamo: Open({
+      active: false,
+      prefix: '',
+      suffix: ''
+    }),
+    stage: Open({
+      active: false
+    }),
+    custom: Skip(String)
   },
-  field: Open({}).Child({
-  }),
-  resource: Open({
-    name: ''
-  }),
-  dynamo: Open({
-    active: false,
-    prefix: '',
-    suffix: '',
-  }),
-  stage: Open({
-    active: false
-  }),
-  custom: Skip(String),
-}, { prefix: 'Entity' })
-
+  { prefix: 'Entity' }
+)
 
 // Contents of '$' leaf
-const MsgMetaShape = Gubu({
-  file: Skip(String),
-  params: Skip({}),
-  transport: Skip({
-    queue: {
-      active: false
-    }
-  }),
-}, { prefix: 'MsgMeta' })
-
+const MsgMetaShape = Gubu(
+  {
+    file: Skip(String),
+    params: Skip({}),
+    transport: Skip({
+      queue: {
+        active: false
+      }
+    })
+  },
+  { prefix: 'MsgMeta' }
+)
 
 const EnvLambda = {
-
-  srv_yml: (model: any, spec: {
-    folder: string
-  }) => {
+  srv_yml: (
+    model: any,
+    spec: {
+      folder: string
+    }
+  ) => {
     let srv_yml_path = Path.join(spec.folder, 'srv.yml')
 
     let srv_yml_prefix_path = Path.join(spec.folder, 'srv.prefix.yml')
     let srv_yml_suffix_path = Path.join(spec.folder, 'srv.suffix.yml')
 
-    let prefixContent = Fs.existsSync(srv_yml_prefix_path) ?
-      Fs.readFileSync(srv_yml_prefix_path) : ''
-    let suffixContent = Fs.existsSync(srv_yml_suffix_path) ?
-      Fs.readFileSync(srv_yml_suffix_path) : ''
+    let prefixContent = Fs.existsSync(srv_yml_prefix_path)
+      ? Fs.readFileSync(srv_yml_prefix_path)
+      : ''
+    let suffixContent = Fs.existsSync(srv_yml_suffix_path)
+      ? Fs.readFileSync(srv_yml_suffix_path)
+      : ''
 
     let content =
-
       prefixContent +
-      Object
-        .entries(model.main.srv)
+      Object.entries(model.main.srv)
         .filter((entry: any) => entry[1].env?.lambda?.active)
         .map((entry: any) => {
           const name = entry[0]
@@ -118,10 +122,9 @@ const EnvLambda = {
 `)
                       }
                     }
-                  }
-                  else if ('schedule' === ev.source) {
+                  } else if ('schedule' === ev.source) {
                     let entries =
-                      'string' === typeof ev.recur ? [ev.recur] : (ev.recur || [])
+                      'string' === typeof ev.recur ? [ev.recur] : ev.recur || []
                     let recur = entries.map((entry: string) => {
                       let schedule = `
     - schedule:
@@ -137,7 +140,6 @@ const EnvLambda = {
                     events += TM(`
 ${recur}
 `)
-
                   }
                 })
               }
@@ -160,11 +162,12 @@ ${recur}
               corsflag = 'true'
               if (web.cors.props && !empty(web.cors.props)) {
                 corsflag = ''
-                corsprops = Object
-                  .entries(web.cors.props)
-                  .reduce(((a: any, nv: any) => (
-                    a += `          ${nv[0]}: ${nv[1]}\n`
-                    , a)), '')
+                corsprops = Object.entries(web.cors.props).reduce(
+                  (a: any, nv: any) => (
+                    (a += `          ${nv[0]}: ${nv[1]}\n`), a
+                  ),
+                  ''
+                )
               }
             }
 
@@ -176,8 +179,7 @@ ${recur}
         method: ${method}
 `)
               }
-            }
-            else {
+            } else {
               for (let method of methods) {
                 events += TM(`
     - http:
@@ -190,8 +192,6 @@ ${corsprops}
             }
           }
 
-
-
           if ('' !== events) {
             srvyml += TM(`
   events:
@@ -199,29 +199,30 @@ ${events}
 `)
           }
 
-
           return srvyml
-        }).join('\n\n\n') +
+        })
+        .join('\n\n\n') +
       suffixContent
 
     Fs.writeFileSync(srv_yml_path, content)
   },
 
-
   // Only create if does not exist
-  srv_handler: (model: any, spec: {
-    folder: string
-    start?: string
-    env?: {
+  srv_handler: (
+    model: any,
+    spec: {
       folder: string
+      start?: string
+      env?: {
+        folder: string
+      }
+      lang?: string
     }
-    lang?: string
-  }) => {
+  ) => {
     let lang = spec.lang || 'js'
     let TS = 'ts' === lang
 
-    Object
-      .entries(model.main.srv)
+    Object.entries(model.main.srv)
       .filter((entry: any) => entry[1].env?.lambda)
       .forEach((entry: any) => {
         const name = entry[0]
@@ -252,10 +253,8 @@ ${events}
         //         }
         //       }
 
-
         let prepare = ''
         let complete = ''
-
 
         dive(model.main.msg.aim[name], 128).map((entry: any) => {
           let path = ['aim', name, ...entry[0]]
@@ -266,7 +265,6 @@ ${events}
   seneca.listen({type:'sqs',pin:'${pin}'})`
           }
         })
-
 
         dive(model.main.srv[name].out, 128).map((entry: any) => {
           let path = entry[0]
@@ -303,11 +301,9 @@ ${events}
           })
         })
 
-
-        let content =
-          TS ? `import { getSeneca } from '${envFolder}/${start}'`
-            :
-            `const getSeneca = require('${envFolder}/${start}')`
+        let content = TS
+          ? `import { getSeneca } from '${envFolder}/${start}'`
+          : `const getSeneca = require('${envFolder}/${start}')`
 
         content += `
 
@@ -333,48 +329,50 @@ exports.handler = async (
       })
   },
 
-
-  resources_yml: (model: any, spec: {
-    folder: string,
-    filename: string
-    custom: string,
-  }) => {
+  resources_yml: (
+    model: any,
+    spec: {
+      folder: string
+      filename: string
+      custom: string
+    }
+  ) => {
     let filename = spec.filename || 'resources.yml'
     let resources_yml_path = Path.join(spec.folder, filename)
 
     let resources_yml_prefix_path = Path.join(spec.folder, 'res.prefix.yml')
     let resources_yml_suffix_path = Path.join(spec.folder, 'res.suffix.yml')
 
-    let prefixContent = Fs.existsSync(resources_yml_prefix_path) ?
-      Fs.readFileSync(resources_yml_prefix_path) : ''
-    let suffixContent = Fs.existsSync(resources_yml_suffix_path) ?
-      Fs.readFileSync(resources_yml_suffix_path) : ''
+    let prefixContent = Fs.existsSync(resources_yml_prefix_path)
+      ? Fs.readFileSync(resources_yml_prefix_path)
+      : ''
+    let suffixContent = Fs.existsSync(resources_yml_suffix_path)
+      ? Fs.readFileSync(resources_yml_suffix_path)
+      : ''
 
     let content =
       prefixContent +
+      dive(model.main.ent)
+        .map((entry: any) => {
+          let path = entry[0]
+          let ent = EntShape(entry[1])
+          // console.log('DYNAMO', path, ent)
 
-      dive(model.main.ent).map((entry: any) => {
-        let path = entry[0]
-        let ent = EntShape(entry[1])
-        // console.log('DYNAMO', path, ent)
+          if (ent && false !== ent.dynamo?.active) {
+            let pathname = path
+              .map((p: string) => (p[0] + '').toUpperCase() + p.substring(1))
+              .join('')
+            let name = ent.resource?.name || pathname
+            let resname = ent.resource?.name || 'Table' + pathname
 
-        if (ent && false !== ent.dynamo?.active) {
-          let pathname = path
-            .map((p: string) =>
-              (p[0] + '').toUpperCase() + p.substring(1))
-            .join('')
-          let name = ent.resource?.name || pathname
-          let resname = ent.resource?.name || 'Table' + pathname
+            let stage_suffix = ent.stage?.active
+              ? '.${self:provider.stage,"dev"}'
+              : ''
 
-          let stage_suffix = ent.stage?.active ? '.${self:provider.stage,"dev"}' : ''
+            let tablename =
+              ent.dynamo.prefix + name + ent.dynamo.suffix + stage_suffix
 
-          let tablename =
-            ent.dynamo.prefix +
-            name +
-            ent.dynamo.suffix +
-            stage_suffix
-
-          return `${resname}:
+            return `${resname}:
   Type: AWS::DynamoDB::Table
   DeletionPolicy: Retain
   Properties:
@@ -390,48 +388,51 @@ exports.handler = async (
       - AttributeName: "${ent.id.field}"
         KeyType: HASH
 `
-        }
-        return ''
-      }).join('\n\n\n') +
+          }
+          return ''
+        })
+        .join('\n\n\n') +
+      dive(model.main.msg, 128)
+        .map((entry: any) => {
+          let path = entry[0]
+          let msgMeta = MsgMetaShape(entry[1].$)
 
+          let pathname = path
+            .map((p: string) => (p[0] + '').toUpperCase() + p.substring(1))
+            .join('')
 
-      dive(model.main.msg, 128).map((entry: any) => {
-        let path = entry[0]
-        let msgMeta = MsgMetaShape(entry[1].$)
+          if (msgMeta.transport?.queue?.active) {
+            // console.log('MM', path, msgMeta)
+            let queue = msgMeta.transport.queue
+            let name = queue.name || pathname
 
-        let pathname = path
-          .map((p: string) =>
-            (p[0] + '').toUpperCase() + p.substring(1))
-          .join('')
+            // TODO: aontu should do this, but needs recursive child conjuncts
+            let stage_suffix =
+              false === queue.stage?.active
+                ? ''
+                : '-${self:provider.stage,"dev"}'
 
+            let resname = 'Queue' + name
 
-        if (msgMeta.transport?.queue?.active) {
-          // console.log('MM', path, msgMeta)
-          let queue = msgMeta.transport.queue
-          let name = queue.name || pathname
+            let queueName =
+              (queue.prefix || '') +
+              path.reduce(
+                (s: string, p: string, i: number) =>
+                  (s += p + (i % 2 ? (i == path.length - 1 ? '' : '-') : '_')),
+                ''
+              ) +
+              (queue.suffix || '') +
+              (stage_suffix || '')
 
-          // TODO: aontu should do this, but needs recursive child conjuncts
-          let stage_suffix =
-            (false === queue.stage?.active) ? '' : '-${self:provider.stage,"dev"}'
-
-          let resname = 'Queue' + name
-
-          let queueName =
-            (queue.prefix || '') +
-            path.reduce((s: string, p: string, i: number) =>
-            (s += p + (i % 2 ?
-              (i == path.length - 1 ? '' : '-') : '_')), '') +
-            (queue.suffix || '') +
-            (stage_suffix || '')
-
-          return `${resname}:
+            return `${resname}:
   Type: "AWS::SQS::Queue"
   Properties:
     QueueName: '${queueName}'
 `
-        }
-        return ''
-      }).join('\n\n\n')
+          }
+          return ''
+        })
+        .join('\n\n\n')
 
     if (spec.custom) {
       content = Fs.readFileSync(spec.custom).toString() + '\n\n\n' + content
@@ -440,24 +441,20 @@ exports.handler = async (
     content += suffixContent
 
     Fs.writeFileSync(resources_yml_path, content)
-  }
+  },
 
+  main_tf: main_tf,
+
+  modules_tf: modules_tf
 }
 
-
-function empty(o: any) {
+function empty (o: any) {
   return null == o ? true : 0 === Object.keys(o).length
 }
 
 // Strip inital newline
-function TM(str: string) {
+function TM (str: string) {
   return str.replace(/^\n/, '')
 }
 
-
-
-export {
-  EnvLambda
-}
-
-
+export { EnvLambda }

@@ -4,13 +4,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EnvLambda = void 0;
+exports.EnvLambda = exports.EntShape = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const gubu_1 = require("gubu");
 const model_1 = require("@voxgig/model");
+const terraform_1 = require("./terraform");
 const { Open, Skip } = gubu_1.Gubu;
-const EntShape = (0, gubu_1.Gubu)({
+exports.EntShape = (0, gubu_1.Gubu)({
     id: {
         field: 'id'
     },
@@ -21,12 +22,12 @@ const EntShape = (0, gubu_1.Gubu)({
     dynamo: Open({
         active: false,
         prefix: '',
-        suffix: '',
+        suffix: ''
     }),
     stage: Open({
         active: false
     }),
-    custom: Skip(String),
+    custom: Skip(String)
 }, { prefix: 'Entity' });
 // Contents of '$' leaf
 const MsgMetaShape = (0, gubu_1.Gubu)({
@@ -36,20 +37,21 @@ const MsgMetaShape = (0, gubu_1.Gubu)({
         queue: {
             active: false
         }
-    }),
+    })
 }, { prefix: 'MsgMeta' });
 const EnvLambda = {
     srv_yml: (model, spec) => {
         let srv_yml_path = path_1.default.join(spec.folder, 'srv.yml');
         let srv_yml_prefix_path = path_1.default.join(spec.folder, 'srv.prefix.yml');
         let srv_yml_suffix_path = path_1.default.join(spec.folder, 'srv.suffix.yml');
-        let prefixContent = fs_1.default.existsSync(srv_yml_prefix_path) ?
-            fs_1.default.readFileSync(srv_yml_prefix_path) : '';
-        let suffixContent = fs_1.default.existsSync(srv_yml_suffix_path) ?
-            fs_1.default.readFileSync(srv_yml_suffix_path) : '';
+        let prefixContent = fs_1.default.existsSync(srv_yml_prefix_path)
+            ? fs_1.default.readFileSync(srv_yml_prefix_path)
+            : '';
+        let suffixContent = fs_1.default.existsSync(srv_yml_suffix_path)
+            ? fs_1.default.readFileSync(srv_yml_suffix_path)
+            : '';
         let content = prefixContent +
-            Object
-                .entries(model.main.srv)
+            Object.entries(model.main.srv)
                 .filter((entry) => { var _a, _b; return (_b = (_a = entry[1].env) === null || _a === void 0 ? void 0 : _a.lambda) === null || _b === void 0 ? void 0 : _b.active; })
                 .map((entry) => {
                 var _a, _b, _c, _d;
@@ -100,7 +102,7 @@ const EnvLambda = {
                                     }
                                 }
                                 else if ('schedule' === ev.source) {
-                                    let entries = 'string' === typeof ev.recur ? [ev.recur] : (ev.recur || []);
+                                    let entries = 'string' === typeof ev.recur ? [ev.recur] : ev.recur || [];
                                     let recur = entries.map((entry) => {
                                         let schedule = `
     - schedule:
@@ -134,10 +136,7 @@ ${recur}
                         corsflag = 'true';
                         if (web.cors.props && !empty(web.cors.props)) {
                             corsflag = '';
-                            corsprops = Object
-                                .entries(web.cors.props)
-                                .reduce(((a, nv) => (a += `          ${nv[0]}: ${nv[1]}\n`
-                                , a)), '');
+                            corsprops = Object.entries(web.cors.props).reduce((a, nv) => ((a += `          ${nv[0]}: ${nv[1]}\n`), a), '');
                         }
                     }
                     if ('v2' === ((_d = web.lambda) === null || _d === void 0 ? void 0 : _d.gateway)) {
@@ -168,7 +167,8 @@ ${events}
 `);
                 }
                 return srvyml;
-            }).join('\n\n\n') +
+            })
+                .join('\n\n\n') +
             suffixContent;
         fs_1.default.writeFileSync(srv_yml_path, content);
     },
@@ -176,8 +176,7 @@ ${events}
     srv_handler: (model, spec) => {
         let lang = spec.lang || 'js';
         let TS = 'ts' === lang;
-        Object
-            .entries(model.main.srv)
+        Object.entries(model.main.srv)
             .filter((entry) => { var _a; return (_a = entry[1].env) === null || _a === void 0 ? void 0 : _a.lambda; })
             .forEach((entry) => {
             var _a;
@@ -247,9 +246,9 @@ ${events}
                     }
                 });
             });
-            let content = TS ? `import { getSeneca } from '${envFolder}/${start}'`
-                :
-                    `const getSeneca = require('${envFolder}/${start}')`;
+            let content = TS
+                ? `import { getSeneca } from '${envFolder}/${start}'`
+                : `const getSeneca = require('${envFolder}/${start}')`;
             content += `
 
 function complete(seneca: any) {${complete}
@@ -277,15 +276,18 @@ exports.handler = async (
         let resources_yml_path = path_1.default.join(spec.folder, filename);
         let resources_yml_prefix_path = path_1.default.join(spec.folder, 'res.prefix.yml');
         let resources_yml_suffix_path = path_1.default.join(spec.folder, 'res.suffix.yml');
-        let prefixContent = fs_1.default.existsSync(resources_yml_prefix_path) ?
-            fs_1.default.readFileSync(resources_yml_prefix_path) : '';
-        let suffixContent = fs_1.default.existsSync(resources_yml_suffix_path) ?
-            fs_1.default.readFileSync(resources_yml_suffix_path) : '';
+        let prefixContent = fs_1.default.existsSync(resources_yml_prefix_path)
+            ? fs_1.default.readFileSync(resources_yml_prefix_path)
+            : '';
+        let suffixContent = fs_1.default.existsSync(resources_yml_suffix_path)
+            ? fs_1.default.readFileSync(resources_yml_suffix_path)
+            : '';
         let content = prefixContent +
-            (0, model_1.dive)(model.main.ent).map((entry) => {
+            (0, model_1.dive)(model.main.ent)
+                .map((entry) => {
                 var _a, _b, _c, _d;
                 let path = entry[0];
-                let ent = EntShape(entry[1]);
+                let ent = (0, exports.EntShape)(entry[1]);
                 // console.log('DYNAMO', path, ent)
                 if (ent && false !== ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
                     let pathname = path
@@ -293,11 +295,10 @@ exports.handler = async (
                         .join('');
                     let name = ((_b = ent.resource) === null || _b === void 0 ? void 0 : _b.name) || pathname;
                     let resname = ((_c = ent.resource) === null || _c === void 0 ? void 0 : _c.name) || 'Table' + pathname;
-                    let stage_suffix = ((_d = ent.stage) === null || _d === void 0 ? void 0 : _d.active) ? '.${self:provider.stage,"dev"}' : '';
-                    let tablename = ent.dynamo.prefix +
-                        name +
-                        ent.dynamo.suffix +
-                        stage_suffix;
+                    let stage_suffix = ((_d = ent.stage) === null || _d === void 0 ? void 0 : _d.active)
+                        ? '.${self:provider.stage,"dev"}'
+                        : '';
+                    let tablename = ent.dynamo.prefix + name + ent.dynamo.suffix + stage_suffix;
                     return `${resname}:
   Type: AWS::DynamoDB::Table
   DeletionPolicy: Retain
@@ -316,8 +317,10 @@ exports.handler = async (
 `;
                 }
                 return '';
-            }).join('\n\n\n') +
-            (0, model_1.dive)(model.main.msg, 128).map((entry) => {
+            })
+                .join('\n\n\n') +
+            (0, model_1.dive)(model.main.msg, 128)
+                .map((entry) => {
                 var _a, _b, _c;
                 let path = entry[0];
                 let msgMeta = MsgMetaShape(entry[1].$);
@@ -329,11 +332,12 @@ exports.handler = async (
                     let queue = msgMeta.transport.queue;
                     let name = queue.name || pathname;
                     // TODO: aontu should do this, but needs recursive child conjuncts
-                    let stage_suffix = (false === ((_c = queue.stage) === null || _c === void 0 ? void 0 : _c.active)) ? '' : '-${self:provider.stage,"dev"}';
+                    let stage_suffix = false === ((_c = queue.stage) === null || _c === void 0 ? void 0 : _c.active)
+                        ? ''
+                        : '-${self:provider.stage,"dev"}';
                     let resname = 'Queue' + name;
                     let queueName = (queue.prefix || '') +
-                        path.reduce((s, p, i) => (s += p + (i % 2 ?
-                            (i == path.length - 1 ? '' : '-') : '_')), '') +
+                        path.reduce((s, p, i) => (s += p + (i % 2 ? (i == path.length - 1 ? '' : '-') : '_')), '') +
                         (queue.suffix || '') +
                         (stage_suffix || '');
                     return `${resname}:
@@ -343,13 +347,16 @@ exports.handler = async (
 `;
                 }
                 return '';
-            }).join('\n\n\n');
+            })
+                .join('\n\n\n');
         if (spec.custom) {
             content = fs_1.default.readFileSync(spec.custom).toString() + '\n\n\n' + content;
         }
         content += suffixContent;
         fs_1.default.writeFileSync(resources_yml_path, content);
-    }
+    },
+    main_tf: terraform_1.main_tf,
+    modules_tf: terraform_1.modules_tf
 };
 exports.EnvLambda = EnvLambda;
 function empty(o) {

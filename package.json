@@ -23,6 +23,8 @@
     "test-some": "jest -t",
     "test-watch": "jest --coverage --watchAll",
     "watch": "tsc -w -d",
+    "lint": "prettier-standard --lint",
+    "format": "prettier-standard --format",
     "build": "tsc -d",
     "clean": "rm -rf node_modules yarn.lock package-lock.json",
     "reset": "npm run clean && npm i && npm run build && npm test",
@@ -36,12 +38,14 @@
     "lib",
     "dist",
     "bin",
-    "LICENSE"
+    "LICENSE",
+    "templates"
   ],
   "dependencies": {
     "gubu": "^7.0.0"
   },
   "devDependencies": {
+    "@ksmithut/prettier-standard": "^0.2.0",
     "@types/jest": "^29.5.11",
     "@voxgig/model": "^1.2.0",
     "@voxgig/system": "^0.8.0",

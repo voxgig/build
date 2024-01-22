@@ -114,3 +114,7 @@ yarn.lock
 
 test/coverage.html
 
+.vscode
+**/files/*.zip
+
+.DS_Store
