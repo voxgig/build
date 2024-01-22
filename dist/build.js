@@ -252,14 +252,14 @@ ${events}
                     `const getSeneca = require('${envFolder}/${start}')`;
             content += `
 
+function complete(seneca: any) {${complete}
+}
+
 exports.handler = async (
   event${TS ? ':any' : ''},
   context${TS ? ':any' : ''}
 ) => {
   ${modify}
-  const complete = function(seneca: any) {
-    ${complete}
-  }
   let seneca = await getSeneca('${name}', complete)
   ${prepare}
   let handler = seneca.export('gateway-lambda/${handler}')
