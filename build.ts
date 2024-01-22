@@ -254,15 +254,15 @@ ${events}
         //       }
 
         let prepare = ''
+        let complete = ''
 
         dive(model.main.msg.aim[name], 128).map((entry: any) => {
           let path = ['aim', name, ...entry[0]]
           let msgMeta = MsgMetaShape(entry[1])
           let pin = pinify(path)
           if (msgMeta.transport?.queue?.active) {
-            prepare += `
-  seneca.listen({type:'sqs',pin:'${pin}'})
-`
+            complete += `
+  seneca.listen({type:'sqs',pin:'${pin}'})`
           }
         })
 
@@ -275,9 +275,8 @@ ${events}
             let pin = pinify(path)
 
             if (msgMeta.transport?.queue?.active) {
-              prepare += `
-  seneca.client({type:'sqs',pin:'${pin}'})
-`
+              complete += `
+  seneca.client({type:'sqs',pin:'${pin}'})`
             }
           }
         })
@@ -288,16 +287,16 @@ ${events}
           onitem[1].events.map((event: any) => {
             if ('s3' === event.source) {
               if (!makeGatewayHandler) {
-                prepare += `
-  const makeGatewayHandler = seneca.export('s3-store/makeGatewayHandler')
-`
+                complete += `
+
+  const makeGatewayHandler = seneca.export('s3-store/makeGatewayHandler')`
+                makeGatewayHandler = true
               }
 
-              prepare += `
+              complete += `
   seneca
     .act('sys:gateway,kind:lambda,add:hook,hook:handler', {
-       handler: makeGatewayHandler('${event.msg}') })
-`
+       handler: makeGatewayHandler('${event.msg}') })`
             }
           })
         })
@@ -308,12 +307,15 @@ ${events}
 
         content += `
 
+function complete(seneca: any) {${complete}
+}
+
 exports.handler = async (
   event${TS ? ':any' : ''},
   context${TS ? ':any' : ''}
 ) => {
   ${modify}
-  let seneca = await getSeneca('${name}')
+  let seneca = await getSeneca('${name}', complete)
   ${prepare}
   let handler = seneca.export('gateway-lambda/${handler}')
   let res = await handler(event, context)
