@@ -204,15 +204,15 @@ ${events}
             //         }
             //       }
             let prepare = '';
+            let complete = '';
             (0, model_1.dive)(model.main.msg.aim[name], 128).map((entry) => {
                 var _a, _b;
                 let path = ['aim', name, ...entry[0]];
                 let msgMeta = MsgMetaShape(entry[1]);
                 let pin = (0, model_1.pinify)(path);
                 if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
-                    prepare += `
-  seneca.listen({type:'sqs',pin:'${pin}'})
-`;
+                    complete += `
+  seneca.listen({type:'sqs',pin:'${pin}'})`;
                 }
             });
             (0, model_1.dive)(model.main.srv[name].out, 128).map((entry) => {
@@ -224,9 +224,8 @@ ${events}
                     let msgMeta = MsgMetaShape(msgMetaMaybe === null || msgMetaMaybe === void 0 ? void 0 : msgMetaMaybe.$);
                     let pin = (0, model_1.pinify)(path);
                     if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
-                        prepare += `
-  seneca.client({type:'sqs',pin:'${pin}'})
-`;
+                        complete += `
+  seneca.client({type:'sqs',pin:'${pin}'})`;
                     }
                 }
             });
@@ -237,15 +236,14 @@ ${events}
                     if ('s3' === event.source) {
                         if (!makeGatewayHandler) {
                             prepare += `
-  const makeGatewayHandler = seneca.export('s3-store/makeGatewayHandler')
-`;
+
+  const makeGatewayHandler = seneca.export('s3-store/makeGatewayHandler')`;
                             makeGatewayHandler = true;
                         }
-                        prepare += `
+                        complete += `
   seneca
     .act('sys:gateway,kind:lambda,add:hook,hook:handler', {
-       handler: makeGatewayHandler('${event.msg}') })
-`;
+       handler: makeGatewayHandler('${event.msg}') })`;
                     }
                 });
             });
@@ -259,7 +257,10 @@ exports.handler = async (
   context${TS ? ':any' : ''}
 ) => {
   ${modify}
-  let seneca = await getSeneca('${name}')
+  const complete = function(seneca: any) {
+    ${complete}
+  }
+  let seneca = await getSeneca('${name}', complete)
   ${prepare}
   let handler = seneca.export('gateway-lambda/${handler}')
   let res = await handler(event, context)
