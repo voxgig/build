@@ -4,7 +4,7 @@ import Fs from 'fs'
 import Path from 'path'
 
 import { Gubu } from 'gubu'
-import { dive, get, pinify } from '@voxgig/model'
+import { dive, get, pinify, camelify } from '@voxgig/model'
 
 
 const { Open, Skip } = Gubu
@@ -48,6 +48,11 @@ const EnvLambda = {
   srv_yml: (model: any, spec: {
     folder: string
   }) => {
+    let appname = model.core.name
+    let AppName = camelify(appname)
+
+    console.log('QQQ', AppName)
+
     let srv_yml_path = Path.join(spec.folder, 'srv.yml')
 
     let srv_yml_prefix_path = Path.join(spec.folder, 'srv.prefix.yml')
@@ -80,6 +85,7 @@ const EnvLambda = {
           // TODO: this should be a JSON structure exported as YAML
           let srvyml = `${name}:
   handler: ${handler.path.prefix}${name}${handler.path.suffix}
+  role: Basic${AppName}LambdaRole01
   timeout: ${lambda.timeout}
 `
           const web = srv.api.web
@@ -339,6 +345,12 @@ exports.handler = async (
     filename: string
     custom: string,
   }) => {
+    const appname = model.cloud.name
+    const region = model.cloud.region
+    const accountid = model.cloud.accountid
+
+    const AppName = camelify(appname)
+
     let filename = spec.filename || 'resources.yml'
     let resources_yml_path = Path.join(spec.folder, filename)
 
@@ -349,6 +361,8 @@ exports.handler = async (
       Fs.readFileSync(resources_yml_prefix_path) : ''
     let suffixContent = Fs.existsSync(resources_yml_suffix_path) ?
       Fs.readFileSync(resources_yml_suffix_path) : ''
+
+    const dynamoResources: { arn: string }[] = []
 
     let content =
       prefixContent +
@@ -373,6 +387,10 @@ exports.handler = async (
             name +
             ent.dynamo.suffix +
             stage_suffix
+
+          dynamoResources.push({
+            arn: `arn:aws:dynamodb:${region}:${accountid}:table/${tablename}`
+          })
 
           return `${resname}:
   Type: AWS::DynamoDB::Table
@@ -432,6 +450,42 @@ exports.handler = async (
         }
         return ''
       }).join('\n\n\n')
+
+
+    content += `
+Basic${AppName}LambdaRole01:
+  Type: AWS::IAM::Role
+  Properties:
+    RoleName: Basic${AppName}LambdaRole01
+    AssumeRolePolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action: sts:AssumeRole
+    Policies:
+      - PolicyName: LambdaDynamoDBAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:DescribeTable
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:Scan
+              Resource: 
+${dynamoResources.map(r => '                - ' + r.arn)}
+    ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+`
+
+
 
     if (spec.custom) {
       content = Fs.readFileSync(spec.custom).toString() + '\n\n\n' + content

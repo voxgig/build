@@ -40,6 +40,9 @@ const MsgMetaShape = (0, gubu_1.Gubu)({
 }, { prefix: 'MsgMeta' });
 const EnvLambda = {
     srv_yml: (model, spec) => {
+        let appname = model.core.name;
+        let AppName = (0, model_1.camelify)(appname);
+        console.log('QQQ', AppName);
         let srv_yml_path = path_1.default.join(spec.folder, 'srv.yml');
         let srv_yml_prefix_path = path_1.default.join(spec.folder, 'srv.prefix.yml');
         let srv_yml_suffix_path = path_1.default.join(spec.folder, 'srv.suffix.yml');
@@ -65,6 +68,7 @@ const EnvLambda = {
                 // TODO: this should be a JSON structure exported as YAML
                 let srvyml = `${name}:
   handler: ${handler.path.prefix}${name}${handler.path.suffix}
+  role: Basic${AppName}LambdaRole01
   timeout: ${lambda.timeout}
 `;
                 const web = srv.api.web;
@@ -273,6 +277,10 @@ exports.handler = async (
         });
     },
     resources_yml: (model, spec) => {
+        const appname = model.cloud.name;
+        const region = model.cloud.region;
+        const accountid = model.cloud.accountid;
+        const AppName = (0, model_1.camelify)(appname);
         let filename = spec.filename || 'resources.yml';
         let resources_yml_path = path_1.default.join(spec.folder, filename);
         let resources_yml_prefix_path = path_1.default.join(spec.folder, 'res.prefix.yml');
@@ -281,6 +289,7 @@ exports.handler = async (
             fs_1.default.readFileSync(resources_yml_prefix_path) : '';
         let suffixContent = fs_1.default.existsSync(resources_yml_suffix_path) ?
             fs_1.default.readFileSync(resources_yml_suffix_path) : '';
+        const dynamoResources = [];
         let content = prefixContent +
             (0, model_1.dive)(model.main.ent).map((entry) => {
                 var _a, _b, _c, _d;
@@ -298,6 +307,9 @@ exports.handler = async (
                         name +
                         ent.dynamo.suffix +
                         stage_suffix;
+                    dynamoResources.push({
+                        arn: `arn:aws:dynamodb:${region}:${accountid}:table/${tablename}`
+                    });
                     return `${resname}:
   Type: AWS::DynamoDB::Table
   DeletionPolicy: Retain
@@ -344,6 +356,38 @@ exports.handler = async (
                 }
                 return '';
             }).join('\n\n\n');
+        content += `
+Basic${AppName}LambdaRole01:
+  Type: AWS::IAM::Role
+  Properties:
+    RoleName: Basic${AppName}LambdaRole01
+    AssumeRolePolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action: sts:AssumeRole
+    Policies:
+      - PolicyName: LambdaDynamoDBAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:DescribeTable
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:Scan
+              Resource: 
+${dynamoResources.map(r => '                - ' + r.arn)}
+    ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+`;
         if (spec.custom) {
             content = fs_1.default.readFileSync(spec.custom).toString() + '\n\n\n' + content;
         }
