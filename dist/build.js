@@ -40,9 +40,8 @@ const MsgMetaShape = (0, gubu_1.Gubu)({
 }, { prefix: 'MsgMeta' });
 const EnvLambda = {
     srv_yml: (model, spec) => {
-        let appname = model.core.name;
+        let appname = model.main.conf.core.name;
         let AppName = (0, model_1.camelify)(appname);
-        console.log('QQQ', AppName);
         let srv_yml_path = path_1.default.join(spec.folder, 'srv.yml');
         let srv_yml_prefix_path = path_1.default.join(spec.folder, 'srv.prefix.yml');
         let srv_yml_suffix_path = path_1.default.join(spec.folder, 'srv.suffix.yml');
@@ -277,10 +276,10 @@ exports.handler = async (
         });
     },
     resources_yml: (model, spec) => {
-        const appname = model.cloud.name;
-        const region = model.cloud.region;
-        const accountid = model.cloud.accountid;
+        const appname = model.main.conf.core.name;
         const AppName = (0, model_1.camelify)(appname);
+        const region = model.main.conf.cloud.aws.region;
+        const accountid = model.main.conf.cloud.aws.accountid;
         let filename = spec.filename || 'resources.yml';
         let resources_yml_path = path_1.default.join(spec.folder, filename);
         let resources_yml_prefix_path = path_1.default.join(spec.folder, 'res.prefix.yml');
@@ -290,7 +289,9 @@ exports.handler = async (
         let suffixContent = fs_1.default.existsSync(resources_yml_suffix_path) ?
             fs_1.default.readFileSync(resources_yml_suffix_path) : '';
         const dynamoResources = [];
-        let content = prefixContent +
+        let content = `# START
+`;
+        prefixContent +
             (0, model_1.dive)(model.main.ent).map((entry) => {
                 var _a, _b, _c, _d;
                 let path = entry[0];
@@ -384,7 +385,7 @@ Basic${AppName}LambdaRole01:
                 - dynamodb:Query
                 - dynamodb:Scan
               Resource: 
-${dynamoResources.map(r => '                - ' + r.arn)}
+${dynamoResources.map(r => '                - ' + r.arn).join('\n')}
     ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 `;
@@ -392,6 +393,9 @@ ${dynamoResources.map(r => '                - ' + r.arn)}
             content = fs_1.default.readFileSync(spec.custom).toString() + '\n\n\n' + content;
         }
         content += suffixContent;
+        content += `
+# END
+`;
         fs_1.default.writeFileSync(resources_yml_path, content);
     }
 };

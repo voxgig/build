@@ -48,10 +48,8 @@ const EnvLambda = {
   srv_yml: (model: any, spec: {
     folder: string
   }) => {
-    let appname = model.core.name
+    let appname = model.main.conf.core.name
     let AppName = camelify(appname)
-
-    console.log('QQQ', AppName)
 
     let srv_yml_path = Path.join(spec.folder, 'srv.yml')
 
@@ -345,11 +343,11 @@ exports.handler = async (
     filename: string
     custom: string,
   }) => {
-    const appname = model.cloud.name
-    const region = model.cloud.region
-    const accountid = model.cloud.accountid
-
+    const appname = model.main.conf.core.name
     const AppName = camelify(appname)
+
+    const region = model.main.conf.cloud.aws.region
+    const accountid = model.main.conf.cloud.aws.accountid
 
     let filename = spec.filename || 'resources.yml'
     let resources_yml_path = Path.join(spec.folder, filename)
@@ -365,7 +363,10 @@ exports.handler = async (
     const dynamoResources: { arn: string }[] = []
 
     let content =
-      prefixContent +
+      `# START
+`
+
+    prefixContent +
 
       dive(model.main.ent).map((entry: any) => {
         let path = entry[0]
@@ -480,7 +481,7 @@ Basic${AppName}LambdaRole01:
                 - dynamodb:Query
                 - dynamodb:Scan
               Resource: 
-${dynamoResources.map(r => '                - ' + r.arn)}
+${dynamoResources.map(r => '                - ' + r.arn).join('\n')}
     ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 `
@@ -492,6 +493,10 @@ ${dynamoResources.map(r => '                - ' + r.arn)}
     }
 
     content += suffixContent
+
+    content += `
+# END
+`
 
     Fs.writeFileSync(resources_yml_path, content)
   }
