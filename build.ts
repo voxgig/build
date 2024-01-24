@@ -453,6 +453,13 @@ exports.handler = async (
       }).join('\n\n\n')
 
 
+    let customLambdaPolicyStatementPath =
+      Path.join(spec.folder, 'res.lambda.policy.statements.yml')
+    let customLambdaPolicyStatementContent = Fs.existsSync(customLambdaPolicyStatementPath) ?
+      Fs.readFileSync(customLambdaPolicyStatementPath) : ''
+
+
+
     content += `
 Basic${AppName}LambdaRole01:
   Type: AWS::IAM::Role
@@ -482,6 +489,7 @@ Basic${AppName}LambdaRole01:
                 - dynamodb:Scan
               Resource: 
 ${dynamoResources.map(r => '                - ' + r.arn).join('\n')}
+${customLambdaPolicyStatementContent}
     ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 `
