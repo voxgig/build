@@ -291,27 +291,28 @@ exports.handler = async (
         const dynamoResources = [];
         let content = `# START
 `;
-        prefixContent +
-            (0, model_1.dive)(model.main.ent).map((entry) => {
-                var _a, _b, _c, _d;
-                let path = entry[0];
-                let ent = EntShape(entry[1]);
-                // console.log('DYNAMO', path, ent)
-                if (ent && false !== ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
-                    let pathname = path
-                        .map((p) => (p[0] + '').toUpperCase() + p.substring(1))
-                        .join('');
-                    let name = ((_b = ent.resource) === null || _b === void 0 ? void 0 : _b.name) || pathname;
-                    let resname = ((_c = ent.resource) === null || _c === void 0 ? void 0 : _c.name) || 'Table' + pathname;
-                    let stage_suffix = ((_d = ent.stage) === null || _d === void 0 ? void 0 : _d.active) ? '.${self:provider.stage,"dev"}' : '';
-                    let tablename = ent.dynamo.prefix +
-                        name +
-                        ent.dynamo.suffix +
-                        stage_suffix;
-                    dynamoResources.push({
-                        arn: `arn:aws:dynamodb:${region}:${accountid}:table/${tablename}`
-                    });
-                    return `${resname}:
+        content +=
+            prefixContent +
+                (0, model_1.dive)(model.main.ent).map((entry) => {
+                    var _a, _b, _c, _d;
+                    let path = entry[0];
+                    let ent = EntShape(entry[1]);
+                    // console.log('DYNAMO', path, ent)
+                    if (ent && false !== ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
+                        let pathname = path
+                            .map((p) => (p[0] + '').toUpperCase() + p.substring(1))
+                            .join('');
+                        let name = ((_b = ent.resource) === null || _b === void 0 ? void 0 : _b.name) || pathname;
+                        let resname = ((_c = ent.resource) === null || _c === void 0 ? void 0 : _c.name) || 'Table' + pathname;
+                        let stage_suffix = ((_d = ent.stage) === null || _d === void 0 ? void 0 : _d.active) ? '.${self:provider.stage,"dev"}' : '';
+                        let tablename = ent.dynamo.prefix +
+                            name +
+                            ent.dynamo.suffix +
+                            stage_suffix;
+                        dynamoResources.push({
+                            arn: `arn:aws:dynamodb:${region}:${accountid}:table/${tablename}`
+                        });
+                        return `${resname}:
   Type: AWS::DynamoDB::Table
   DeletionPolicy: Retain
   Properties:
@@ -327,36 +328,36 @@ exports.handler = async (
       - AttributeName: "${ent.id.field}"
         KeyType: HASH
 `;
-                }
-                return '';
-            }).join('\n\n\n') +
-            (0, model_1.dive)(model.main.msg, 128).map((entry) => {
-                var _a, _b, _c;
-                let path = entry[0];
-                let msgMeta = MsgMetaShape(entry[1].$);
-                let pathname = path
-                    .map((p) => (p[0] + '').toUpperCase() + p.substring(1))
-                    .join('');
-                if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
-                    // console.log('MM', path, msgMeta)
-                    let queue = msgMeta.transport.queue;
-                    let name = queue.name || pathname;
-                    // TODO: aontu should do this, but needs recursive child conjuncts
-                    let stage_suffix = (false === ((_c = queue.stage) === null || _c === void 0 ? void 0 : _c.active)) ? '' : '-${self:provider.stage,"dev"}';
-                    let resname = 'Queue' + name;
-                    let queueName = (queue.prefix || '') +
-                        path.reduce((s, p, i) => (s += p + (i % 2 ?
-                            (i == path.length - 1 ? '' : '-') : '_')), '') +
-                        (queue.suffix || '') +
-                        (stage_suffix || '');
-                    return `${resname}:
+                    }
+                    return '';
+                }).join('\n\n\n') +
+                (0, model_1.dive)(model.main.msg, 128).map((entry) => {
+                    var _a, _b, _c;
+                    let path = entry[0];
+                    let msgMeta = MsgMetaShape(entry[1].$);
+                    let pathname = path
+                        .map((p) => (p[0] + '').toUpperCase() + p.substring(1))
+                        .join('');
+                    if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
+                        // console.log('MM', path, msgMeta)
+                        let queue = msgMeta.transport.queue;
+                        let name = queue.name || pathname;
+                        // TODO: aontu should do this, but needs recursive child conjuncts
+                        let stage_suffix = (false === ((_c = queue.stage) === null || _c === void 0 ? void 0 : _c.active)) ? '' : '-${self:provider.stage,"dev"}';
+                        let resname = 'Queue' + name;
+                        let queueName = (queue.prefix || '') +
+                            path.reduce((s, p, i) => (s += p + (i % 2 ?
+                                (i == path.length - 1 ? '' : '-') : '_')), '') +
+                            (queue.suffix || '') +
+                            (stage_suffix || '');
+                        return `${resname}:
   Type: "AWS::SQS::Queue"
   Properties:
     QueueName: '${queueName}'
 `;
-                }
-                return '';
-            }).join('\n\n\n');
+                    }
+                    return '';
+                }).join('\n\n\n');
         let customLambdaPolicyStatementPath = path_1.default.join(spec.folder, 'res.lambda.policy.statements.yml');
         let customLambdaPolicyStatementContent = fs_1.default.existsSync(customLambdaPolicyStatementPath) ?
             fs_1.default.readFileSync(customLambdaPolicyStatementPath) : '';

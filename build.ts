@@ -366,7 +366,8 @@ exports.handler = async (
       `# START
 `
 
-    prefixContent +
+    content +=
+      prefixContent +
 
       dive(model.main.ent).map((entry: any) => {
         let path = entry[0]
