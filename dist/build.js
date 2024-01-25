@@ -38,6 +38,7 @@ const MsgMetaShape = (0, gubu_1.Gubu)({
         }
     }),
 }, { prefix: 'MsgMeta' });
+// console.log('BUILD 1')
 const EnvLambda = {
     srv_yml: (model, spec) => {
         let appname = model.main.conf.core.name;
@@ -330,34 +331,40 @@ exports.handler = async (
 `;
                     }
                     return '';
-                }).join('\n\n\n') +
-                (0, model_1.dive)(model.main.msg, 128).map((entry) => {
-                    var _a, _b, _c;
-                    let path = entry[0];
-                    let msgMeta = MsgMetaShape(entry[1].$);
-                    let pathname = path
-                        .map((p) => (p[0] + '').toUpperCase() + p.substring(1))
-                        .join('');
-                    if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
-                        // console.log('MM', path, msgMeta)
-                        let queue = msgMeta.transport.queue;
-                        let name = queue.name || pathname;
-                        // TODO: aontu should do this, but needs recursive child conjuncts
-                        let stage_suffix = (false === ((_c = queue.stage) === null || _c === void 0 ? void 0 : _c.active)) ? '' : '-${self:provider.stage,"dev"}';
-                        let resname = 'Queue' + name;
-                        let queueName = (queue.prefix || '') +
-                            path.reduce((s, p, i) => (s += p + (i % 2 ?
-                                (i == path.length - 1 ? '' : '-') : '_')), '') +
-                            (queue.suffix || '') +
-                            (stage_suffix || '');
-                        return `${resname}:
+                }).join('\n\n\n');
+        // content +=
+        let queueDefs = (0, model_1.dive)(model.main.msg, 128).map((entry) => {
+            var _a, _b, _c;
+            let path = entry[0];
+            let msgMeta = MsgMetaShape(entry[1]);
+            let pathname = path
+                .map((p) => (p[0] + '').toUpperCase() + p.substring(1))
+                .join('');
+            // console.log('MQ', pathname, msgMeta)
+            if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
+                // console.log('MM', path, msgMeta)
+                let queue = msgMeta.transport.queue;
+                let name = queue.name || pathname;
+                // TODO: aontu should do this, but needs recursive child conjuncts
+                let stage_suffix = (false === ((_c = queue.stage) === null || _c === void 0 ? void 0 : _c.active)) ? '' : '-${self:provider.stage,"dev"}';
+                let resname = 'Queue' + name;
+                let queueName = (queue.prefix || '') +
+                    path.reduce((s, p, i) => (s += p + (i % 2 ?
+                        (i == path.length - 1 ? '' : '-') : '_')), '') +
+                    (queue.suffix || '') +
+                    (stage_suffix || '');
+                // console.log('QN', queueName)
+                return `${resname}:
   Type: "AWS::SQS::Queue"
   Properties:
     QueueName: '${queueName}'
+
 `;
-                    }
-                    return '';
-                }).join('\n\n\n');
+            }
+            return '';
+        }).filter(n => '' !== n).join('');
+        // console.log('queueDefs', queueDefs)
+        content += '\n\n' + queueDefs;
         let customLambdaPolicyStatementPath = path_1.default.join(spec.folder, 'res.lambda.policy.statements.yml');
         let customLambdaPolicyStatementContent = fs_1.default.existsSync(customLambdaPolicyStatementPath) ?
             fs_1.default.readFileSync(customLambdaPolicyStatementPath) : '';

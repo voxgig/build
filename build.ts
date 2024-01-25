@@ -43,6 +43,8 @@ const MsgMetaShape = Gubu({
 }, { prefix: 'MsgMeta' })
 
 
+// console.log('BUILD 1')
+
 const EnvLambda = {
 
   srv_yml: (model: any, spec: {
@@ -412,47 +414,54 @@ exports.handler = async (
 `
         }
         return ''
-      }).join('\n\n\n') +
+      }).join('\n\n\n')
 
+    // content +=
+    let queueDefs = dive(model.main.msg, 128).map((entry: any) => {
+      let path = entry[0]
+      let msgMeta = MsgMetaShape(entry[1])
 
-      dive(model.main.msg, 128).map((entry: any) => {
-        let path = entry[0]
-        let msgMeta = MsgMetaShape(entry[1].$)
+      let pathname = path
+        .map((p: string) =>
+          (p[0] + '').toUpperCase() + p.substring(1))
+        .join('')
 
-        let pathname = path
-          .map((p: string) =>
-            (p[0] + '').toUpperCase() + p.substring(1))
-          .join('')
+      // console.log('MQ', pathname, msgMeta)
 
+      if (msgMeta.transport?.queue?.active) {
+        // console.log('MM', path, msgMeta)
+        let queue = msgMeta.transport.queue
+        let name = queue.name || pathname
 
-        if (msgMeta.transport?.queue?.active) {
-          // console.log('MM', path, msgMeta)
-          let queue = msgMeta.transport.queue
-          let name = queue.name || pathname
+        // TODO: aontu should do this, but needs recursive child conjuncts
+        let stage_suffix =
+          (false === queue.stage?.active) ? '' : '-${self:provider.stage,"dev"}'
 
-          // TODO: aontu should do this, but needs recursive child conjuncts
-          let stage_suffix =
-            (false === queue.stage?.active) ? '' : '-${self:provider.stage,"dev"}'
+        let resname = 'Queue' + name
 
-          let resname = 'Queue' + name
+        let queueName =
+          (queue.prefix || '') +
+          path.reduce((s: string, p: string, i: number) =>
+          (s += p + (i % 2 ?
+            (i == path.length - 1 ? '' : '-') : '_')), '') +
+          (queue.suffix || '') +
+          (stage_suffix || '')
 
-          let queueName =
-            (queue.prefix || '') +
-            path.reduce((s: string, p: string, i: number) =>
-            (s += p + (i % 2 ?
-              (i == path.length - 1 ? '' : '-') : '_')), '') +
-            (queue.suffix || '') +
-            (stage_suffix || '')
+        // console.log('QN', queueName)
 
-          return `${resname}:
+        return `${resname}:
   Type: "AWS::SQS::Queue"
   Properties:
     QueueName: '${queueName}'
-`
-        }
-        return ''
-      }).join('\n\n\n')
 
+`
+      }
+      return ''
+    }).filter(n => '' !== n).join('')
+
+    // console.log('queueDefs', queueDefs)
+
+    content += '\n\n' + queueDefs
 
     let customLambdaPolicyStatementPath =
       Path.join(spec.folder, 'res.lambda.policy.statements.yml')
