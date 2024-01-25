@@ -145,6 +145,17 @@ ${recur}
 `)
 
                   }
+                  else if ('sqs' === ev.source) {
+                    events += TM(` 
+     - sqs:
+          arn:
+            Fn::GetAtt:
+              - ${ev.qrn}
+              - Arn
+          batchSize: 1
+`)
+
+                  }
                 })
               }
             })
