@@ -369,7 +369,7 @@ exports.handler = async (
         let customLambdaPolicyStatementContent = fs_1.default.existsSync(customLambdaPolicyStatementPath) ?
             fs_1.default.readFileSync(customLambdaPolicyStatementPath) : '';
         content += `
-Basic${AppName}LambdaRole\${self:custom.index.BasicLambdaRole,"01"}:
+Basic${AppName}LambdaRole:
   Type: AWS::IAM::Role
   Properties:
     RoleName: Basic${AppName}LambdaRole\${self:custom.index.BasicLambdaRole,"01"}

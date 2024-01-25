@@ -471,7 +471,7 @@ exports.handler = async (
 
 
     content += `
-Basic${AppName}LambdaRole\${self:custom.index.BasicLambdaRole,"01"}:
+Basic${AppName}LambdaRole:
   Type: AWS::IAM::Role
   Properties:
     RoleName: Basic${AppName}LambdaRole\${self:custom.index.BasicLambdaRole,"01"}
