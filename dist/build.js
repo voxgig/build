@@ -382,7 +382,7 @@ Basic${AppName}LambdaRole:
               - lambda.amazonaws.com
           Action: sts:AssumeRole
     Policies:
-      - PolicyName: LambdaDynamoDBAccess
+      - PolicyName: LambdaServiceAccess
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
