@@ -85,7 +85,7 @@ const EnvLambda = {
           // TODO: this should be a JSON structure exported as YAML
           let srvyml = `${name}:
   handler: ${handler.path.prefix}${name}${handler.path.suffix}
-  role: Basic${AppName}LambdaRole\${self:custom.index.BasicLambdaRole,"01"}
+  role: Basic${AppName}LambdaRole
   timeout: ${lambda.timeout}
 `
           const web = srv.api.web
