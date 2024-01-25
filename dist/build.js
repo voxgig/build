@@ -121,7 +121,7 @@ ${recur}
 `);
                                 }
                                 else if ('sqs' === ev.source) {
-                                    events += TM(` 
+                                    events += TM(`
     - sqs:
         arn:
           Fn::GetAtt:
