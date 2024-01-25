@@ -68,7 +68,7 @@ const EnvLambda = {
                 // TODO: this should be a JSON structure exported as YAML
                 let srvyml = `${name}:
   handler: ${handler.path.prefix}${name}${handler.path.suffix}
-  role: Basic${AppName}LambdaRole01
+  role: Basic${AppName}LambdaRole\${self:custom.index.BasicLambdaRole,"01"}
   timeout: ${lambda.timeout}
 `;
                 const web = srv.api.web;
@@ -369,10 +369,10 @@ exports.handler = async (
         let customLambdaPolicyStatementContent = fs_1.default.existsSync(customLambdaPolicyStatementPath) ?
             fs_1.default.readFileSync(customLambdaPolicyStatementPath) : '';
         content += `
-Basic${AppName}LambdaRole01:
+Basic${AppName}LambdaRole\${self:custom.index.BasicLambdaRole,"01"}:
   Type: AWS::IAM::Role
   Properties:
-    RoleName: Basic${AppName}LambdaRole01
+    RoleName: Basic${AppName}LambdaRole\${self:custom.index.BasicLambdaRole,"01"}
     AssumeRolePolicyDocument:
       Version: '2012-10-17'
       Statement:
