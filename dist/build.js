@@ -364,12 +364,12 @@ exports.handler = async (
                         (i == path.length - 1 ? '' : '-') : '_')), '') +
                     (queue.suffix || '') +
                     (stage_suffix || '');
-                // console.log('QN', queueName)
+                let queueTimeout = queue.timeout || 30;
                 return `${resname}:
   Type: "AWS::SQS::Queue"
   Properties:
     QueueName: '${queueName}'
-
+    VisibilityTimeout: ${queueTimeout}
 `;
             }
             return '';
