@@ -87,6 +87,7 @@ const EnvLambda = {
   handler: ${handler.path.prefix}${name}${handler.path.suffix}
   role: Basic${AppName}LambdaRole
   timeout: ${lambda.timeout}
+  memorySize: ${lambda.memory || 1024}
 `
           const web = srv.api.web
 
