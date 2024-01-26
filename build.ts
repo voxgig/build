@@ -37,7 +37,8 @@ const MsgMetaShape = Gubu({
   params: Skip({}),
   transport: Skip({
     queue: {
-      active: false
+      active: false,
+      timeout: Number,
     }
   }),
 }, { prefix: 'MsgMeta' })

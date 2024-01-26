@@ -34,7 +34,8 @@ const MsgMetaShape = (0, gubu_1.Gubu)({
     params: Skip({}),
     transport: Skip({
         queue: {
-            active: false
+            active: false,
+            timeout: Number,
         }
     }),
 }, { prefix: 'MsgMeta' });
