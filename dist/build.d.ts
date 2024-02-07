@@ -14,6 +14,6 @@ declare const EnvLambda: {
         folder: string;
         filename: string;
         custom: string;
-    }) => void;
+    }) => Promise<void>;
 };
 export { EnvLambda };

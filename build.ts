@@ -3,45 +3,11 @@
 import Fs from 'fs'
 import Path from 'path'
 
-import { Gubu } from 'gubu'
 import { dive, get, pinify, camelify } from '@voxgig/model'
 
+import { MsgMetaShape } from './shape/msg'
 
-const { Open, Skip } = Gubu
-
-
-const EntShape = Gubu({
-  id: {
-    field: 'id'
-  },
-  field: Open({}).Child({
-  }),
-  resource: Open({
-    name: ''
-  }),
-  dynamo: Open({
-    active: false,
-    prefix: '',
-    suffix: '',
-  }),
-  stage: Open({
-    active: false
-  }),
-  custom: Skip(String),
-}, { prefix: 'Entity' })
-
-
-// Contents of '$' leaf
-const MsgMetaShape = Gubu({
-  file: Skip(String),
-  params: Skip({}),
-  transport: Skip({
-    queue: {
-      active: false,
-      timeout: Number,
-    }
-  }),
-}, { prefix: 'MsgMeta' })
+import { res_dynamo_yml } from './yml/res_dynamo_yml'
 
 
 // console.log('BUILD 1')
@@ -353,7 +319,7 @@ exports.handler = async (
   },
 
 
-  resources_yml: (model: any, spec: {
+  resources_yml: async (model: any, spec: {
     folder: string,
     filename: string
     custom: string,
@@ -384,50 +350,7 @@ exports.handler = async (
     content +=
       prefixContent +
 
-      dive(model.main.ent).map((entry: any) => {
-        let path = entry[0]
-        let ent = EntShape(entry[1])
-        // console.log('DYNAMO', path, ent)
-
-        if (ent && false !== ent.dynamo?.active) {
-          let pathname = path
-            .map((p: string) =>
-              (p[0] + '').toUpperCase() + p.substring(1))
-            .join('')
-          let name = ent.resource?.name || pathname
-          let resname = ent.resource?.name || 'Table' + pathname
-
-          let stage_suffix = ent.stage?.active ? '.${self:provider.stage,"dev"}' : ''
-
-          let tablename =
-            ent.dynamo.prefix +
-            name +
-            ent.dynamo.suffix +
-            stage_suffix
-
-          dynamoResources.push({
-            arn: `arn:aws:dynamodb:${region}:${accountid}:table/${tablename}`
-          })
-
-          return `${resname}:
-  Type: AWS::DynamoDB::Table
-  DeletionPolicy: Retain
-  Properties:
-    TableName: '${tablename}'
-    BillingMode: "PAY_PER_REQUEST"
-    PointInTimeRecoverySpecification:
-      PointInTimeRecoveryEnabled: "true"
-    DeletionProtectionEnabled: true
-    AttributeDefinitions:
-      - AttributeName: "${ent.id.field}"
-        AttributeType: "S"
-    KeySchema:
-      - AttributeName: "${ent.id.field}"
-        KeyType: HASH
-`
-        }
-        return ''
-      }).join('\n\n\n')
+      await res_dynamo_yml(model, { dynamoResources, region, accountid })
 
     // content +=
     let queueDefs = dive(model.main.msg, 128).map((entry: any) => {
@@ -530,9 +453,15 @@ ${customLambdaPolicyStatementContent}
 `
 
     Fs.writeFileSync(resources_yml_path, content)
-  }
+  },
+
+
 
 }
+
+
+
+
 
 
 function empty(o: any) {

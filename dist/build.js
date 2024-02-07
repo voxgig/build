@@ -7,38 +7,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EnvLambda = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-const gubu_1 = require("gubu");
 const model_1 = require("@voxgig/model");
-const { Open, Skip } = gubu_1.Gubu;
-const EntShape = (0, gubu_1.Gubu)({
-    id: {
-        field: 'id'
-    },
-    field: Open({}).Child({}),
-    resource: Open({
-        name: ''
-    }),
-    dynamo: Open({
-        active: false,
-        prefix: '',
-        suffix: '',
-    }),
-    stage: Open({
-        active: false
-    }),
-    custom: Skip(String),
-}, { prefix: 'Entity' });
-// Contents of '$' leaf
-const MsgMetaShape = (0, gubu_1.Gubu)({
-    file: Skip(String),
-    params: Skip({}),
-    transport: Skip({
-        queue: {
-            active: false,
-            timeout: Number,
-        }
-    }),
-}, { prefix: 'MsgMeta' });
+const msg_1 = require("./shape/msg");
+const res_dynamo_yml_1 = require("./yml/res_dynamo_yml");
 // console.log('BUILD 1')
 const EnvLambda = {
     srv_yml: (model, spec) => {
@@ -224,7 +195,7 @@ ${events}
             (0, model_1.dive)(model.main.msg.aim[name], 128).map((entry) => {
                 var _a, _b;
                 let path = ['aim', name, ...entry[0]];
-                let msgMeta = MsgMetaShape(entry[1]);
+                let msgMeta = (0, msg_1.MsgMetaShape)(entry[1]);
                 let pin = (0, model_1.pinify)(path);
                 if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
                     complete += `
@@ -237,7 +208,7 @@ ${events}
                 let msgMetaMaybe = (0, model_1.get)(model.main.msg, path);
                 // console.log(name, path, msgMetaMaybe)
                 if (msgMetaMaybe === null || msgMetaMaybe === void 0 ? void 0 : msgMetaMaybe.$) {
-                    let msgMeta = MsgMetaShape(msgMetaMaybe === null || msgMetaMaybe === void 0 ? void 0 : msgMetaMaybe.$);
+                    let msgMeta = (0, msg_1.MsgMetaShape)(msgMetaMaybe === null || msgMetaMaybe === void 0 ? void 0 : msgMetaMaybe.$);
                     let pin = (0, model_1.pinify)(path);
                     if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
                         complete += `
@@ -288,7 +259,7 @@ exports.handler = async (
             fs_1.default.writeFileSync(srv_handler_path, content);
         });
     },
-    resources_yml: (model, spec) => {
+    resources_yml: async (model, spec) => {
         const appname = model.main.conf.core.name;
         const AppName = (0, model_1.camelify)(appname);
         const region = model.main.conf.cloud.aws.region;
@@ -306,49 +277,12 @@ exports.handler = async (
 `;
         content +=
             prefixContent +
-                (0, model_1.dive)(model.main.ent).map((entry) => {
-                    var _a, _b, _c, _d;
-                    let path = entry[0];
-                    let ent = EntShape(entry[1]);
-                    // console.log('DYNAMO', path, ent)
-                    if (ent && false !== ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
-                        let pathname = path
-                            .map((p) => (p[0] + '').toUpperCase() + p.substring(1))
-                            .join('');
-                        let name = ((_b = ent.resource) === null || _b === void 0 ? void 0 : _b.name) || pathname;
-                        let resname = ((_c = ent.resource) === null || _c === void 0 ? void 0 : _c.name) || 'Table' + pathname;
-                        let stage_suffix = ((_d = ent.stage) === null || _d === void 0 ? void 0 : _d.active) ? '.${self:provider.stage,"dev"}' : '';
-                        let tablename = ent.dynamo.prefix +
-                            name +
-                            ent.dynamo.suffix +
-                            stage_suffix;
-                        dynamoResources.push({
-                            arn: `arn:aws:dynamodb:${region}:${accountid}:table/${tablename}`
-                        });
-                        return `${resname}:
-  Type: AWS::DynamoDB::Table
-  DeletionPolicy: Retain
-  Properties:
-    TableName: '${tablename}'
-    BillingMode: "PAY_PER_REQUEST"
-    PointInTimeRecoverySpecification:
-      PointInTimeRecoveryEnabled: "true"
-    DeletionProtectionEnabled: true
-    AttributeDefinitions:
-      - AttributeName: "${ent.id.field}"
-        AttributeType: "S"
-    KeySchema:
-      - AttributeName: "${ent.id.field}"
-        KeyType: HASH
-`;
-                    }
-                    return '';
-                }).join('\n\n\n');
+                await (0, res_dynamo_yml_1.res_dynamo_yml)(model, { dynamoResources, region, accountid });
         // content +=
         let queueDefs = (0, model_1.dive)(model.main.msg, 128).map((entry) => {
             var _a, _b, _c;
             let path = entry[0];
-            let msgMeta = MsgMetaShape(entry[1]);
+            let msgMeta = (0, msg_1.MsgMetaShape)(entry[1]);
             let pathname = path
                 .map((p) => (p[0] + '').toUpperCase() + p.substring(1))
                 .join('');
@@ -421,7 +355,7 @@ ${customLambdaPolicyStatementContent}
 # END
 `;
         fs_1.default.writeFileSync(resources_yml_path, content);
-    }
+    },
 };
 exports.EnvLambda = EnvLambda;
 function empty(o) {
