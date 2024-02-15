@@ -6,6 +6,7 @@ import Path from 'path'
 import { dive, get, pinify, camelify } from '@voxgig/model'
 
 import { MsgMetaShape } from './shape/msg'
+import { CloudConfShape } from './shape/conf'
 
 import { res_dynamo_yml } from './yml/res_dynamo_yml'
 
@@ -327,8 +328,10 @@ exports.handler = async (
     const appname = model.main.conf.core.name
     const AppName = camelify(appname)
 
-    const region = model.main.conf.cloud.aws.region
-    const accountid = model.main.conf.cloud.aws.accountid
+    const cloud = CloudConfShape(model.main.conf.cloud)
+
+    const region = cloud.aws.region
+    const accountid = cloud.aws.accountid
 
     let filename = spec.filename || 'resources.yml'
     let resources_yml_path = Path.join(spec.folder, filename)

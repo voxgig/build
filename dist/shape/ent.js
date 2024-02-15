@@ -7,6 +7,7 @@ const EntShape = (0, gubu_1.Gubu)({
     id: {
         field: 'id'
     },
+    title: 'Title',
     field: Open({}).Child({}),
     index: Open({}).Child({}),
     resource: Open({

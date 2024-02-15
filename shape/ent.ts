@@ -8,6 +8,7 @@ const EntShape = Gubu({
   id: {
     field: 'id'
   },
+  title: 'Title',
   field: Open({}).Child({
   }),
   index: Open({}).Child({
