@@ -7,6 +7,9 @@ const CloudConfShape = (0, gubu_1.Gubu)(Open({
     aws: {
         region: 'us-east-1',
         accountid: 'AWS-ACCOUNT-ID',
+        bedrock: {
+            model: 'BEDROCK-MODEL',
+        },
     }
 }), { prefix: 'CloudConf' });
 exports.CloudConfShape = CloudConfShape;

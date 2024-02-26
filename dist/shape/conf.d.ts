@@ -3,12 +3,18 @@ declare const CloudConfShape: {
         aws: {
             region: string;
             accountid: string;
+            bedrock: {
+                model: string;
+            };
         };
     };
     valid: <V_1>(root?: V_1 | undefined, ctx?: import("gubu").Context | undefined) => root is V_1 & {
         aws: {
             region: string;
             accountid: string;
+            bedrock: {
+                model: string;
+            };
         };
     };
     match(root?: any, ctx?: import("gubu").Context | undefined): boolean;
@@ -52,6 +58,9 @@ declare const CloudConfShape: {
         aws: {
             region: string;
             accountid: string;
+            bedrock: {
+                model: string;
+            };
         };
     }>;
     stringify(shape?: any): string;
