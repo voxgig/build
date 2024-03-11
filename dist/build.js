@@ -14,7 +14,8 @@ const res_dynamo_yml_1 = require("./yml/res_dynamo_yml");
 // console.log('BUILD 1')
 const EnvLambda = {
     srv_yml: (model, spec) => {
-        let appname = model.main.conf.core.name;
+        const core = (0, conf_1.CoreConfShape)(model.main.conf.core);
+        let appname = core.name;
         let AppName = (0, model_1.camelify)(appname);
         let srv_yml_path = path_1.default.join(spec.folder, 'srv.yml');
         let srv_yml_prefix_path = path_1.default.join(spec.folder, 'srv.prefix.yml');
@@ -261,7 +262,8 @@ exports.handler = async (
         });
     },
     resources_yml: async (model, spec) => {
-        const appname = model.main.conf.core.name;
+        const core = (0, conf_1.CoreConfShape)(model.main.conf.core);
+        const appname = core.name;
         const AppName = (0, model_1.camelify)(appname);
         const cloud = (0, conf_1.CloudConfShape)(model.main.conf.cloud);
         const region = cloud.aws.region;

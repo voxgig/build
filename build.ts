@@ -6,7 +6,7 @@ import Path from 'path'
 import { dive, get, pinify, camelify } from '@voxgig/model'
 
 import { MsgMetaShape } from './shape/msg'
-import { CloudConfShape } from './shape/conf'
+import { CoreConfShape, CloudConfShape } from './shape/conf'
 
 import { res_dynamo_yml } from './yml/res_dynamo_yml'
 
@@ -18,7 +18,10 @@ const EnvLambda = {
   srv_yml: (model: any, spec: {
     folder: string
   }) => {
-    let appname = model.main.conf.core.name
+
+    const core = CoreConfShape(model.main.conf.core)
+
+    let appname = core.name
     let AppName = camelify(appname)
 
     let srv_yml_path = Path.join(spec.folder, 'srv.yml')
@@ -325,7 +328,10 @@ exports.handler = async (
     filename: string
     custom: string,
   }) => {
-    const appname = model.main.conf.core.name
+
+    const core = CoreConfShape(model.main.conf.core)
+
+    const appname = core.name
     const AppName = camelify(appname)
 
     const cloud = CloudConfShape(model.main.conf.cloud)

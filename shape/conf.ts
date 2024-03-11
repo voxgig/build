@@ -15,6 +15,12 @@ const CloudConfShape = Gubu(Open({
 }), { prefix: 'CloudConf' })
 
 
+const CoreConfShape = Gubu(Open({
+  name: String
+}), { prefix: 'CoreConf' })
+
+
 export {
-  CloudConfShape
+  CoreConfShape,
+  CloudConfShape,
 }

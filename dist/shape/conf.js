@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CloudConfShape = void 0;
+exports.CloudConfShape = exports.CoreConfShape = void 0;
 const gubu_1 = require("gubu");
 const { Open } = gubu_1.Gubu;
 const CloudConfShape = (0, gubu_1.Gubu)(Open({
@@ -13,4 +13,8 @@ const CloudConfShape = (0, gubu_1.Gubu)(Open({
     }
 }), { prefix: 'CloudConf' });
 exports.CloudConfShape = CloudConfShape;
+const CoreConfShape = (0, gubu_1.Gubu)(Open({
+    name: String
+}), { prefix: 'CoreConf' });
+exports.CoreConfShape = CoreConfShape;
 //# sourceMappingURL=conf.js.map
