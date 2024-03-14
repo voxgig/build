@@ -382,6 +382,9 @@ exports.handler = async (
         let stage_suffix =
           (false === queue.stage?.active) ? '' : '-${self:provider.stage,"dev"}'
 
+        let queue_suffix = (null == queue.suffix || '' == queue.suffix) ? '' :
+          '-' + queue.suffix
+
         let resname = 'Queue' + name
 
         let queueName =
@@ -389,7 +392,7 @@ exports.handler = async (
           path.reduce((s: string, p: string, i: number) =>
           (s += p + (i % 2 ?
             (i == path.length - 1 ? '' : '-') : '_')), '') +
-          (queue.suffix || '') +
+          (queue_suffix || '') +
           (stage_suffix || '')
 
         let queueTimeout = queue.timeout || 30

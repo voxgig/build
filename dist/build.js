@@ -297,11 +297,13 @@ exports.handler = async (
                 let name = queue.name || pathname;
                 // TODO: aontu should do this, but needs recursive child conjuncts
                 let stage_suffix = (false === ((_c = queue.stage) === null || _c === void 0 ? void 0 : _c.active)) ? '' : '-${self:provider.stage,"dev"}';
+                let queue_suffix = (null == queue.suffix || '' == queue.suffix) ? '' :
+                    '-' + queue.suffix;
                 let resname = 'Queue' + name;
                 let queueName = (queue.prefix || '') +
                     path.reduce((s, p, i) => (s += p + (i % 2 ?
                         (i == path.length - 1 ? '' : '-') : '_')), '') +
-                    (queue.suffix || '') +
+                    (queue_suffix || '') +
                     (stage_suffix || '');
                 let queueTimeout = queue.timeout || 30;
                 return `${resname}:
