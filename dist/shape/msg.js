@@ -11,6 +11,7 @@ const MsgMetaShape = (0, gubu_1.Gubu)({
         queue: {
             active: false,
             timeout: Number,
+            suffix: String,
         }
     }),
 }, { prefix: 'MsgMeta' });

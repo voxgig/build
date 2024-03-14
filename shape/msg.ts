@@ -12,6 +12,7 @@ const MsgMetaShape = Gubu({
     queue: {
       active: false,
       timeout: Number,
+      suffix: String,
     }
   }),
 }, { prefix: 'MsgMeta' })

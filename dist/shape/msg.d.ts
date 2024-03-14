@@ -6,6 +6,7 @@ declare const MsgMetaShape: {
             queue: {
                 active: boolean;
                 timeout: NumberConstructor;
+                suffix: StringConstructor;
             };
         }>;
     };
@@ -16,6 +17,7 @@ declare const MsgMetaShape: {
             queue: {
                 active: boolean;
                 timeout: NumberConstructor;
+                suffix: StringConstructor;
             };
         }>;
     };
@@ -63,6 +65,7 @@ declare const MsgMetaShape: {
             queue: {
                 active: boolean;
                 timeout: NumberConstructor;
+                suffix: StringConstructor;
             };
         }>;
     }>;
