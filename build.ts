@@ -430,6 +430,8 @@ Basic${AppName}LambdaRole:
           Principal:
             Service:
               - lambda.amazonaws.com
+              - events.amazonaws.com
+              - ecs-tasks.amazonaws.com
           Action: sts:AssumeRole
     Policies:
       - PolicyName: LambdaServiceAccess
