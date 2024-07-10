@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/build",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "main": "dist/build.js",
   "type": "commonjs",
   "types": "dist/build.d.ts",
@@ -46,11 +46,11 @@
     "@types/jest": "^29.5.12",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "20.14.10",
-    "@voxgig/model": "^2.0.1",
-    "@voxgig/system": "^0.9.0",
+    "@voxgig/model": "^2.1.0",
+    "@voxgig/system": "^1.2.0",
     "esbuild": "^0.23.0",
     "jest": "^29.7.0",
-    "ts-jest": "^29.2.1",
+    "ts-jest": "^29.2.2",
     "typescript": "^5.5.3"
   }
 }

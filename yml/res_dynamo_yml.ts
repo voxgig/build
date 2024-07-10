@@ -1,6 +1,6 @@
 import Yaml from 'js-yaml'
 
-import { dive, get, pinify, camelify } from '@voxgig/model'
+import { dive, get, pinify, camelify } from '@voxgig/util'
 
 
 import { indent } from '../util'

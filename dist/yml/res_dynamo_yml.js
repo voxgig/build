@@ -3,13 +3,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.res_dynamo_yml = void 0;
+exports.res_dynamo_yml = res_dynamo_yml;
 const js_yaml_1 = __importDefault(require("js-yaml"));
-const model_1 = require("@voxgig/model");
+const util_1 = require("@voxgig/util");
 const ent_1 = require("../shape/ent");
 async function res_dynamo_yml(model, spec) {
     var _a, _b, _c, _d;
-    let entries = (0, model_1.dive)(model.main.ent);
+    let entries = (0, util_1.dive)(model.main.ent);
     let ymlparts = [];
     for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
@@ -81,5 +81,4 @@ async function res_dynamo_yml(model, spec) {
     }
     return ymlparts.join('\n\n\n');
 }
-exports.res_dynamo_yml = res_dynamo_yml;
 //# sourceMappingURL=res_dynamo_yml.js.map

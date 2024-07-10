@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.indent = void 0;
+exports.indent = indent;
 function indent(text, size) {
     let lines = text.split('\n');
     const prefix = ' '.repeat(size);
@@ -8,5 +8,4 @@ function indent(text, size) {
     const tout = lines.join('');
     return tout;
 }
-exports.indent = indent;
 //# sourceMappingURL=util.js.map

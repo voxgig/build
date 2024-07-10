@@ -1,5 +1,5 @@
 declare const CloudConfShape: {
-    <V>(root?: V | undefined, ctx?: import("gubu").Context | undefined): V & {
+    <V>(root?: V | undefined, ctx?: import("gubu").Context): V & {
         aws: {
             region: string;
             accountid: string;
@@ -8,7 +8,7 @@ declare const CloudConfShape: {
             };
         };
     };
-    valid: <V_1>(root?: V_1 | undefined, ctx?: import("gubu").Context | undefined) => root is V_1 & {
+    valid: <V>(root?: V | undefined, ctx?: import("gubu").Context) => root is V & {
         aws: {
             region: string;
             accountid: string;
@@ -17,17 +17,17 @@ declare const CloudConfShape: {
             };
         };
     };
-    match(root?: any, ctx?: import("gubu").Context | undefined): boolean;
-    error(root?: any, ctx?: import("gubu").Context | undefined): {
+    match(root?: any, ctx?: import("gubu").Context): boolean;
+    error(root?: any, ctx?: import("gubu").Context): {
         gubu: boolean;
         code: string;
         prefix: string;
-        props: {
+        props: ({
             path: string;
             type: string;
             value: any;
-        }[];
-        desc: () => {
+        }[]);
+        desc: () => ({
             name: string;
             code: string;
             err: {
@@ -43,7 +43,7 @@ declare const CloudConfShape: {
                 u: any;
             }[];
             ctx: any;
-        };
+        });
         toJSON(): any & {
             err: any;
             name: string;
@@ -51,7 +51,7 @@ declare const CloudConfShape: {
         };
         name: string;
         message: string;
-        stack?: string | undefined;
+        stack?: string;
     }[];
     spec(): any;
     node(): import("gubu").Node<{
@@ -63,7 +63,8 @@ declare const CloudConfShape: {
             };
         };
     }>;
-    stringify(shape?: any): string;
+    stringify(...rest: any[]): string;
+    jsonify(): any;
     toString(): string;
     gubu: {
         gubu$: symbol;
@@ -71,23 +72,23 @@ declare const CloudConfShape: {
     };
 };
 declare const CoreConfShape: {
-    <V>(root?: V | undefined, ctx?: import("gubu").Context | undefined): V & {
+    <V>(root?: V | undefined, ctx?: import("gubu").Context): V & {
         name: StringConstructor;
     };
-    valid: <V_1>(root?: V_1 | undefined, ctx?: import("gubu").Context | undefined) => root is V_1 & {
+    valid: <V>(root?: V | undefined, ctx?: import("gubu").Context) => root is V & {
         name: StringConstructor;
     };
-    match(root?: any, ctx?: import("gubu").Context | undefined): boolean;
-    error(root?: any, ctx?: import("gubu").Context | undefined): {
+    match(root?: any, ctx?: import("gubu").Context): boolean;
+    error(root?: any, ctx?: import("gubu").Context): {
         gubu: boolean;
         code: string;
         prefix: string;
-        props: {
+        props: ({
             path: string;
             type: string;
             value: any;
-        }[];
-        desc: () => {
+        }[]);
+        desc: () => ({
             name: string;
             code: string;
             err: {
@@ -103,7 +104,7 @@ declare const CoreConfShape: {
                 u: any;
             }[];
             ctx: any;
-        };
+        });
         toJSON(): any & {
             err: any;
             name: string;
@@ -111,13 +112,14 @@ declare const CoreConfShape: {
         };
         name: string;
         message: string;
-        stack?: string | undefined;
+        stack?: string;
     }[];
     spec(): any;
     node(): import("gubu").Node<{
         name: StringConstructor;
     }>;
-    stringify(shape?: any): string;
+    stringify(...rest: any[]): string;
+    jsonify(): any;
     toString(): string;
     gubu: {
         gubu$: symbol;

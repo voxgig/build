@@ -3,7 +3,7 @@
 import Fs from 'fs'
 import Path from 'path'
 
-import { dive, get, pinify, camelify } from '@voxgig/model'
+import { dive, get, pinify, camelify } from '@voxgig/util'
 
 import { MsgMetaShape } from './shape/msg'
 import { CoreConfShape, CloudConfShape } from './shape/conf'

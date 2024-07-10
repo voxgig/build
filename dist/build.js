@@ -7,7 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EnvLambda = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-const model_1 = require("@voxgig/model");
+const util_1 = require("@voxgig/util");
 const msg_1 = require("./shape/msg");
 const conf_1 = require("./shape/conf");
 const res_dynamo_yml_1 = require("./yml/res_dynamo_yml");
@@ -16,7 +16,7 @@ const EnvLambda = {
     srv_yml: (model, spec) => {
         const core = (0, conf_1.CoreConfShape)(model.main.conf.core);
         let appname = core.name;
-        let AppName = (0, model_1.camelify)(appname);
+        let AppName = (0, util_1.camelify)(appname);
         let srv_yml_path = path_1.default.join(spec.folder, 'srv.yml');
         let srv_yml_prefix_path = path_1.default.join(spec.folder, 'srv.prefix.yml');
         let srv_yml_suffix_path = path_1.default.join(spec.folder, 'srv.suffix.yml');
@@ -194,24 +194,24 @@ ${events}
             //       }
             let prepare = '';
             let complete = '';
-            (0, model_1.dive)(model.main.msg.aim[name], 128).map((entry) => {
+            (0, util_1.dive)(model.main.msg.aim[name], 128).map((entry) => {
                 var _a, _b;
                 let path = ['aim', name, ...entry[0]];
                 let msgMeta = (0, msg_1.MsgMetaShape)(entry[1]);
-                let pin = (0, model_1.pinify)(path);
+                let pin = (0, util_1.pinify)(path);
                 if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
                     complete += `
   seneca.listen({type:'sqs',pin:'${pin}'})`;
                 }
             });
-            (0, model_1.dive)(model.main.srv[name].out, 128).map((entry) => {
+            (0, util_1.dive)(model.main.srv[name].out, 128).map((entry) => {
                 var _a, _b;
                 let path = entry[0];
-                let msgMetaMaybe = (0, model_1.get)(model.main.msg, path);
+                let msgMetaMaybe = (0, util_1.get)(model.main.msg, path);
                 // console.log(name, path, msgMetaMaybe)
                 if (msgMetaMaybe === null || msgMetaMaybe === void 0 ? void 0 : msgMetaMaybe.$) {
                     let msgMeta = (0, msg_1.MsgMetaShape)(msgMetaMaybe === null || msgMetaMaybe === void 0 ? void 0 : msgMetaMaybe.$);
-                    let pin = (0, model_1.pinify)(path);
+                    let pin = (0, util_1.pinify)(path);
                     if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
                         complete += `
   seneca.client({type:'sqs',pin:'${pin}'})`;
@@ -264,7 +264,7 @@ exports.handler = async (
     resources_yml: async (model, spec) => {
         const core = (0, conf_1.CoreConfShape)(model.main.conf.core);
         const appname = core.name;
-        const AppName = (0, model_1.camelify)(appname);
+        const AppName = (0, util_1.camelify)(appname);
         const cloud = (0, conf_1.CloudConfShape)(model.main.conf.cloud);
         const region = cloud.aws.region;
         const accountid = cloud.aws.accountid;
@@ -283,7 +283,7 @@ exports.handler = async (
             prefixContent +
                 await (0, res_dynamo_yml_1.res_dynamo_yml)(model, { dynamoResources, region, accountid });
         // content +=
-        let queueDefs = (0, model_1.dive)(model.main.msg, 128).map((entry) => {
+        let queueDefs = (0, util_1.dive)(model.main.msg, 128).map((entry) => {
             var _a, _b, _c;
             let path = entry[0];
             let msgMeta = (0, msg_1.MsgMetaShape)(entry[1]);

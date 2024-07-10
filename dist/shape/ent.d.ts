@@ -1,5 +1,5 @@
 declare const EntShape: {
-    <V>(root?: V | undefined, ctx?: import("gubu").Context | undefined): V & {
+    <V>(root?: V | undefined, ctx?: import("gubu").Context): V & {
         id: {
             field: string;
         };
@@ -20,7 +20,7 @@ declare const EntShape: {
         }>;
         custom: import("gubu").Node<StringConstructor>;
     };
-    valid: <V_1>(root?: V_1 | undefined, ctx?: import("gubu").Context | undefined) => root is V_1 & {
+    valid: <V>(root?: V | undefined, ctx?: import("gubu").Context) => root is V & {
         id: {
             field: string;
         };
@@ -41,17 +41,17 @@ declare const EntShape: {
         }>;
         custom: import("gubu").Node<StringConstructor>;
     };
-    match(root?: any, ctx?: import("gubu").Context | undefined): boolean;
-    error(root?: any, ctx?: import("gubu").Context | undefined): {
+    match(root?: any, ctx?: import("gubu").Context): boolean;
+    error(root?: any, ctx?: import("gubu").Context): {
         gubu: boolean;
         code: string;
         prefix: string;
-        props: {
+        props: ({
             path: string;
             type: string;
             value: any;
-        }[];
-        desc: () => {
+        }[]);
+        desc: () => ({
             name: string;
             code: string;
             err: {
@@ -67,7 +67,7 @@ declare const EntShape: {
                 u: any;
             }[];
             ctx: any;
-        };
+        });
         toJSON(): any & {
             err: any;
             name: string;
@@ -75,7 +75,7 @@ declare const EntShape: {
         };
         name: string;
         message: string;
-        stack?: string | undefined;
+        stack?: string;
     }[];
     spec(): any;
     node(): import("gubu").Node<{
@@ -99,7 +99,8 @@ declare const EntShape: {
         }>;
         custom: import("gubu").Node<StringConstructor>;
     }>;
-    stringify(shape?: any): string;
+    stringify(...rest: any[]): string;
+    jsonify(): any;
     toString(): string;
     gubu: {
         gubu$: symbol;
