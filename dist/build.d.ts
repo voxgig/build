@@ -16,4 +16,4 @@ declare const EnvLambda: {
         custom: string;
     }) => Promise<void>;
 };
-export { EnvLambda };
+export { EnvLambda, };

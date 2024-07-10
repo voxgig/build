@@ -5,6 +5,7 @@ declare const EntShape: {
         };
         title: string;
         field: import("gubu").Node<{}>;
+        valid: import("gubu").Node<{}>;
         index: import("gubu").Node<{}>;
         resource: import("gubu").Node<{
             name: string;
@@ -25,6 +26,7 @@ declare const EntShape: {
         };
         title: string;
         field: import("gubu").Node<{}>;
+        valid: import("gubu").Node<{}>;
         index: import("gubu").Node<{}>;
         resource: import("gubu").Node<{
             name: string;
@@ -82,6 +84,7 @@ declare const EntShape: {
         };
         title: string;
         field: import("gubu").Node<{}>;
+        valid: import("gubu").Node<{}>;
         index: import("gubu").Node<{}>;
         resource: import("gubu").Node<{
             name: string;

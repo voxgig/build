@@ -490,7 +490,7 @@ function TM(str: string) {
 
 
 export {
-  EnvLambda
+  EnvLambda,
 }
 
 
