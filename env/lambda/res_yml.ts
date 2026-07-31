@@ -13,14 +13,18 @@ import { CoreConfShape, CloudConfShape } from '../../shape/conf'
 
 import { res_dynamo_yml } from '../../yml/res_dynamo_yml'
 
-import { generate } from './generate'
+import { generate, loadFragment, renderFragment } from './generate'
 
 
 const resources_yml = async (model: any, spec: {
   folder: string,
   filename: string
   custom: string,
+  tm?: string
 }) => {
+
+  const queueFrag = loadFragment('res.queue.yml.frag', spec)
+  const roleFrag = loadFragment('res.role.yml.frag', spec)
 
   const core = CoreConfShape(model.main.conf.core)
 
@@ -89,12 +93,11 @@ const resources_yml = async (model: any, spec: {
 
       let queueTimeout = queue.timeout || 30
 
-      return `${resname}:
-  Type: "AWS::SQS::Queue"
-  Properties:
-    QueueName: '${queueName}'
-    VisibilityTimeout: ${queueTimeout}
-`
+      return renderFragment(queueFrag, {
+        resname,
+        queueName,
+        queueTimeout,
+      })
     }
     return ''
   }).filter(n => '' !== n).join('')
@@ -110,41 +113,11 @@ const resources_yml = async (model: any, spec: {
 
 
 
-  content += `
-Basic${AppName}LambdaRole:
-  Type: AWS::IAM::Role
-  Properties:
-    RoleName: Basic${AppName}LambdaRole\${self:custom.index.BasicLambdaRole,"01"}
-    AssumeRolePolicyDocument:
-      Version: '2012-10-17'
-      Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-              - lambda.amazonaws.com
-              - events.amazonaws.com
-              - ecs-tasks.amazonaws.com
-          Action: sts:AssumeRole
-    Policies:
-      - PolicyName: LambdaServiceAccess
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:DescribeTable
-                - dynamodb:GetItem
-                - dynamodb:PutItem
-                - dynamodb:UpdateItem
-                - dynamodb:DeleteItem
-                - dynamodb:Query
-                - dynamodb:Scan
-              Resource: 
-${dynamoResources.map(r => '                - ' + r.arn).join('\n')}
-${customLambdaPolicyStatementContent}
-    ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-`
+  content += renderFragment(roleFrag, {
+    AppName,
+    dynamoArns: dynamoResources.map(r => '                - ' + r.arn).join('\n'),
+    customPolicy: customLambdaPolicyStatementContent,
+  })
 
 
 

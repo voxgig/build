@@ -16,6 +16,7 @@ const srv_yml = async (model, spec) => {
     const core = (0, conf_1.CoreConfShape)(model.main.conf.core);
     let appname = core.name;
     let AppName = (0, util_1.camelify)(appname);
+    const frag = (0, generate_1.loadFragment)('srv.yml.frag', spec);
     let srv_yml_prefix_path = path_1.default.join(spec.folder, 'srv.prefix.yml');
     let srv_yml_suffix_path = path_1.default.join(spec.folder, 'srv.suffix.yml');
     let prefixContent = fs_1.default.existsSync(srv_yml_prefix_path) ?
@@ -37,13 +38,6 @@ const srv_yml = async (model, spec) => {
             if ((_c = (_b = (_a = srv.gen) === null || _a === void 0 ? void 0 : _a.custom) === null || _b === void 0 ? void 0 : _b.lambda) === null || _c === void 0 ? void 0 : _c.srv_yml) {
                 return srv.gen.custom.lambda.srv_yml;
             }
-            // TODO: this should be a JSON structure exported as YAML
-            let srvyml = `${name}:
-  handler: ${handler.path.prefix}${name}${handler.path.suffix}
-  role: Basic${AppName}LambdaRole
-  timeout: ${lambda.timeout}
-  memorySize: ${lambda.memory || 1024}
-`;
             const web = srv.api.web;
             let events = '';
             let onEvents = srv.on;
@@ -148,13 +142,21 @@ ${corsprops}
                     }
                 }
             }
+            let eventsBlock = '';
             if ('' !== events) {
-                srvyml += (0, generate_1.TM)(`
+                eventsBlock = (0, generate_1.TM)(`
   events:
 ${events}
 `);
             }
-            return srvyml;
+            return (0, generate_1.renderFragment)(frag, {
+                name,
+                handler: handler.path.prefix + name + handler.path.suffix,
+                AppName,
+                timeout: lambda.timeout,
+                memory: lambda.memory || 1024,
+                events: eventsBlock,
+            });
         }).join('\n\n\n') +
         suffixContent;
     await (0, generate_1.generate)(spec.folder, [{ name: 'srv.yml', content }]);

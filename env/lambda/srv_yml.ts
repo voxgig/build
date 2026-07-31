@@ -10,17 +10,20 @@ import { camelify } from '@voxgig/util'
 
 import { CoreConfShape } from '../../shape/conf'
 
-import { generate, empty, TM } from './generate'
+import { generate, empty, TM, loadFragment, renderFragment } from './generate'
 
 
 const srv_yml = async (model: any, spec: {
   folder: string
+  tm?: string
 }) => {
 
   const core = CoreConfShape(model.main.conf.core)
 
   let appname = core.name
   let AppName = camelify(appname)
+
+  const frag = loadFragment('srv.yml.frag', spec)
 
   let srv_yml_prefix_path = Path.join(spec.folder, 'srv.prefix.yml')
   let srv_yml_suffix_path = Path.join(spec.folder, 'srv.suffix.yml')
@@ -49,13 +52,6 @@ const srv_yml = async (model: any, spec: {
           return srv.gen.custom.lambda.srv_yml
         }
 
-        // TODO: this should be a JSON structure exported as YAML
-        let srvyml = `${name}:
-  handler: ${handler.path.prefix}${name}${handler.path.suffix}
-  role: Basic${AppName}LambdaRole
-  timeout: ${lambda.timeout}
-  memorySize: ${lambda.memory || 1024}
-`
         const web = srv.api.web
 
         let events = ''
@@ -177,15 +173,22 @@ ${corsprops}
 
 
 
+        let eventsBlock = ''
         if ('' !== events) {
-          srvyml += TM(`
+          eventsBlock = TM(`
   events:
 ${events}
 `)
         }
 
-
-        return srvyml
+        return renderFragment(frag, {
+          name,
+          handler: handler.path.prefix + name + handler.path.suffix,
+          AppName,
+          timeout: lambda.timeout,
+          memory: lambda.memory || 1024,
+          events: eventsBlock,
+        })
       }).join('\n\n\n') +
     suffixContent
 

@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/build",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "main": "dist/build.js",
   "type": "commonjs",
   "types": "dist/build.d.ts",
@@ -42,7 +42,9 @@
     "lib",
     "dist",
     "bin",
-    "LICENSE"
+    "LICENSE",
+    "tm",
+    "env"
   ],
   "dependencies": {
     "@voxgig/util": "0.5.4",

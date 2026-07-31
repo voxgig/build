@@ -10,7 +10,7 @@ const generate_1 = require("./generate");
 // Only create if does not exist
 const srv_handler = async (model, spec) => {
     let lang = spec.lang || 'js';
-    let TS = 'ts' === lang;
+    const frag = (0, generate_1.loadFragment)('srv_handler.' + lang + '.frag', spec);
     const files = [];
     Object
         .entries(model.main.srv)
@@ -82,26 +82,15 @@ const srv_handler = async (model, spec) => {
                 }
             });
         });
-        let content = TS ? `import { getSeneca } from '${envFolder}/${start}'`
-            :
-                `const getSeneca = require('${envFolder}/${start}')`;
-        content += `
-
-function complete(seneca: any) {${complete}
-}
-
-exports.handler = async (
-  event${TS ? ':any' : ''},
-  context${TS ? ':any' : ''}
-) => {
-  ${modify}
-  let seneca = await getSeneca('${name}', complete)
-  ${prepare}
-  let handler = seneca.export('gateway-lambda/${handler}')
-  let res = await handler(event, context)
-  return res
-}
-`;
+        const content = (0, generate_1.renderFragment)(frag, {
+            envFolder,
+            start,
+            name,
+            complete,
+            modify,
+            prepare,
+            handler,
+        });
         files.push({ name: name + '.' + lang, content });
     });
     if (0 < files.length) {

@@ -10,7 +10,8 @@
     "strict": true,
     "target": "ES2019",
     "declaration": true,
-    "declarationDir": "dist"
+    "declarationDir": "dist",
+    "skipLibCheck": true
   },
   "exclude": [
     "node_modules",

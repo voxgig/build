@@ -15,6 +15,8 @@ const conf_1 = require("../../shape/conf");
 const res_dynamo_yml_1 = require("../../yml/res_dynamo_yml");
 const generate_1 = require("./generate");
 const resources_yml = async (model, spec) => {
+    const queueFrag = (0, generate_1.loadFragment)('res.queue.yml.frag', spec);
+    const roleFrag = (0, generate_1.loadFragment)('res.role.yml.frag', spec);
     const core = (0, conf_1.CoreConfShape)(model.main.conf.core);
     const appname = core.name;
     const AppName = (0, util_1.camelify)(appname);
@@ -58,12 +60,11 @@ const resources_yml = async (model, spec) => {
                 (queue_suffix || '') +
                 (stage_suffix || '');
             let queueTimeout = queue.timeout || 30;
-            return `${resname}:
-  Type: "AWS::SQS::Queue"
-  Properties:
-    QueueName: '${queueName}'
-    VisibilityTimeout: ${queueTimeout}
-`;
+            return (0, generate_1.renderFragment)(queueFrag, {
+                resname,
+                queueName,
+                queueTimeout,
+            });
         }
         return '';
     }).filter(n => '' !== n).join('');
@@ -72,41 +73,11 @@ const resources_yml = async (model, spec) => {
     let customLambdaPolicyStatementPath = path_1.default.join(spec.folder, 'res.lambda.policy.statements.yml');
     let customLambdaPolicyStatementContent = fs_1.default.existsSync(customLambdaPolicyStatementPath) ?
         fs_1.default.readFileSync(customLambdaPolicyStatementPath) : '';
-    content += `
-Basic${AppName}LambdaRole:
-  Type: AWS::IAM::Role
-  Properties:
-    RoleName: Basic${AppName}LambdaRole\${self:custom.index.BasicLambdaRole,"01"}
-    AssumeRolePolicyDocument:
-      Version: '2012-10-17'
-      Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-              - lambda.amazonaws.com
-              - events.amazonaws.com
-              - ecs-tasks.amazonaws.com
-          Action: sts:AssumeRole
-    Policies:
-      - PolicyName: LambdaServiceAccess
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:DescribeTable
-                - dynamodb:GetItem
-                - dynamodb:PutItem
-                - dynamodb:UpdateItem
-                - dynamodb:DeleteItem
-                - dynamodb:Query
-                - dynamodb:Scan
-              Resource: 
-${dynamoResources.map(r => '                - ' + r.arn).join('\n')}
-${customLambdaPolicyStatementContent}
-    ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-`;
+    content += (0, generate_1.renderFragment)(roleFrag, {
+        AppName,
+        dynamoArns: dynamoResources.map(r => '                - ' + r.arn).join('\n'),
+        customPolicy: customLambdaPolicyStatementContent,
+    });
     if (spec.custom) {
         content = fs_1.default.readFileSync(spec.custom).toString() + '\n\n\n' + content;
     }

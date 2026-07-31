@@ -63,3 +63,41 @@ describe('envlambda-jostraca', () => {
   })
 
 })
+
+
+describe('fragment-shadowing', () => {
+
+  test('project-tm-overrides-package-fragment', async () => {
+    const out = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'vb-shadow-'))
+    const tm = Path.join(out, 'tm')
+    Fs.mkdirSync(tm, { recursive: true })
+
+    // Shadow the service fragment with a custom shape.
+    Fs.writeFileSync(Path.join(tm, 'srv.yml.frag'),
+      '# custom $$name$$ (memory $$memory$$)\n$$events$$\n')
+
+    const gen = Path.join(out, 'gen')
+    await EnvLambda.srv_yml(model, { folder: gen, tm } as any)
+
+    const srv = Fs.readFileSync(Path.join(gen, 'srv.yml'), 'utf8')
+    expect(srv).toContain('# custom alpha (memory 2048)')
+    expect(srv).not.toContain('handler:')
+
+    // Un-shadowed fragments still come from the package.
+    const gen2 = Path.join(out, 'gen2')
+    await EnvLambda.srv_yml(model, { folder: gen2 } as any)
+    expect(Fs.readFileSync(Path.join(gen2, 'srv.yml'), 'utf8'))
+      .toContain('handler: dist/handler/lambda/alpha.handler')
+  })
+
+
+  test('fragment-listing', () => {
+    const { Fragments } = require('../build')
+    const names = Fragments.list()
+    expect(names).toContain('srv.yml.frag')
+    expect(names).toContain('srv_handler.ts.frag')
+    expect(names).toContain('res.role.yml.frag')
+    expect(names).toContain('res.queue.yml.frag')
+  })
+
+})

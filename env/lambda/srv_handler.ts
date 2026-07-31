@@ -7,7 +7,7 @@ import { dive, get, pinify } from '@voxgig/util'
 
 import { MsgMetaShape } from '../../shape/msg'
 
-import { generate } from './generate'
+import { generate, loadFragment, renderFragment } from './generate'
 
 
 // Only create if does not exist
@@ -18,9 +18,11 @@ const srv_handler = async (model: any, spec: {
     folder: string
   }
   lang?: string
+  tm?: string
 }) => {
   let lang = spec.lang || 'js'
-  let TS = 'ts' === lang
+
+  const frag = loadFragment('srv_handler.' + lang + '.frag', spec)
 
   const files: { name: string, content: string }[] = []
 
@@ -106,28 +108,15 @@ const srv_handler = async (model: any, spec: {
       })
 
 
-      let content =
-        TS ? `import { getSeneca } from '${envFolder}/${start}'`
-          :
-          `const getSeneca = require('${envFolder}/${start}')`
-
-      content += `
-
-function complete(seneca: any) {${complete}
-}
-
-exports.handler = async (
-  event${TS ? ':any' : ''},
-  context${TS ? ':any' : ''}
-) => {
-  ${modify}
-  let seneca = await getSeneca('${name}', complete)
-  ${prepare}
-  let handler = seneca.export('gateway-lambda/${handler}')
-  let res = await handler(event, context)
-  return res
-}
-`
+      const content = renderFragment(frag, {
+        envFolder,
+        start,
+        name,
+        complete,
+        modify,
+        prepare,
+        handler,
+      })
 
       files.push({ name: name + '.' + lang, content })
     })
