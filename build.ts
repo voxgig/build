@@ -17,6 +17,8 @@ import { srv_yml } from './env/lambda/srv_yml'
 import { srv_handler } from './env/lambda/srv_handler'
 import { resources_yml } from './env/lambda/res_yml'
 
+import { env_gen, ENV_FILES, ENV_SRC, KINDS as ENV_KINDS } from './env/env_gen'
+
 import {
   generate, empty, TM,
   loadFragment, renderFragment, listFragments, PKG_TM,
@@ -34,6 +36,16 @@ const EnvLambda = {
 }
 
 
+// Per-environment deployment artifacts (gen/env/<name>/), driven by the
+// model's `main: env:` declarations. See env/env_gen.ts.
+const EnvGen = {
+  env_gen,
+  files: ENV_FILES,
+  srcfiles: ENV_SRC,
+  kinds: ENV_KINDS,
+}
+
+
 // Fragment tooling (used by voxgig-system template list/eject/diff, and
 // available to project code).
 const Fragments = {
@@ -46,6 +58,7 @@ const Fragments = {
 
 export {
   EnvLambda,
+  EnvGen,
   Fragments,
 
   // Building blocks for ejected project templates (src/gen/<name>.ts

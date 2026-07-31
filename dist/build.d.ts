@@ -23,10 +23,27 @@ declare const EnvLambda: {
         tm?: string;
     }) => Promise<void>;
 };
+declare const EnvGen: {
+    env_gen: (model: any, spec: {
+        folder: string;
+        tm?: string;
+        src?: string;
+    }) => Promise<void>;
+    files: Record<string, {
+        frag: string;
+        out: string;
+    }[]>;
+    srcfiles: Record<string, {
+        frag: string;
+        dir: string;
+        out: string;
+    }[]>;
+    kinds: string[];
+};
 declare const Fragments: {
     load: typeof loadFragment;
     render: typeof renderFragment;
     list: typeof listFragments;
     folder: string;
 };
-export { EnvLambda, Fragments, generate, empty, TM, loadFragment, renderFragment, MsgMetaShape, CoreConfShape, CloudConfShape, res_dynamo_yml, };
+export { EnvLambda, EnvGen, Fragments, generate, empty, TM, loadFragment, renderFragment, MsgMetaShape, CoreConfShape, CloudConfShape, res_dynamo_yml, };

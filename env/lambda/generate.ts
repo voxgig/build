@@ -17,22 +17,28 @@ import { Jostraca, Project, File, Content } from 'jostraca'
 // the project's build actions). The fragment file's final newline is
 // dropped at load, so slot values fully control trailing bytes.
 
-// Package tm folder: compiled code lives at <pkg>/dist/env/lambda (three
+// Package tm root: compiled code lives at <pkg>/dist/env/lambda (three
 // levels down), but test transforms run the source at <pkg>/env/lambda
-// (two levels down) - probe both.
-const PKG_TM = [
-  Path.join(__dirname, '..', '..', '..', 'tm', 'lambda'),
-  Path.join(__dirname, '..', '..', 'tm', 'lambda'),
+// (two levels down) - probe both. Areas (tm/<area>/...) group fragment
+// sets: 'lambda' (the EnvLambda templates) and 'env' (per-environment
+// deployment templates).
+const PKG_TM_ROOT = [
+  Path.join(__dirname, '..', '..', '..', 'tm'),
+  Path.join(__dirname, '..', '..', 'tm'),
 ].find((p) => Fs.existsSync(p)) ||
-  Path.join(__dirname, '..', '..', '..', 'tm', 'lambda')
+  Path.join(__dirname, '..', '..', '..', 'tm')
+
+const PKG_TM = Path.join(PKG_TM_ROOT, 'lambda')
 
 
-function loadFragment(name: string, spec?: { tm?: string }): string {
+function loadFragment(
+  name: string, spec?: { tm?: string }, area: string = 'lambda'
+): string {
   const candidates = []
   if (spec?.tm) {
     candidates.push(Path.join(spec.tm, name))
   }
-  candidates.push(Path.join(PKG_TM, name))
+  candidates.push(Path.join(PKG_TM_ROOT, area, name))
 
   for (const c of candidates) {
     if (Fs.existsSync(c)) {
@@ -102,4 +108,5 @@ export {
   renderFragment,
   listFragments,
   PKG_TM,
+  PKG_TM_ROOT,
 }

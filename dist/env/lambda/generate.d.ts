@@ -1,7 +1,8 @@
+declare const PKG_TM_ROOT: string;
 declare const PKG_TM: string;
 declare function loadFragment(name: string, spec?: {
     tm?: string;
-}): string;
+}, area?: string): string;
 declare function renderFragment(src: string, slots: Record<string, any>): string;
 declare function listFragments(): string[];
 declare function generate(folder: string, files: {
@@ -10,4 +11,4 @@ declare function generate(folder: string, files: {
 }[]): Promise<void>;
 declare function empty(o: any): boolean;
 declare function TM(str: string): string;
-export { generate, empty, TM, loadFragment, renderFragment, listFragments, PKG_TM, };
+export { generate, empty, TM, loadFragment, renderFragment, listFragments, PKG_TM, PKG_TM_ROOT, };

@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PKG_TM = void 0;
+exports.PKG_TM_ROOT = exports.PKG_TM = void 0;
 exports.generate = generate;
 exports.empty = empty;
 exports.TM = TM;
@@ -23,21 +23,25 @@ const jostraca_1 = require("jostraca");
 // placing a same-named file in its own tm folder (passed as spec.tm by
 // the project's build actions). The fragment file's final newline is
 // dropped at load, so slot values fully control trailing bytes.
-// Package tm folder: compiled code lives at <pkg>/dist/env/lambda (three
+// Package tm root: compiled code lives at <pkg>/dist/env/lambda (three
 // levels down), but test transforms run the source at <pkg>/env/lambda
-// (two levels down) - probe both.
-const PKG_TM = [
-    path_1.default.join(__dirname, '..', '..', '..', 'tm', 'lambda'),
-    path_1.default.join(__dirname, '..', '..', 'tm', 'lambda'),
+// (two levels down) - probe both. Areas (tm/<area>/...) group fragment
+// sets: 'lambda' (the EnvLambda templates) and 'env' (per-environment
+// deployment templates).
+const PKG_TM_ROOT = [
+    path_1.default.join(__dirname, '..', '..', '..', 'tm'),
+    path_1.default.join(__dirname, '..', '..', 'tm'),
 ].find((p) => fs_1.default.existsSync(p)) ||
-    path_1.default.join(__dirname, '..', '..', '..', 'tm', 'lambda');
+    path_1.default.join(__dirname, '..', '..', '..', 'tm');
+exports.PKG_TM_ROOT = PKG_TM_ROOT;
+const PKG_TM = path_1.default.join(PKG_TM_ROOT, 'lambda');
 exports.PKG_TM = PKG_TM;
-function loadFragment(name, spec) {
+function loadFragment(name, spec, area = 'lambda') {
     const candidates = [];
     if (spec === null || spec === void 0 ? void 0 : spec.tm) {
         candidates.push(path_1.default.join(spec.tm, name));
     }
-    candidates.push(path_1.default.join(PKG_TM, name));
+    candidates.push(path_1.default.join(PKG_TM_ROOT, area, name));
     for (const c of candidates) {
         if (fs_1.default.existsSync(c)) {
             let src = fs_1.default.readFileSync(c, 'utf8');
