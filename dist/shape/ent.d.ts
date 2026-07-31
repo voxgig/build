@@ -68,7 +68,7 @@ declare const EntShape: {
             }[];
             ctx: any;
         });
-        toJSON(): any & {
+        toJSON(): /*elided*/ any & {
             err: any;
             name: string;
             message: string;

@@ -1,0 +1,75 @@
+alpha:
+  handler: dist/handler/lambda/alpha.handler
+  role: BasicRichLambdaRole
+  timeout: 55
+  memorySize: 2048
+  events:
+    - sqs:
+        arn:
+          Fn::GetAtt:
+            - QueueAimAlphaRunJob
+            - Arn
+        batchSize: 1
+    - s3:
+        bucket: bkt1
+        event: s3:ObjectCreated:*
+        existing: true
+        rules:
+          - prefix: in/
+          - suffix: .txt
+
+    - schedule:
+        rate: rate(5 minutes)
+        input:
+          msg: {"aim":"alpha","run":"job"} 
+
+
+
+
+beta:
+  handler: dist/handler/lambda/beta.handler
+  role: BasicRichLambdaRole
+  timeout: 30
+  memorySize: 1024
+  events:
+    - http:
+        path: "/api/public/beta"
+        method: POST
+        cors: 
+          headers: ['A','B']
+          maxAge: 3
+
+    - http:
+        path: "/api/public/beta"
+        method: GET
+        cors: 
+          headers: ['A','B']
+          maxAge: 3
+
+
+
+
+
+gamma:
+  handler: dist/handler/lambda/gamma.handler
+  role: BasicRichLambdaRole
+  timeout: 10
+  memorySize: 1024
+  events:
+    - httpApi:
+        path: "/api/w/gamma"
+        method: POST
+
+
+
+
+delta:
+  custom: override
+
+
+
+customkind:
+  handler: p/customkind.h
+  role: BasicRichLambdaRole
+  timeout: 5
+  memorySize: 1024

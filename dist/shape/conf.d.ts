@@ -44,7 +44,7 @@ declare const CloudConfShape: {
             }[];
             ctx: any;
         });
-        toJSON(): any & {
+        toJSON(): /*elided*/ any & {
             err: any;
             name: string;
             message: string;
@@ -105,7 +105,7 @@ declare const CoreConfShape: {
             }[];
             ctx: any;
         });
-        toJSON(): any & {
+        toJSON(): /*elided*/ any & {
             err: any;
             name: string;
             message: string;

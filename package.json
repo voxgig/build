@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/build",
-  "version": "3.1.0",
+  "version": "4.0.0",
   "main": "dist/build.js",
   "type": "commonjs",
   "types": "dist/build.d.ts",
@@ -28,7 +28,13 @@
     "reset": "npm run clean && npm i && npm run build && npm test",
     "repo-tag": "REPO_VERSION=`node -e \"console.log(require('./package').version)\"` && echo TAG: v$REPO_VERSION && git commit -a -m v$REPO_VERSION && git push && git tag v$REPO_VERSION && git push --tags;",
     "repo-publish": "npm run clean && npm i && npm run repo-publish-quick",
-    "repo-publish-quick": "npm run build && npm run test && npm run repo-tag && npm publish --registry https://registry.npmjs.org --access=public"
+    "repo-publish-quick": "npm run build && npm run test && npm run repo-tag && npm run repo-stage-publish",
+    "repo-stage-publish": "aql vault exec --for=npm vxg:pub01 -- npm stage publish --registry https://registry.npmjs.org --access=public",
+    "repo-stage-publish-dry": "aql vault exec --dry-run --for=npm vxg:pub01 -- npm stage publish --registry https://registry.npmjs.org --access=public --dry-run",
+    "repo-stage-list": "aql vault exec --for=npm vxg:pub01 -- npm stage list",
+    "repo-stage-view": "aql vault exec --for=npm vxg:pub01 -- npm stage view",
+    "repo-stage-approve": "aql vault exec --for=npm vxg:pub01 -- npm stage approve",
+    "repo-stage-reject": "aql vault exec --for=npm vxg:pub01 -- npm stage reject"
   },
   "license": "MIT",
   "files": [
@@ -39,13 +45,15 @@
     "LICENSE"
   ],
   "dependencies": {
-    "gubu": "^8.0.2",
+    "@voxgig/util": "0.5.4",
+    "gubu": "8.0.2",
+    "jostraca": "0.31.2",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "20.14.10",
+    "@types/node": "26.1.2",
     "@voxgig/model": "^2.1.0",
     "@voxgig/system": "^1.2.0",
     "esbuild": "^0.23.0",

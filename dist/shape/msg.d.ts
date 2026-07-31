@@ -48,7 +48,7 @@ declare const MsgMetaShape: {
             }[];
             ctx: any;
         });
-        toJSON(): any & {
+        toJSON(): /*elided*/ any & {
             err: any;
             name: string;
             message: string;

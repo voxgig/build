@@ -1,0 +1,71 @@
+# START
+TableQazFoo:
+  Type: AWS::DynamoDB::Table
+  DeletionPolicy: Retain
+  Properties:
+    TableName: QazFoo.${self:provider.stage,"dev"}
+    BillingMode: PAY_PER_REQUEST
+    PointInTimeRecoverySpecification:
+      PointInTimeRecoveryEnabled: 'true'
+    DeletionProtectionEnabled: true
+    AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+    KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+    GlobalSecondaryIndexes:
+      - IndexName: lot
+        KeySchema:
+          - AttributeName: lot
+            KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+
+
+QueueAimAlphaRunJob:
+  Type: "AWS::SQS::Queue"
+  Properties:
+    QueueName: 'aim_alpha-run_job-01-${self:provider.stage,"dev"}'
+    VisibilityTimeout: 99
+QueueAimBetaPushThing:
+  Type: "AWS::SQS::Queue"
+  Properties:
+    QueueName: 'aim_beta-push_thing-q2-${self:provider.stage,"dev"}'
+    VisibilityTimeout: 44
+
+BasicRichLambdaRole:
+  Type: AWS::IAM::Role
+  Properties:
+    RoleName: BasicRichLambdaRole${self:custom.index.BasicLambdaRole,"01"}
+    AssumeRolePolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+              - events.amazonaws.com
+              - ecs-tasks.amazonaws.com
+          Action: sts:AssumeRole
+    Policies:
+      - PolicyName: LambdaServiceAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:DescribeTable
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:Scan
+              Resource: 
+                - arn:aws:dynamodb:eu-west-1:ACC123:table/QazFoo.${self:provider.stage,"dev"}
+
+    ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+# END
