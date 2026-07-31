@@ -1,16 +1,13 @@
 {
   "sys": {
-    "shape": {
-      "builder": {
-        "x": 1
-      }
-    },
     "model": {
-      "build": {},
-      "builders": {
+      "action": {
         "srv_yml": {
           "load": "build/srv_yml"
         }
+      },
+      "order": {
+        "action": "srv_yml"
       }
     }
   }

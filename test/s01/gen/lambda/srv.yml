@@ -1,7 +1,12 @@
 mercury:
   handler: /src/handlers/mercury.handler
+  role: BasicS01LambdaRole
+  timeout: 30
+  memorySize: 1024
   events:
     - http:
         path: "/api/general/mercury"
         method: POST
         cors: true
+
+

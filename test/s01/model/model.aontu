@@ -1,8 +1,8 @@
 
-sys: @"../../../node_modules/@voxgig/model/model/sys.jsonic"
+@"@voxgig/model/model/sys.aontu"
 
 
-main: @"main.jsonic"
+main: @"main.aontu"
 
 
 main: msg: {
@@ -23,6 +23,7 @@ main: srv: mercury: {
     path: {
       prefix: '/api/'
       area: 'general/'
+      suffix: ''
     }
     cors: active: true
   }
@@ -31,4 +32,11 @@ main: srv: mercury: {
 
 main: srv: venus: {
   in: aim: bar: {}
+}
+
+
+main: conf: core: {
+  name: 's01'
+  short: 's01'
+  token: 's01-auth'
 }

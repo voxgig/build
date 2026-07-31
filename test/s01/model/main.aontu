@@ -1,0 +1,2 @@
+
+srv: &: $.sys.shape.srv.std_ts

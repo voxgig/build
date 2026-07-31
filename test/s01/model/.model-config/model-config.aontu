@@ -1,0 +1,10 @@
+
+@"@voxgig/model/model/.model-config/model-config.aontu"
+
+sys: model: action: {
+  srv_yml: {
+    load: 'build/srv_yml'
+  }
+}
+
+sys: model: order: action: 'srv_yml'

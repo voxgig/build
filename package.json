@@ -18,7 +18,7 @@
     "url": "git://github.com/voxgig/build.git"
   },
   "scripts": {
-    "model-s01": "voxgig-model test/s01/model/model.jsonic",
+    "model-s01": "voxgig-model test/s01/model/model.aontu",
     "test": "jest --coverage",
     "test-some": "jest -t",
     "test-watch": "jest --coverage --watchAll",
@@ -54,7 +54,7 @@
     "@types/jest": "^29.5.12",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "26.1.2",
-    "@voxgig/model": "^2.1.0",
+    "@voxgig/model": "^9.2.4",
     "@voxgig/system": "^1.2.0",
     "esbuild": "^0.23.0",
     "jest": "^29.7.0",

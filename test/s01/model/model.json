@@ -1,70 +1,43 @@
 {
-  "sys": {
-    "shape": {
-      "srv": {
-        "in": {},
-        "deps": {},
+  "main": {
+    "conf": {
+      "core": {
+        "name": "s01",
+        "short": "s01",
+        "token": "s01-auth"
+      }
+    },
+    "msg": {
+      "aim": {
+        "bar": {
+          "element": {
+            "hydrogen": {}
+          }
+        },
+        "foo": {
+          "color": {
+            "red": {}
+          }
+        }
+      }
+    },
+    "srv": {
+      "mercury": {
         "api": {
           "web": {
             "active": true,
-            "path": {
-              "prefix": "/",
-              "area": ""
+            "cors": {
+              "active": true
             },
             "method": "POST",
-            "cors": {
-              "active": false
+            "path": {
+              "area": "general/",
+              "prefix": "/api/",
+              "suffix": ""
             }
           }
         },
-        "env": {
-          "lambda": {
-            "active": false,
-            "handler": {
-              "path": {
-                "prefix": "src/",
-                "suffix": ".handler"
-              }
-            }
-          }
-        }
-      },
-      "app": {},
-      "part": {
-        "img": {}
-      }
-    },
-    "app": {
-      "web": {
-        "basic": {
-          "name": "basic",
-          "layout": "BasicAdmin",
-          "parts": {
-            "head": {
-              "part": "BasicHead"
-            },
-            "side": {
-              "part": "BasicSide"
-            },
-            "main": {
-              "part": "BasicMain"
-            },
-            "foot": {
-              "part": "BasicFoot"
-            }
-          }
-        }
-      }
-    }
-  },
-  "main": {
-    "srv": {
-      "mercury": {
-        "in": {
-          "aim": {
-            "foo": {}
-          }
-        },
+        "deps": {},
         "env": {
           "lambda": {
             "active": true,
@@ -73,70 +46,53 @@
                 "prefix": "/src/handlers/",
                 "suffix": ".handler"
               }
-            }
+            },
+            "kind": "standard",
+            "timeout": 30
           }
         },
-        "api": {
-          "web": {
-            "path": {
-              "prefix": "/api/",
-              "area": "general/"
-            },
-            "cors": {
-              "active": true
-            },
-            "active": true,
-            "method": "POST"
-          }
-        },
-        "deps": {}
-      },
-      "venus": {
         "in": {
           "aim": {
-            "bar": {}
+            "foo": {}
+          }
+        },
+        "out": {}
+      },
+      "venus": {
+        "api": {
+          "web": {
+            "active": true,
+            "cors": {
+              "active": false
+            },
+            "method": "POST",
+            "path": {
+              "prefix": "/api/"
+            }
           }
         },
         "deps": {},
-        "api": {
-          "web": {
-            "active": true,
-            "path": {
-              "prefix": "/",
-              "area": ""
-            },
-            "method": "POST",
-            "cors": {
-              "active": false
-            }
-          }
-        },
         "env": {
           "lambda": {
             "active": false,
             "handler": {
               "path": {
-                "prefix": "src/",
+                "prefix": "dist/handler/lambda/",
                 "suffix": ".handler"
               }
-            }
-          }
-        }
-      }
-    },
-    "msg": {
-      "aim": {
-        "foo": {
-          "color": {
-            "red": {}
+            },
+            "kind": "standard",
+            "timeout": 30
           }
         },
-        "bar": {
-          "element": {
-            "hydrogen": {}
+        "in": {
+          "aim": {
+            "bar": {}
           }
-        }
+        },
+        "out": {}
       }
     }
-  }
+  },
+  "sys": {}
 }
