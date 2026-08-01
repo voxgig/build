@@ -8,7 +8,7 @@
 // Cross-component notification uses the tiny `evt` plugin below:
 // components post cmp:bus,emit:<name> and subscribe with onEvent().
 
-/* global Seneca */
+/* global Seneca, SenecaBrowserStore, SenecaBrowserDebug */
 
 const bus = Seneca({
   legacy: false,
@@ -26,31 +26,48 @@ const bus = Seneca({
   .client({ type: 'browser', pin: 'aim:*' })
 
 
-// Event fanout: seneca actions have single handlers, so the bus plugin
-// keeps a listener registry for UI notification.
-const listeners = {}
+// Transparent state cache (Redux-like): caches aim:* query results and
+// invalidates on writes, so repeated reads are served without a round-trip.
+// Registered AFTER .client() so the aim:* pin actions exist to be wrapped.
+if ('undefined' !== typeof SenecaBrowserStore) {
+  bus.use(SenecaBrowserStore, { pin: 'aim:*' })
+}
 
-bus.use(function evt() {
-  this.add('cmp:bus,emit:evt', function (msg, reply) {
-    const subs = listeners[msg.name] || []
-    for (const fn of subs) {
-      try {
-        fn(msg.data || {})
-      }
-      catch (e) {
-        console.error('evt listener failed', msg.name, e)
-      }
-    }
-    reply({ ok: true, count: subs.length })
-  })
+// In-window devtools: a resizable/hideable pop-up showing live Seneca
+// message flows, config, and (via the store plugin above) the cache tree.
+// aim:* messages are the remote (backend) calls. Loaded as a global script
+// in index.html; guarded so a missing bundle never breaks the app.
+if ('undefined' !== typeof SenecaBrowserDebug) {
+  bus.use(SenecaBrowserDebug, { remotePins: 'aim:*' })
+}
+
+
+// Event fanout, unified on Seneca messages: cross-component events use the
+// bus's own sub/act. Unlike a plain `add` (single handler), `sub` allows
+// many observers per pattern - so it IS the pub/sub primitive. A no-op sink
+// action lets `act` resolve; observers subscribe via `sub`. This is the same
+// mechanism reactivity uses (see @seneca/browser-store's changed:* events).
+bus.add('cmp:evt', function (msg, reply) {
+  reply()
 })
 
 function onEvent(name, fn) {
-  (listeners[name] = listeners[name] || []).push(fn)
+  bus.sub('cmp:evt,name:' + name, function (msg) {
+    fn(msg.data || {})
+  })
 }
 
 function emit(name, data) {
-  bus.post('cmp:bus,emit:evt', { name, data })
+  bus.act('cmp:evt,name:' + name, { data })
+}
+
+
+// Avoid cross-user staleness: drop all cached queries whenever auth changes
+// (sign in / sign out), since cached results are principal-scoped.
+if ('undefined' !== typeof SenecaBrowserStore) {
+  onEvent('auth', function () {
+    bus.act('sys:browser-store,clear:store', function () {})
+  })
 }
 
 

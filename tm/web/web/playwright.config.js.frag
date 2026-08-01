@@ -9,6 +9,10 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 30000,
   fullyParallel: false,
+  // One worker: all specs share a single backend web runner with one
+  // in-memory store and the same seeded users, so they must run serially to
+  // avoid cross-spec contention on shared state.
+  workers: 1,
   reporter: [['list']],
   use: {
     baseURL: `http://localhost:${PORT}`,
