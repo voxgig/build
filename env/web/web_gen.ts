@@ -38,6 +38,10 @@ const WEB_FILES: { frag: string, out: string }[] = [
   { frag: 'web/src/bus.js.frag', out: 'web/src/bus.js' },
   { frag: 'web/src/model.js.frag', out: 'web/src/model.js' },
   { frag: 'web/src/api.js.frag', out: 'web/src/api.js' },
+  { frag: 'web/src/hooks.js.frag', out: 'web/src/hooks.js' },
+  { frag: 'web/src/theme.js.frag', out: 'web/src/theme.js' },
+  { frag: 'web/src/customise.js.frag', out: 'web/src/customise.js' },
+  { frag: 'web/src/custom.css.frag', out: 'web/src/custom.css' },
   { frag: 'web/src/style.css.frag', out: 'web/src/style.css' },
   { frag: 'web/src/cmp/app.js.frag', out: 'web/src/cmp/app.js' },
   { frag: 'web/src/cmp/public.js.frag', out: 'web/src/cmp/public.js' },
@@ -128,6 +132,86 @@ const web_gen = async (model: any, spec: {
     Fs.mkdirSync(Path.dirname(dest), { recursive: true })
     Fs.writeFileSync(dest, content)
     created.push(outrel)
+  }
+
+  // Custom entity views: for every entity declaring `ux:{ view: 'custom' }`,
+  // generate a hand-coded view component (CREATE-ONCE, so edits survive) plus
+  // an always-regenerated index (views.js) that imports them.
+  const entzones = model.main.ent || {}
+  const customs: { zone: string, name: string, canon: string }[] = []
+  for (const zone of Object.keys(entzones)) {
+    for (const name of Object.keys(entzones[zone])) {
+      const def = entzones[zone][name]
+      if (def && def.ux && 'custom' === def.ux.view) {
+        customs.push({ zone, name, canon: zone + '/' + name })
+      }
+    }
+  }
+
+  for (const c of customs) {
+    const outrel = 'web/src/cmp/view/' + c.zone + '_' + c.name + '.js'
+    const dest = Path.join(spec.root, outrel)
+    if (Fs.existsSync(dest) && !spec.force) {
+      skipped.push(outrel)
+      continue
+    }
+    const vslots = Object.assign({}, slots, {
+      canon: c.canon,
+      zone: c.zone,
+      name: c.name,
+      tag: 'vg-view-' + c.zone + '-' + c.name,
+      className: 'VgView' + camelify(c.zone) + camelify(c.name),
+      Label: camelify(c.name),
+    })
+    const content = renderFragment(
+      loadFragment('web/src/cmp/view/custom-view.js.frag', spec, 'web'), vslots)
+    Fs.mkdirSync(Path.dirname(dest), { recursive: true })
+    Fs.writeFileSync(dest, content)
+    created.push(outrel)
+  }
+
+  // views.js — the generated index of custom views. Regenerated whenever the
+  // set of custom views changes; a no-op run leaves it (and `created`) alone.
+  const viewsRel = 'web/src/views.js'
+  const viewsPath = Path.join(spec.root, viewsRel)
+  const viewsBody =
+    '// AUTO-GENERATED: imports every custom entity view (model entities declaring\n' +
+    '// ux:{view:\'custom\'}). Regenerated from the model — do not edit. The view\n' +
+    '// files it imports are hand-coded and create-once.\n\n' +
+    customs.map((c) => `import './cmp/view/${c.zone}_${c.name}.js'`).join('\n') + '\n'
+  const existingViews = Fs.existsSync(viewsPath) ? Fs.readFileSync(viewsPath, 'utf8') : null
+  if (existingViews !== viewsBody) {
+    Fs.mkdirSync(Path.join(spec.root, 'web/src'), { recursive: true })
+    Fs.writeFileSync(viewsPath, viewsBody)
+    created.push(viewsRel)
+  }
+
+  // theme.css — the design theme from the model (main.theme). Each mode's
+  // tokens become CSS variables under :root[data-theme-mode="<mode>"], with the
+  // default mode also on plain :root. Regenerated from the model; override
+  // tokens in custom.css and add modes via the theme:modes hook.
+  const theme = model.main && model.main.theme
+  if (theme && theme.modes && Object.keys(theme.modes).length) {
+    const defMode = theme.mode || Object.keys(theme.modes)[0]
+    const tokensCss = (tokens: any) => Object.keys(tokens).sort()
+      .map((k) => `  --vg-${k}: ${tokens[k]};`).join('\n')
+    const blocks = [':root,\n:root[data-theme-mode="' + defMode + '"] {\n' + tokensCss(theme.modes[defMode]) + '\n}']
+    for (const mode of Object.keys(theme.modes)) {
+      if (mode !== defMode) {
+        blocks.push(':root[data-theme-mode="' + mode + '"] {\n' + tokensCss(theme.modes[mode]) + '\n}')
+      }
+    }
+    const themeBody =
+      '/* AUTO-GENERATED from the model theme (main.theme) — do not edit.\n' +
+      '   Override tokens in custom.css; add modes via the theme:modes hook. */\n\n' +
+      blocks.join('\n\n') + '\n'
+    const themePath = Path.join(spec.root, 'web/src/theme.css')
+    const existingTheme = Fs.existsSync(themePath) ? Fs.readFileSync(themePath, 'utf8') : null
+    if (existingTheme !== themeBody) {
+      Fs.mkdirSync(Path.join(spec.root, 'web/src'), { recursive: true })
+      Fs.writeFileSync(themePath, themeBody)
+      created.push('web/src/theme.css')
+    }
   }
 
   return { created: created.sort(), skipped: skipped.sort() }

@@ -1,12 +1,14 @@
 // The public content site (marketing pages) shown to signed-out visitors,
 // with the login form. Static content — the app itself is behind auth.
 
+import * as Hooks from '../hooks.js'
+
 class VgPublic extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `
       <div class="vg-public">
         <header class="vg-public-nav">
-          <span class="vg-brand">📋 $$Name$$</span>
+          <span class="vg-brand">📋 Todo</span>
           <nav>
             <a href="#features">Features</a>
             <a href="#about">About</a>
@@ -43,8 +45,10 @@ class VgPublic extends HTMLElement {
             the data model.</p>
         </section>
 
+        ${Hooks.html('public:sections', {})}
+
         <footer class="vg-public-footer">
-          <span>&copy; $$Name$$. A Voxgig demo.</span>
+          <span>&copy; Todo. A Voxgig demo.</span>
         </footer>
       </div>`
   }

@@ -3,6 +3,7 @@
 
 import { bus } from '../bus.js'
 import * as Api from '../api.js'
+import * as Hooks from '../hooks.js'
 
 
 class VgSettings extends HTMLElement {
@@ -36,6 +37,8 @@ class VgSettings extends HTMLElement {
             <div class="vg-form-msg" id="vg-pass-msg"></div>
           </form>
         </section>
+
+        ${Hooks.html('settings:sections', { user: this.user })}
       </div>`
 
     this.querySelector('#vg-profile').onsubmit = async (ev) => {

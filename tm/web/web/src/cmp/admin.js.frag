@@ -11,6 +11,7 @@
 import { emit } from '../bus.js'
 import * as Model from '../model.js'
 import * as Api from '../api.js'
+import * as Hooks from '../hooks.js'
 
 
 function esc(s) {
@@ -102,17 +103,21 @@ class VgEntityAdmin extends HTMLElement {
     if (pf && this.projectId) {
       q[pf] = this.projectId
     }
-    const [items, maps] = await Promise.all([Api.list(canon, q), this.refMaps(canon)])
+    let [items, maps] = await Promise.all([Api.list(canon, q), this.refMaps(canon)])
     if (!this.current(tok)) {
       return
     }
-    const fields = Model.displayFields(canon).filter((f) => f !== pf)
+    // Hook: transform the item set (sort/filter/augment) and the columns.
+    items = Hooks.filter('admin:list:items', items, { canon })
+    const fields = Hooks.filter('admin:list:columns',
+      Model.displayFields(canon).filter((f) => f !== pf), { canon })
     const labelName = Model.labelOf(canon)
 
     const rows = items.map((item) => `
       <tr>
         ${fields.map((f) => `<td>${this.cell(canon, f, item[f], maps)}</td>`).join('')}
         <td class="vg-actions">
+          ${Hooks.html('admin:row:actions', { canon, item })}
           <button class="vg-open" data-id="${item.id}">Open</button>
           <button class="vg-edit" data-id="${item.id}">Edit</button>
           <button class="vg-del" data-id="${item.id}">Delete</button>
@@ -123,6 +128,7 @@ class VgEntityAdmin extends HTMLElement {
       <div class="vg-entity">
         <div class="vg-entity-head">
           <h2>${esc(labelName)}</h2>
+          ${Hooks.html('admin:list:toolbar', { canon })}
           <button class="vg-primary" id="vg-new">New ${esc(labelName)}</button>
         </div>
         <table class="vg-table">
@@ -148,6 +154,9 @@ class VgEntityAdmin extends HTMLElement {
         this.showList()
       }
     }
+    // Hook: wire up any custom markup injected by admin:row:actions /
+    // admin:list:toolbar (the root element + rendered items are provided).
+    Hooks.action('admin:list:after', { root: this, canon, items })
   }
 
   // ---- detail (relationship navigation) ----
@@ -238,7 +247,9 @@ class VgEntityAdmin extends HTMLElement {
     const preset = (childCtx && childCtx.preset) || {}
     const item = id ? (await Api.load(canon, id)) || {} : Object.assign({}, preset)
     const pf = Model.projectRefField(canon)
-    const fields = Model.displayFields(canon).filter((f) => f !== pf)
+    // Hook: transform the editable field list.
+    const fields = Hooks.filter('admin:form:fields',
+      Model.displayFields(canon).filter((f) => f !== pf), { canon, id })
 
     // Populate reference pickers.
     const refOptions = {}
@@ -282,6 +293,7 @@ class VgEntityAdmin extends HTMLElement {
         <form class="vg-entity-form">
           <h3>${id ? 'Edit' : 'New'} ${esc(Model.labelOf(canon))}</h3>
           ${inputs}
+          ${Hooks.html('admin:form:extra', { canon, id, item })}
           <div class="vg-form-actions">
             <button type="submit" class="vg-primary">Save</button>
             <button type="button" class="vg-link" id="vg-cancel">Cancel</button>
@@ -290,6 +302,7 @@ class VgEntityAdmin extends HTMLElement {
         </form>
       </div>`
 
+    Hooks.action('admin:form:after', { root: this, canon, id, item })
     this.querySelector('#vg-cancel').onclick = () => this.reload()
     this.querySelector('form').onsubmit = async (ev) => {
       ev.preventDefault()
@@ -311,11 +324,15 @@ class VgEntityAdmin extends HTMLElement {
           data[f] = 'Number' === fdef.kind ? Number(el.value) : el.value
         }
       }
-      const res = await Api.save(canon, data)
+      // Hook: transform the payload just before saving.
+      const payload = Hooks.filter('admin:save:data', data, { canon, id })
+      const res = await Api.save(canon, payload)
       if (!res.ok) {
         this.querySelector('#vg-form-err').textContent = 'Save failed: ' + (res.why || '')
         return
       }
+      // Hook: react to a successful save.
+      Hooks.action('admin:save:after', { canon, id, item: res.item, res })
       if ('proj/project' === canon) {
         emit('projects-changed', {})
       }

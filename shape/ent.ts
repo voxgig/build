@@ -4,7 +4,9 @@ import { Gubu } from 'gubu'
 const { Open, Skip } = Gubu
 
 
-const EntShape = Gubu({
+// Open: entities may carry extra attributes beyond the deployment-relevant
+// ones below (e.g. `ux` for frontend view hints), which this generator ignores.
+const EntShape = Gubu(Open({
   id: {
     field: 'id'
   },
@@ -26,7 +28,7 @@ const EntShape = Gubu({
     active: false
   }),
   custom: Skip(String),
-}, { prefix: 'Entity' })
+}), { prefix: 'Entity' })
 
 
 export {

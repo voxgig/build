@@ -128,6 +128,18 @@ function displayFields(canon) {
   return Object.keys(f).filter((k) => SYS_FIELDS.indexOf(k) < 0)
 }
 
+// Custom view: an entity may declare ux:{view:'custom'} to replace the
+// generic entity admin with a hand-coded component. Returns that component's
+// custom-element tag (vg-view-<zone>-<name>) or null for the generic admin.
+function customViewTag(canon) {
+  const [z, n] = String(canon).split('/')
+  const def = ent()[z] && ent()[z][n]
+  if (def && def.ux && 'custom' === def.ux.view) {
+    return 'vg-view-' + z + '-' + n
+  }
+  return null
+}
+
 export {
   loadModel,
   entities,
@@ -139,6 +151,7 @@ export {
   labelField,
   labelOf,
   displayFields,
+  customViewTag,
   titleize,
   SYS_FIELDS,
 }
