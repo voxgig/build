@@ -18,6 +18,7 @@ import Seneca from 'seneca'
 import { Local } from '@voxgig/system'
 
 import { basic, base } from '../shared/basic'
+import { seedDemo } from '../shared/seed'
 
 import Pkg from '../../../package.json'
 import Model from '../../../model/model.json'
@@ -89,12 +90,20 @@ async function run() {
   await seneca.ready()
 
   // Seed the predefined users (idempotent per boot: in-memory store).
+  const usersByEmail: Record<string, any> = {}
   for (const u of USERS) {
     const res = await seneca.post('sys:user,register:user', u)
     if (!res.ok) {
       console.log('SEED-USER-FAILED', u.email, res.why)
     }
+    const got = await seneca.post('sys:user,get:user', { email: u.email })
+    if (got.ok && got.user) {
+      usersByEmail[u.email] = got.user
+    }
   }
+
+  // Seed demo projects/todolists/items (collaborative, one shared project).
+  await seedDemo(seneca, usersByEmail)
 
   const app = Express()
   // web/ is a sibling of backend/; from dist/env/local go up to the

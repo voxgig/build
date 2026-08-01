@@ -1,8 +1,9 @@
-// Auth: a seneca plugin holding the signed-in principal, and the
-// <vg-auth> web component (sign-in form / signed-in bar) driving it
-// purely through bus messages.
+// Auth: a seneca plugin holding the signed-in principal (state), and the
+// <vg-auth> login form used on the public site. The signed-in UI lives in
+// the app shell's user menu, not here.
 
 import { bus, emit } from '../bus.js'
+import { remindPass } from '../api.js'
 
 
 bus.use(function auth_cmp() {
@@ -47,49 +48,73 @@ bus.use(function auth_cmp() {
 })
 
 
+// The public login form (+ a forgot-password flow that never actually
+// emails — the backend logs the reset code).
 class VgAuth extends HTMLElement {
   connectedCallback() {
+    this.mode = 'signin'
     this.render()
   }
 
-  async render() {
-    const state = await bus.post('cmp:auth,get:state')
-
-    if (state.user) {
-      this.innerHTML = `
-        <div class="vg-auth-bar">
-          <span>Signed in: <b>${state.user.email}</b></span>
-          <button id="vg-signout">Sign out</button>
-        </div>`
-      this.querySelector('#vg-signout').onclick = async () => {
-        await bus.post('cmp:auth,signout:user')
-        this.render()
-      }
+  render() {
+    if ('forgot' === this.mode) {
+      this.renderForgot()
     }
     else {
-      this.innerHTML = `
-        <form class="vg-auth-form">
-          <h2>Sign in</h2>
-          <label>Email <input name="email" type="email" required /></label>
-          <label>Password <input name="password" type="password" required /></label>
-          <button type="submit">Sign in</button>
-          <div class="vg-auth-err" id="vg-auth-err"></div>
-        </form>`
-      this.querySelector('form').onsubmit = async (ev) => {
-        ev.preventDefault()
-        const fd = new FormData(ev.target)
-        const res = await bus.post('cmp:auth,signin:user', {
-          email: fd.get('email'),
-          password: fd.get('password'),
-        })
-        if (!res.ok) {
-          this.querySelector('#vg-auth-err').textContent =
-            'Sign in failed: ' + res.why
-        }
-        else {
-          this.render()
-        }
+      this.renderSignin()
+    }
+  }
+
+  renderSignin() {
+    this.innerHTML = `
+      <form class="vg-auth-form">
+        <h2>Sign in</h2>
+        <label>Email <input name="email" type="email" required /></label>
+        <label>Password <input name="password" type="password" required /></label>
+        <button type="submit">Sign in</button>
+        <a href="#" class="vg-link" id="vg-forgot">Forgot password?</a>
+        <div class="vg-auth-err" id="vg-auth-err"></div>
+      </form>`
+    this.querySelector('#vg-forgot').onclick = (ev) => {
+      ev.preventDefault()
+      this.mode = 'forgot'
+      this.render()
+    }
+    this.querySelector('form').onsubmit = async (ev) => {
+      ev.preventDefault()
+      const fd = new FormData(ev.target)
+      const res = await bus.post('cmp:auth,signin:user', {
+        email: fd.get('email'),
+        password: fd.get('password'),
+      })
+      if (!res.ok) {
+        this.querySelector('#vg-auth-err').textContent = 'Sign in failed: ' + res.why
       }
+    }
+  }
+
+  renderForgot() {
+    this.innerHTML = `
+      <form class="vg-auth-form">
+        <h2>Reset password</h2>
+        <p class="vg-hint">Enter your email and we'll send a reset link.</p>
+        <label>Email <input name="email" type="email" required /></label>
+        <button type="submit">Send reset link</button>
+        <a href="#" class="vg-link" id="vg-back">Back to sign in</a>
+        <div class="vg-auth-msg" id="vg-auth-msg"></div>
+      </form>`
+    this.querySelector('#vg-back').onclick = (ev) => {
+      ev.preventDefault()
+      this.mode = 'signin'
+      this.render()
+    }
+    this.querySelector('form').onsubmit = async (ev) => {
+      ev.preventDefault()
+      const fd = new FormData(ev.target)
+      await remindPass(fd.get('email'))
+      // Always the same message (no user enumeration; nothing is actually sent).
+      this.querySelector('#vg-auth-msg').textContent =
+        'If that email is registered, a reset link has been sent.'
     }
   }
 }
