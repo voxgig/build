@@ -4,7 +4,7 @@
 // <vg-entity-admin> component renders nav / list / form and talks to the
 // plugin (and through it, the backend) only via bus messages.
 
-import { bus, emit } from '../bus.js'
+import { bus } from '../bus.js'
 
 
 // Fields managed by the system, not the form.
@@ -58,12 +58,14 @@ bus.use(function entity_admin() {
     })
   })
 
+  // Save/remove just pass through to the backend. The UI refresh is NOT
+  // triggered here: the store plugin emits a sys:browser-store,changed:group
+  // message on the write, and <vg-entity-admin> re-lists reactively in
+  // response (see connectedCallback). This decouples "who mutated" from
+  // "who must refresh".
   seneca.add('cmp:entity_admin,save:item', function (msg, reply) {
     this.act({ ...msgFor(msg.canon, 'save'), item: msg.item },
       function (err, out) {
-        if (!err && out.ok) {
-          emit('entity', { canon: msg.canon })
-        }
         reply(err ? { ok: false, why: err.message } : out)
       })
   })
@@ -71,9 +73,6 @@ bus.use(function entity_admin() {
   seneca.add('cmp:entity_admin,remove:item', function (msg, reply) {
     this.act({ ...msgFor(msg.canon, 'remove'), id: msg.id },
       function (err, out) {
-        if (!err && out.ok) {
-          emit('entity', { canon: msg.canon })
-        }
         reply(err ? { ok: false, why: err.message } : out)
       })
   })
@@ -101,6 +100,20 @@ class VgEntityAdmin extends HTMLElement {
   }
 
   connectedCallback() {
+    // Reactivity via Seneca messages: re-list whenever the store signals that
+    // this entity's data changed - regardless of which component wrote it.
+    // `sub` is Seneca's native fan-out (many observers per pattern), so this
+    // is the same messaging primitive used everywhere else.
+    bus.sub('sys:browser-store,changed:group', (msg) => {
+      if (this.isConnected && msg.group === this.canon) {
+        this.renderList()
+      }
+    })
+    bus.sub('sys:browser-store,changed:all', () => {
+      if (this.isConnected && this.canon) {
+        this.renderList()
+      }
+    })
     this.render()
   }
 
@@ -144,6 +157,11 @@ class VgEntityAdmin extends HTMLElement {
   }
 
   async renderList() {
+    // May be invoked reactively (store change event) before the first full
+    // render has built the DOM - skip until the list container exists.
+    if (!this.entities || !this.querySelector('#vg-list')) {
+      return
+    }
     const out = await bus.post('cmp:entity_admin,list:item',
       { canon: this.canon })
     const items = (out.ok && out.list) || []
@@ -183,8 +201,8 @@ class VgEntityAdmin extends HTMLElement {
       b.onclick = async () => {
         await bus.post('cmp:entity_admin,remove:item',
           { canon: this.canon, id: b.dataset.id })
+        // The list refresh comes reactively from the store's changed event.
         this.editing = null
-        await this.renderList()
         this.renderForm()
       }
     }
@@ -243,8 +261,8 @@ class VgEntityAdmin extends HTMLElement {
           'save failed: ' + (res.why || '')
       }
       else {
+        // The list refresh comes reactively from the store's changed event.
         this.editing = null
-        await this.renderList()
         this.renderForm()
       }
     }

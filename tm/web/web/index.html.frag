@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>$$Name$$</title>
     <script src="/seneca-browser.js"></script>
+    <script src="/seneca-browser-store.js"></script>
+    <script src="/seneca-browser-debug.js"></script>
   </head>
   <body>
     <vg-app></vg-app>
