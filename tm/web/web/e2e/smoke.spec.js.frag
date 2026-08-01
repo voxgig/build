@@ -1,21 +1,22 @@
 import { test, expect } from '@playwright/test'
 
-// Generic smoke test: the SPA boots, a seeded user can sign in, and the
-// model-driven entity admin renders with at least one entity. Add
-// project-specific CRUD flows alongside this file.
+// Generic smoke test: the public site loads, a seeded user can sign in, and
+// the model-driven app shell renders with an entity menu. Add project-specific
+// flows (CRUD, relationship drill, settings) in your own spec files.
 
-test('sign in and load the entity admin', async ({ page }) => {
+test('public site, sign in, and the app shell', async ({ page }) => {
   await page.goto('/')
 
+  // Public content site with a login form.
   await expect(page.locator('vg-auth h2')).toHaveText('Sign in')
 
-  await page.fill('input[name=email]', '$$seedEmail$$')
-  await page.fill('input[name=password]', '$$seedPassword$$')
+  await page.fill('vg-auth input[name=email]', '$$seedEmail$$')
+  await page.fill('vg-auth input[name=password]', '$$seedPassword$$')
   await page.click('vg-auth button[type=submit]')
 
-  await expect(page.locator('.vg-auth-bar b')).toHaveText('$$seedEmail$$')
-  await expect(page.locator('vg-entity-admin nav a')).not.toHaveCount(0)
-
-  // The first entity's list loads (count line rendered).
-  await expect(page.locator('#vg-count')).toBeVisible()
+  // The enterprise shell: top bar with the signed-in user, and a
+  // model-driven entity menu with at least one entity.
+  await expect(page.locator('.vg-shell')).toBeVisible()
+  await expect(page.locator('.vg-user-btn')).toContainText('$$seedEmail$$')
+  await expect(page.locator('.vg-navlink')).not.toHaveCount(0)
 })

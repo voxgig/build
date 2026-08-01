@@ -1,272 +1,335 @@
-// Entity admin: a django-admin-style generic CRUD UI, driven entirely by
-// the compiled model (fetched from /model.json). The entity_admin plugin
-// owns the model + per-entity message mapping (state); the
-// <vg-entity-admin> component renders nav / list / form and talks to the
-// plugin (and through it, the backend) only via bus messages.
+// The generic entity admin: list / detail / form for ANY entity in the
+// model, driven entirely by /model.json. Reference fields (a `ref` target
+// canon) render as pickers in forms and clickable links in lists; a detail
+// view shows an entity plus inline lists of everything that references it
+// (inverse relationships), so you can navigate the whole graph.
+//
+// Backed by the ONE generic backend service (aim:ent,cmd:*) via api.js.
+//
+// Properties set by the shell: canon, projectId, detailId, onNavigate(canon,id).
 
-import { bus } from '../bus.js'
-
-
-// Fields managed by the system, not the form.
-const SYS_FIELDS = ['id', 'owner_id', 't_c', 't_m', 't_mh', 't_ch']
-
-
-bus.use(function entity_admin() {
-  const seneca = this
-
-  let model = null
-
-  // Entities from the model: [{ zone, name, canon, fields }]
-  function entities() {
-    const out = []
-    const ent = (model && model.main.ent) || {}
-    for (const zone of Object.keys(ent)) {
-      if ('sys' === zone) {
-        continue
-      }
-      for (const name of Object.keys(ent[zone])) {
-        out.push({
-          zone,
-          name,
-          canon: zone + '/' + name,
-          fields: ent[zone][name].field || {},
-        })
-      }
-    }
-    return out
-  }
-
-  // Message mapping convention: entity zone/name -> aim:<zone>,<verb>:<name>.
-  function msgFor(canon, verb) {
-    const [zone, name] = canon.split('/')
-    return { aim: zone, [verb]: name }
-  }
-
-  seneca.add('cmp:entity_admin,load:model', function (msg, reply) {
-    if (model) {
-      return reply({ ok: true, entities: entities() })
-    }
-    fetch('/model.json').then((r) => r.json()).then((m) => {
-      model = m
-      reply({ ok: true, entities: entities() })
-    }).catch((e) => reply({ ok: false, why: String(e) }))
-  })
-
-  seneca.add('cmp:entity_admin,list:item', function (msg, reply) {
-    this.act(msgFor(msg.canon, 'list'), function (err, out) {
-      reply(err ? { ok: false, why: err.message } : out)
-    })
-  })
-
-  // Save/remove just pass through to the backend. The UI refresh is NOT
-  // triggered here: the store plugin emits a sys:browser-store,changed:group
-  // message on the write, and <vg-entity-admin> re-lists reactively in
-  // response (see connectedCallback). This decouples "who mutated" from
-  // "who must refresh".
-  seneca.add('cmp:entity_admin,save:item', function (msg, reply) {
-    this.act({ ...msgFor(msg.canon, 'save'), item: msg.item },
-      function (err, out) {
-        reply(err ? { ok: false, why: err.message } : out)
-      })
-  })
-
-  seneca.add('cmp:entity_admin,remove:item', function (msg, reply) {
-    this.act({ ...msgFor(msg.canon, 'remove'), id: msg.id },
-      function (err, out) {
-        reply(err ? { ok: false, why: err.message } : out)
-      })
-  })
-})
+import { emit } from '../bus.js'
+import * as Model from '../model.js'
+import * as Api from '../api.js'
 
 
-function inputFor(fname, fdef, value) {
-  const kind = (fdef && fdef.kind) || 'String'
-  const val = null == value ? '' : value
-  if ('Boolean' === kind) {
-    return `<input name="${fname}" type="checkbox" ${true === value ? 'checked' : ''} />`
-  }
-  if ('Number' === kind) {
-    return `<input name="${fname}" type="number" value="${val}" />`
-  }
-  return `<input name="${fname}" type="text" value="${String(val).replace(/"/g, '&quot;')}" />`
+function esc(s) {
+  return String(null == s ? '' : s).replace(/[&<>"]/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 }
 
 
 class VgEntityAdmin extends HTMLElement {
-  constructor() {
-    super()
-    this.canon = null
-    this.editing = null   // item being edited, or {} for new
+  reload() {
+    if (this.detailId) {
+      this.showDetail(this.detailId)
+    }
+    else {
+      this.showList()
+    }
   }
 
-  connectedCallback() {
-    // Reactivity via Seneca messages: re-list whenever the store signals that
-    // this entity's data changed - regardless of which component wrote it.
-    // `sub` is Seneca's native fan-out (many observers per pattern), so this
-    // is the same messaging primitive used everywhere else.
-    bus.sub('sys:browser-store,changed:group', (msg) => {
-      if (this.isConnected && msg.group === this.canon) {
-        this.renderList()
-      }
-    })
-    bus.sub('sys:browser-store,changed:all', () => {
-      if (this.isConnected && this.canon) {
-        this.renderList()
-      }
-    })
-    this.render()
+  // Render token: async render methods capture it up-front and only commit
+  // to the DOM if they are still the latest, so a slow/stale render can't
+  // overwrite a newer one (fixes overlapping list/detail/form renders).
+  begin() {
+    return (this._tok = (this._tok || 0) + 1)
   }
 
-  async render() {
-    const res = await bus.post('cmp:entity_admin,load:model')
-    if (!res.ok) {
-      this.innerHTML = `<p>model load failed: ${res.why}</p>`
-      return
+  current(tok) {
+    return tok === this._tok
+  }
+
+  navigate(canon, id) {
+    if (this.onNavigate) {
+      this.onNavigate(canon, id)
     }
-    this.entities = res.entities
-    if (null == this.canon && 0 < res.entities.length) {
-      this.canon = res.entities[0].canon
+  }
+
+  // Map each reference field to { targetCanon, labels:{id->label} } so refs
+  // render as human labels/links instead of raw ids.
+  async refMaps(canon) {
+    const maps = {}
+    for (const r of Model.refsOf(canon)) {
+      const rows = await Api.list(r.target)
+      const lf = Model.labelField(r.target)
+      const labels = {}
+      for (const row of rows) {
+        labels[row.id] = row[lf]
+      }
+      maps[r.field] = { target: r.target, labels }
     }
+    return maps
+  }
 
-    const nav = res.entities.map((e) =>
-      `<a href="#" class="vg-nav ${e.canon === this.canon ? 'sel' : ''}"
-        data-canon="${e.canon}">${e.canon}</a>`).join(' ')
+  cell(canon, field, value, maps) {
+    const fdef = Model.fieldsOf(canon)[field] || {}
+    if (fdef.ref) {
+      if (null == value) {
+        return '<span class="vg-muted">—</span>'
+      }
+      const m = maps[field] || { labels: {} }
+      const label = m.labels[value] || value
+      return `<a href="#" class="vg-ref" data-canon="${fdef.ref}" data-id="${esc(value)}">${esc(label)}</a>`
+    }
+    if ('Boolean' === fdef.kind) {
+      return value ? '✓' : '<span class="vg-muted">✗</span>'
+    }
+    return esc(value)
+  }
 
-    this.innerHTML = `
-      <div class="vg-admin">
-        <nav>${nav}</nav>
-        <div id="vg-list"></div>
-        <div id="vg-form"></div>
-      </div>`
-
-    for (const a of this.querySelectorAll('.vg-nav')) {
+  wireRefLinks(root) {
+    for (const a of root.querySelectorAll('.vg-ref')) {
       a.onclick = (ev) => {
         ev.preventDefault()
-        this.canon = a.dataset.canon
-        this.editing = null
-        this.render()
+        this.navigate(a.dataset.canon, a.dataset.id)
       }
     }
-
-    await this.renderList()
-    this.renderForm()
   }
 
-  entdef() {
-    return this.entities.find((e) => e.canon === this.canon)
-  }
+  // ---- list ----
 
-  async renderList() {
-    // May be invoked reactively (store change event) before the first full
-    // render has built the DOM - skip until the list container exists.
-    if (!this.entities || !this.querySelector('#vg-list')) {
+  async showList() {
+    const tok = this.begin()
+    const canon = this.canon
+    const pf = Model.projectRefField(canon)
+    if ('proj/project' !== canon && pf && !this.projectId) {
+      this.innerHTML = `<div class="vg-empty">Select or create a project to manage ${esc(Model.labelOf(canon))}.</div>`
       return
     }
-    const out = await bus.post('cmp:entity_admin,list:item',
-      { canon: this.canon })
-    const items = (out.ok && out.list) || []
-    const fields = Object.keys(this.entdef().fields)
-      .filter((f) => !SYS_FIELDS.includes(f))
 
-    const head = fields.map((f) => `<th>${f}</th>`).join('')
+    const q = {}
+    if (pf && this.projectId) {
+      q[pf] = this.projectId
+    }
+    const [items, maps] = await Promise.all([Api.list(canon, q), this.refMaps(canon)])
+    if (!this.current(tok)) {
+      return
+    }
+    const fields = Model.displayFields(canon).filter((f) => f !== pf)
+    const labelName = Model.labelOf(canon)
+
     const rows = items.map((item) => `
-      <tr data-id="${item.id}">
-        ${fields.map((f) => `<td>${null == item[f] ? '' : item[f]}</td>`).join('')}
-        <td>
-          <button class="vg-edit" data-id="${item.id}">edit</button>
-          <button class="vg-del" data-id="${item.id}">delete</button>
+      <tr>
+        ${fields.map((f) => `<td>${this.cell(canon, f, item[f], maps)}</td>`).join('')}
+        <td class="vg-actions">
+          <button class="vg-open" data-id="${item.id}">Open</button>
+          <button class="vg-edit" data-id="${item.id}">Edit</button>
+          <button class="vg-del" data-id="${item.id}">Delete</button>
         </td>
       </tr>`).join('')
 
-    this.querySelector('#vg-list').innerHTML = `
-      <h2>${this.canon} <button id="vg-new">new</button></h2>
-      <table class="vg-table">
-        <thead><tr>${head}<th></th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-      <p id="vg-count">${items.length} item${1 === items.length ? '' : 's'}</p>`
+    this.innerHTML = `
+      <div class="vg-entity">
+        <div class="vg-entity-head">
+          <h2>${esc(labelName)}</h2>
+          <button class="vg-primary" id="vg-new">New ${esc(labelName)}</button>
+        </div>
+        <table class="vg-table">
+          <thead><tr>${fields.map((f) => `<th>${esc(Model.titleize(f))}</th>`).join('')}<th></th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="${fields.length + 1}" class="vg-muted">No ${esc(labelName)} yet.</td></tr>`}</tbody>
+        </table>
+        <p id="vg-count" class="vg-muted">${items.length} item${1 === items.length ? '' : 's'}</p>
+      </div>`
 
-    this.items = items
-    this.querySelector('#vg-new').onclick = () => {
-      this.editing = {}
-      this.renderForm()
+    this.wireRefLinks(this)
+    this.querySelector('#vg-new').onclick = () => this.showForm(null)
+    for (const b of this.querySelectorAll('.vg-open')) {
+      // Route through the shell so it can update project context.
+      b.onclick = () => this.navigate(canon, b.dataset.id)
     }
     for (const b of this.querySelectorAll('.vg-edit')) {
-      b.onclick = () => {
-        this.editing = this.items.find((i) => i.id === b.dataset.id)
-        this.renderForm()
-      }
+      b.onclick = () => this.showForm(b.dataset.id)
     }
     for (const b of this.querySelectorAll('.vg-del')) {
       b.onclick = async () => {
-        await bus.post('cmp:entity_admin,remove:item',
-          { canon: this.canon, id: b.dataset.id })
-        // The list refresh comes reactively from the store's changed event.
-        this.editing = null
-        this.renderForm()
+        await Api.remove(canon, b.dataset.id)
+        this.afterMutation()
+        this.showList()
       }
     }
   }
 
-  renderForm() {
-    const box = this.querySelector('#vg-form')
-    if (null == this.editing) {
-      box.innerHTML = ''
+  // ---- detail (relationship navigation) ----
+
+  async showDetail(id) {
+    const tok = this.begin()
+    const canon = this.canon
+    const item = await Api.load(canon, id)
+    if (!item) {
+      this.innerHTML = `<div class="vg-empty">Not found.</div>`
       return
     }
+    const maps = await this.refMaps(canon)
+    const fields = Model.displayFields(canon)
+    const label = item[Model.labelField(canon)] || id
 
-    const def = this.entdef()
-    const fields = Object.keys(def.fields)
-      .filter((f) => !SYS_FIELDS.includes(f))
+    const rowsHtml = fields.map((f) => `
+      <tr><th>${esc(Model.titleize(f))}</th><td>${this.cell(canon, f, item[f], maps)}</td></tr>`).join('')
 
-    box.innerHTML = `
-      <form class="vg-entity-form">
-        <h3>${this.editing.id ? 'Edit' : 'New'} ${this.canon}</h3>
-        ${fields.map((f) => `
-          <label>${(def.fields[f] && def.fields[f].label) || f}
-            ${inputFor(f, def.fields[f], this.editing[f])}
-          </label>`).join('')}
-        <button type="submit">Save</button>
-        <button type="button" id="vg-cancel">Cancel</button>
-        <div id="vg-form-err"></div>
-      </form>`
-
-    box.querySelector('#vg-cancel').onclick = () => {
-      this.editing = null
-      this.renderForm()
+    // Inverse relationships: everything that references THIS entity.
+    const children = Model.inverseRefs(canon)
+    const childSections = []
+    for (const c of children) {
+      const kids = await Api.list(c.canon, { [c.field]: id })
+      const kmaps = await this.refMaps(c.canon)
+      const kfields = Model.displayFields(c.canon).filter((x) => x !== c.field)
+      childSections.push(`
+        <section class="vg-children" data-canon="${c.canon}" data-parent-field="${c.field}">
+          <div class="vg-entity-head">
+            <h3>${esc(c.label)}</h3>
+            <button class="vg-primary vg-child-new" data-canon="${c.canon}">New ${esc(c.label)}</button>
+          </div>
+          <table class="vg-table">
+            <thead><tr>${kfields.map((f) => `<th>${esc(Model.titleize(f))}</th>`).join('')}<th></th></tr></thead>
+            <tbody>${kids.map((k) => `
+              <tr>
+                ${kfields.map((f) => `<td>${this.cell(c.canon, f, k[f], kmaps)}</td>`).join('')}
+                <td class="vg-actions">
+                  <button class="vg-child-open" data-canon="${c.canon}" data-id="${k.id}">Open</button>
+                </td>
+              </tr>`).join('') || `<tr><td colspan="${kfields.length + 1}" class="vg-muted">None yet.</td></tr>`}
+            </tbody>
+          </table>
+        </section>`)
     }
 
-    box.querySelector('form').onsubmit = async (ev) => {
+    if (!this.current(tok)) {
+      return
+    }
+    this.innerHTML = `
+      <div class="vg-entity">
+        <div class="vg-entity-head">
+          <button class="vg-link" id="vg-back">‹ ${esc(Model.labelOf(canon))}</button>
+          <h2>${esc(label)}</h2>
+          <button class="vg-edit" id="vg-edit-detail" data-id="${id}">Edit</button>
+        </div>
+        <table class="vg-detail"><tbody>${rowsHtml}</tbody></table>
+        ${childSections.join('')}
+      </div>`
+
+    this.wireRefLinks(this)
+    this.querySelector('#vg-back').onclick = () => { this.detailId = null; this.showList() }
+    this.querySelector('#vg-edit-detail').onclick = () => this.showForm(id)
+    for (const b of this.querySelectorAll('.vg-child-open')) {
+      b.onclick = () => this.navigate(b.dataset.canon, b.dataset.id)
+    }
+    for (const b of this.querySelectorAll('.vg-child-new')) {
+      b.onclick = () => this.showForm(null, { canon: b.dataset.canon, preset: this.presetFor(b.dataset.canon, canon, id) })
+    }
+  }
+
+  // Preset the parent reference (and inherited project) when creating a child.
+  presetFor(childCanon, parentCanon, parentId) {
+    const preset = {}
+    for (const r of Model.refsOf(childCanon)) {
+      if (r.target === parentCanon) {
+        preset[r.field] = parentId
+      }
+    }
+    return preset
+  }
+
+  // ---- form ----
+
+  async showForm(id, childCtx) {
+    const tok = this.begin()
+    const canon = (childCtx && childCtx.canon) || this.canon
+    const preset = (childCtx && childCtx.preset) || {}
+    const item = id ? (await Api.load(canon, id)) || {} : Object.assign({}, preset)
+    const pf = Model.projectRefField(canon)
+    const fields = Model.displayFields(canon).filter((f) => f !== pf)
+
+    // Populate reference pickers.
+    const refOptions = {}
+    for (const r of Model.refsOf(canon)) {
+      if (r.field === pf) {
+        continue
+      }
+      const rows = await Api.list(r.target)
+      const lf = Model.labelField(r.target)
+      refOptions[r.field] = rows.map((row) => ({ id: row.id, label: row[lf] || row.id }))
+    }
+
+    const inputs = fields.map((f) => {
+      const fdef = Model.fieldsOf(canon)[f] || {}
+      const val = item[f]
+      let control
+      if (fdef.ref) {
+        const opts = refOptions[f] || []
+        control = `<select name="${f}">
+          <option value="">— none —</option>
+          ${opts.map((o) => `<option value="${esc(o.id)}"${o.id === val ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}
+        </select>`
+      }
+      else if ('Boolean' === fdef.kind) {
+        control = `<input name="${f}" type="checkbox"${val ? ' checked' : ''} />`
+      }
+      else if ('Number' === fdef.kind) {
+        control = `<input name="${f}" type="number" value="${null == val ? '' : esc(val)}" />`
+      }
+      else {
+        control = `<input name="${f}" type="text" value="${null == val ? '' : esc(val)}" />`
+      }
+      return `<label>${esc(fdef.label || Model.titleize(f))} ${control}</label>`
+    }).join('')
+
+    if (!this.current(tok)) {
+      return
+    }
+    this.innerHTML = `
+      <div class="vg-entity">
+        <form class="vg-entity-form">
+          <h3>${id ? 'Edit' : 'New'} ${esc(Model.labelOf(canon))}</h3>
+          ${inputs}
+          <div class="vg-form-actions">
+            <button type="submit" class="vg-primary">Save</button>
+            <button type="button" class="vg-link" id="vg-cancel">Cancel</button>
+          </div>
+          <div class="vg-form-err" id="vg-form-err"></div>
+        </form>
+      </div>`
+
+    this.querySelector('#vg-cancel').onclick = () => this.reload()
+    this.querySelector('form').onsubmit = async (ev) => {
       ev.preventDefault()
-      const item = { ...(this.editing.id ? { id: this.editing.id } : {}) }
+      const data = Object.assign({}, id ? { id } : {}, preset)
+      // Project-scoped entities inherit the current project.
+      if (pf && this.projectId) {
+        data[pf] = this.projectId
+      }
       for (const f of fields) {
-        const input = box.querySelector(`[name="${f}"]`)
-        const kind = (def.fields[f] && def.fields[f].kind) || 'String'
-        if ('Boolean' === kind) {
-          item[f] = input.checked
+        const fdef = Model.fieldsOf(canon)[f] || {}
+        const el = ev.target.querySelector(`[name="${f}"]`)
+        if ('Boolean' === fdef.kind) {
+          data[f] = el.checked
         }
-        else if ('' === input.value) {
-          // Blank optional field: leave unset (don't send an empty string;
-          // an optional/Skip field rejects '').
+        else if ('' === el.value) {
           continue
         }
         else {
-          item[f] = 'Number' === kind ? Number(input.value) : input.value
+          data[f] = 'Number' === fdef.kind ? Number(el.value) : el.value
         }
       }
-      const res = await bus.post('cmp:entity_admin,save:item',
-        { canon: this.canon, item })
+      const res = await Api.save(canon, data)
       if (!res.ok) {
-        box.querySelector('#vg-form-err').textContent =
-          'save failed: ' + (res.why || '')
+        this.querySelector('#vg-form-err').textContent = 'Save failed: ' + (res.why || '')
+        return
       }
-      else {
-        // The list refresh comes reactively from the store's changed event.
-        this.editing = null
-        this.renderForm()
+      if ('proj/project' === canon) {
+        emit('projects-changed', {})
       }
+      // Return to wherever we were.
+      this.reload()
+    }
+  }
+
+  afterMutation() {
+    if ('proj/project' === this.canon) {
+      emit('projects-changed', {})
     }
   }
 }
+
 
 customElements.define('vg-entity-admin', VgEntityAdmin)
