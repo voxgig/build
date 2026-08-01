@@ -190,3 +190,69 @@ describe('env-gen', () => {
   })
 
 })
+
+
+describe('env-web', () => {
+
+  test('generates the SPA + backend web pieces (create-once)', async () => {
+    const { EnvWeb } = require('../build')
+    const out = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'vb-web-'))
+
+    const model = {
+      main: {
+        conf: { core: { name: 'shop' }, port: { backend: 50600 } },
+        srv: { widget: {}, order: {} },
+      },
+    }
+
+    const res = await EnvWeb.web_gen(model, { root: out, env: {} })
+
+    // key files present
+    for (const f of [
+      'web/package.json', 'web/index.html', 'web/playwright.config.js',
+      'web/src/bus.js', 'web/src/cmp/admin.js', 'web/e2e/smoke.spec.js',
+      'backend/src/env/web/web.ts', 'backend/src/srv/auth/auth-srv.ts',
+    ]) {
+      expect(Fs.existsSync(Path.join(out, f))).toEqual(true)
+    }
+
+    // slots rendered
+    const pkg = JSON.parse(
+      Fs.readFileSync(Path.join(out, 'web/package.json'), 'utf8'))
+    expect(pkg.name).toEqual('shop-web')
+    expect(pkg.devDependencies['seneca-browser']).toBeDefined()
+
+    const runner = Fs.readFileSync(
+      Path.join(out, 'backend/src/env/web/web.ts'), 'utf8')
+    expect(runner).toContain("name: 'shop-auth'")
+    expect(runner).toContain('alice@example.com')
+    // generic allow derived from the model services
+    expect(runner).toContain('Object.keys((Model as any).main.srv)')
+
+    const html = Fs.readFileSync(Path.join(out, 'web/index.html'), 'utf8')
+    expect(html).toContain('<title>Shop</title>')
+
+    const e2e = Fs.readFileSync(Path.join(out, 'web/e2e/smoke.spec.js'), 'utf8')
+    expect(e2e).toContain("'alice@example.com'")
+
+    // create-once: an existing file is not overwritten
+    Fs.writeFileSync(Path.join(out, 'web/src/bus.js'), '// mine\n')
+    const res2 = await EnvWeb.web_gen(model, { root: out, env: {} })
+    expect(res2.created).toEqual([])
+    expect(Fs.readFileSync(Path.join(out, 'web/src/bus.js'), 'utf8'))
+      .toEqual('// mine\n')
+    expect(res.created.length).toBeGreaterThan(15)
+  })
+
+
+  test('env_gen delegates kind:web', async () => {
+    const { EnvGen } = require('../build')
+    const out = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'vb-web-'))
+    await EnvGen.env_gen({
+      main: { conf: { core: { name: 'shop' } }, srv: {},
+        env: { web: { active: true } } },
+    }, { folder: Path.join(out, 'gen'), root: out })
+    expect(Fs.existsSync(Path.join(out, 'web/index.html'))).toEqual(true)
+  })
+
+})

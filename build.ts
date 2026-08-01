@@ -18,6 +18,7 @@ import { srv_handler } from './env/lambda/srv_handler'
 import { resources_yml } from './env/lambda/res_yml'
 
 import { env_gen, ENV_FILES, ENV_SRC, KINDS as ENV_KINDS } from './env/env_gen'
+import { web_gen, WEB_FILES } from './env/web/web_gen'
 
 import {
   generate, empty, TM,
@@ -42,7 +43,15 @@ const EnvGen = {
   env_gen,
   files: ENV_FILES,
   srcfiles: ENV_SRC,
-  kinds: ENV_KINDS,
+  kinds: [...ENV_KINDS, 'web'],
+}
+
+
+// EnvWeb: the experimental web frontend (SPA + backend web runner +
+// auth), generated create-once. See env/web/web_gen.ts.
+const EnvWeb = {
+  web_gen,
+  files: WEB_FILES,
 }
 
 
@@ -59,6 +68,7 @@ const Fragments = {
 export {
   EnvLambda,
   EnvGen,
+  EnvWeb,
   Fragments,
 
   // Building blocks for ejected project templates (src/gen/<name>.ts

@@ -21,6 +21,7 @@ const path_1 = __importDefault(require("path"));
 const util_1 = require("@voxgig/util");
 const conf_1 = require("../shape/conf");
 const generate_1 = require("./lambda/generate");
+const web_gen_1 = require("./web/web_gen");
 // The supported environment kinds and the files each generates.
 // `out` may contain $$slots$$ (rendered with the same slot values).
 const ENV_FILES = {
@@ -97,6 +98,16 @@ const env_gen = async (model, spec) => {
             continue;
         }
         const kind = def.kind || name;
+        // The 'web' kind is the frontend SPA (+ backend web runner + auth),
+        // not a flat deployment-artifact set - delegate to EnvWeb.
+        if ('web' === kind) {
+            if (null == spec.root) {
+                throw new Error('@voxgig/build: env kind "web" needs spec.root ' +
+                    '(the project root); pass it from the build action');
+            }
+            await (0, web_gen_1.web_gen)(model, { root: spec.root, tm: spec.tm, env: def });
+            continue;
+        }
         const filedefs = ENV_FILES[kind];
         if (null == filedefs) {
             throw new Error('@voxgig/build: unknown environment kind: ' + kind +

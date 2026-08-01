@@ -1,7 +1,7 @@
 "use strict";
 /* Copyright © 2022-2026 Voxgig Ltd, MIT License. */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.res_dynamo_yml = exports.CloudConfShape = exports.CoreConfShape = exports.MsgMetaShape = exports.renderFragment = exports.loadFragment = exports.TM = exports.empty = exports.generate = exports.Fragments = exports.EnvGen = exports.EnvLambda = void 0;
+exports.res_dynamo_yml = exports.CloudConfShape = exports.CoreConfShape = exports.MsgMetaShape = exports.renderFragment = exports.loadFragment = exports.TM = exports.empty = exports.generate = exports.Fragments = exports.EnvWeb = exports.EnvGen = exports.EnvLambda = void 0;
 // EnvLambda: generation of the Lambda deployment templates, built on the
 // jostraca templating library. The templates live in env/lambda/, one file
 // per output for convenience:
@@ -18,6 +18,7 @@ const srv_yml_1 = require("./env/lambda/srv_yml");
 const srv_handler_1 = require("./env/lambda/srv_handler");
 const res_yml_1 = require("./env/lambda/res_yml");
 const env_gen_1 = require("./env/env_gen");
+const web_gen_1 = require("./env/web/web_gen");
 const generate_1 = require("./env/lambda/generate");
 Object.defineProperty(exports, "generate", { enumerable: true, get: function () { return generate_1.generate; } });
 Object.defineProperty(exports, "empty", { enumerable: true, get: function () { return generate_1.empty; } });
@@ -43,9 +44,16 @@ const EnvGen = {
     env_gen: env_gen_1.env_gen,
     files: env_gen_1.ENV_FILES,
     srcfiles: env_gen_1.ENV_SRC,
-    kinds: env_gen_1.KINDS,
+    kinds: [...env_gen_1.KINDS, 'web'],
 };
 exports.EnvGen = EnvGen;
+// EnvWeb: the experimental web frontend (SPA + backend web runner +
+// auth), generated create-once. See env/web/web_gen.ts.
+const EnvWeb = {
+    web_gen: web_gen_1.web_gen,
+    files: web_gen_1.WEB_FILES,
+};
+exports.EnvWeb = EnvWeb;
 // Fragment tooling (used by voxgig-system template list/eject/diff, and
 // available to project code).
 const Fragments = {

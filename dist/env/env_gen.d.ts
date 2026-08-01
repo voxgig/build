@@ -12,5 +12,6 @@ declare const env_gen: (model: any, spec: {
     folder: string;
     tm?: string;
     src?: string;
+    root?: string;
 }) => Promise<void>;
 export { env_gen, ENV_FILES, ENV_SRC, KINDS, };

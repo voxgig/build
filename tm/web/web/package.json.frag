@@ -1,0 +1,17 @@
+{
+  "name": "$$name$$-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "$$Name$$ SPA: web components on a Seneca service bus",
+  "scripts": {
+    "postinstall": "node -e \"require('fs').copyFileSync(require.resolve('seneca-browser'),'public/seneca-browser.js')\"",
+    "dev": "vite",
+    "build": "vite build",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "seneca-browser": "^8.0.0-rc4",
+    "vite": "^7.3.4"
+  }
+}

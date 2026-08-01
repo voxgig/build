@@ -28,6 +28,7 @@ declare const EnvGen: {
         folder: string;
         tm?: string;
         src?: string;
+        root?: string;
     }) => Promise<void>;
     files: Record<string, {
         frag: string;
@@ -40,10 +41,25 @@ declare const EnvGen: {
     }[]>;
     kinds: string[];
 };
+declare const EnvWeb: {
+    web_gen: (model: any, spec: {
+        root: string;
+        tm?: string;
+        env?: any;
+        force?: boolean;
+    }) => Promise<{
+        created: string[];
+        skipped: string[];
+    }>;
+    files: {
+        frag: string;
+        out: string;
+    }[];
+};
 declare const Fragments: {
     load: typeof loadFragment;
     render: typeof renderFragment;
     list: typeof listFragments;
     folder: string;
 };
-export { EnvLambda, EnvGen, Fragments, generate, empty, TM, loadFragment, renderFragment, MsgMetaShape, CoreConfShape, CloudConfShape, res_dynamo_yml, };
+export { EnvLambda, EnvGen, EnvWeb, Fragments, generate, empty, TM, loadFragment, renderFragment, MsgMetaShape, CoreConfShape, CloudConfShape, res_dynamo_yml, };

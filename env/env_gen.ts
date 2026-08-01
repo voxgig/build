@@ -20,6 +20,7 @@ import { camelify } from '@voxgig/util'
 import { CoreConfShape } from '../shape/conf'
 
 import { generate, loadFragment, renderFragment } from './lambda/generate'
+import { web_gen } from './web/web_gen'
 
 
 // The supported environment kinds and the files each generates.
@@ -93,6 +94,8 @@ const env_gen = async (model: any, spec: {
   tm?: string        // project tm/env folder (fragment shadowing)
   src?: string       // project src/env folder: runtime entries generated
                      // here ONCE (existing files are never overwritten)
+  root?: string      // project root (holds backend/ and web/) - required
+                     // for the 'web' kind (full frontend generation)
 }) => {
 
   const core = CoreConfShape(model.main.conf.core)
@@ -107,6 +110,17 @@ const env_gen = async (model: any, spec: {
     }
 
     const kind = def.kind || name
+
+    // The 'web' kind is the frontend SPA (+ backend web runner + auth),
+    // not a flat deployment-artifact set - delegate to EnvWeb.
+    if ('web' === kind) {
+      if (null == spec.root) {
+        throw new Error('@voxgig/build: env kind "web" needs spec.root ' +
+          '(the project root); pass it from the build action')
+      }
+      await web_gen(model, { root: spec.root, tm: spec.tm, env: def })
+      continue
+    }
     const filedefs = ENV_FILES[kind]
     if (null == filedefs) {
       throw new Error('@voxgig/build: unknown environment kind: ' + kind +
