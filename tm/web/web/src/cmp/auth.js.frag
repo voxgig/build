@@ -18,7 +18,7 @@ bus.use(function auth_cmp() {
 
   // Resolve current auth from the backend (cookie session).
   seneca.add('cmp:auth,load:state', function (msg, reply) {
-    this.act('aim:req,on:auth,load:auth', function (err, out) {
+    this.act('aim:web,on:auth,load:auth', function (err, out) {
       user = (!err && out.ok && 'signedin' === out.state) ? out.user : null
       emit('auth', { user })
       reply({ ok: true, user })
@@ -26,7 +26,7 @@ bus.use(function auth_cmp() {
   })
 
   seneca.add('cmp:auth,signin:user', function (msg, reply) {
-    this.act('aim:req,on:auth,signin:user', {
+    this.act('aim:web,on:auth,signin:user', {
       email: msg.email,
       password: msg.password,
     }, function (err, out) {
@@ -40,7 +40,7 @@ bus.use(function auth_cmp() {
   })
 
   seneca.add('cmp:auth,signout:user', function (msg, reply) {
-    this.act('aim:req,on:auth,signout:user', function () {
+    this.act('aim:web,on:auth,signout:user', function () {
       user = null
       emit('auth', { user })
       reply({ ok: true })

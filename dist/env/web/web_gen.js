@@ -111,6 +111,9 @@ const WEB_FILES = [
     { frag: 'backend/test/unit/srv/auth/apikey.test.ts.frag', out: 'backend/test/unit/srv/auth/apikey.test.ts' },
     { frag: 'backend/test/unit/srv/auth/session.test.ts.frag', out: 'backend/test/unit/srv/auth/session.test.ts' },
     { frag: 'backend/test/unit/env/web/api-router.test.ts.frag', out: 'backend/test/unit/env/web/api-router.test.ts' },
+    { frag: 'backend/test/unit/env/web/surface.test.ts.frag', out: 'backend/test/unit/env/web/surface.test.ts' },
+    { frag: 'backend/test/unit/srv/ent/ent.setup.ts.frag', out: 'backend/test/unit/srv/ent/ent.setup.ts' },
+    { frag: 'backend/test/unit/srv/ent/proxy.test.ts.frag', out: 'backend/test/unit/srv/ent/proxy.test.ts' },
     // Generic entity service (parameterised CRUD, membership-scoped).
     { frag: 'backend/srv/ent/ent-srv.ts.frag', out: 'backend/src/srv/ent/ent-srv.ts' },
     { frag: 'backend/srv/ent/access.ts.frag', out: 'backend/src/srv/ent/access.ts' },
@@ -119,6 +122,13 @@ const WEB_FILES = [
     { frag: 'backend/srv/ent/cmd_load.ts.frag', out: 'backend/src/srv/ent/cmd_load.ts' },
     { frag: 'backend/srv/ent/cmd_save.ts.frag', out: 'backend/src/srv/ent/cmd_save.ts' },
     { frag: 'backend/srv/ent/cmd_remove.ts.frag', out: 'backend/src/srv/ent/cmd_remove.ts' },
+    // Browser proxies: aim:web,on:ent,cmd:* -> aim:ent,cmd:* (the gateway
+    // accepts only aim:web, so the entity service is never posted directly
+    // from a browser).
+    { frag: 'backend/srv/ent/web_cmd_list.ts.frag', out: 'backend/src/srv/ent/web_cmd_list.ts' },
+    { frag: 'backend/srv/ent/web_cmd_load.ts.frag', out: 'backend/src/srv/ent/web_cmd_load.ts' },
+    { frag: 'backend/srv/ent/web_cmd_save.ts.frag', out: 'backend/src/srv/ent/web_cmd_save.ts' },
+    { frag: 'backend/srv/ent/web_cmd_remove.ts.frag', out: 'backend/src/srv/ent/web_cmd_remove.ts' },
 ];
 exports.WEB_FILES = WEB_FILES;
 // Default seeded users (local testing only), rendered into the runner.

@@ -36,6 +36,12 @@ npm test        # node:test + coverage thresholds (test/*.test.ts)
 - **Generator output is pinned byte-exact** by `test/fixture`. If an
   intentional output change fails tests, refresh the fixtures and say so
   in the commit.
+- **The browser surface is `aim:web` only.** The generated gateway
+  allow-list must stay the literal `{ 'aim:web': true }`; browser
+  operations are added as model-declared `aim:web` proxies (`web_*`
+  actions), never by widening the list. A pinned assertion in
+  `test/envlambda.test.ts` and the generated
+  `backend/test/unit/env/web/surface.test.ts` both guard it.
 - **EnvWeb is create-once.** Everything in `WEB_FILES` skips existing
   files unless `force`. Only `views.js` and `theme.css` are regenerated,
   and both must stay content-diffed (a no-op `web_gen` run must report

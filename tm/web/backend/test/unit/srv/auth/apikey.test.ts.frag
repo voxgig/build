@@ -111,9 +111,9 @@ describe('api keys', () => {
 
     // Unauthenticated calls are refused.
     for (const msg of [
-      { aim: 'req', on: 'auth', create: 'apikey', name: 'x' },
-      { aim: 'req', on: 'auth', list: 'apikey' },
-      { aim: 'req', on: 'auth', revoke: 'apikey', id: 'x' },
+      { aim: 'web', on: 'auth', create: 'apikey', name: 'x' },
+      { aim: 'web', on: 'auth', list: 'apikey' },
+      { aim: 'web', on: 'auth', revoke: 'apikey', id: 'x' },
     ]) {
       const out = await seneca.post(msg)
       assert.strictEqual(out.ok, false)
@@ -121,7 +121,7 @@ describe('api keys', () => {
     }
 
     const made = await as(seneca, { id: 'u01' },
-      { aim: 'req', on: 'auth', create: 'apikey', name: 'from-web' })
+      { aim: 'web', on: 'auth', create: 'apikey', name: 'from-web' })
     assert.strictEqual(made.ok, true)
 
     // The key belongs to the signed-in user, not anyone named in the msg.
@@ -129,20 +129,20 @@ describe('api keys', () => {
     assert.strictEqual(stored.user_id, 'u01')
 
     const mine = await as(seneca, { id: 'u01' },
-      { aim: 'req', on: 'auth', list: 'apikey' })
+      { aim: 'web', on: 'auth', list: 'apikey' })
     assert.strictEqual(mine.items.length, 1)
 
     // Another user sees none of them, and cannot revoke.
     const others = await as(seneca, { id: 'u02' },
-      { aim: 'req', on: 'auth', list: 'apikey' })
+      { aim: 'web', on: 'auth', list: 'apikey' })
     assert.strictEqual(others.items.length, 0)
 
     const denied = await as(seneca, { id: 'u02' },
-      { aim: 'req', on: 'auth', revoke: 'apikey', id: made.item.id })
+      { aim: 'web', on: 'auth', revoke: 'apikey', id: made.item.id })
     assert.strictEqual(denied.ok, false)
 
     const revoked = await as(seneca, { id: 'u01' },
-      { aim: 'req', on: 'auth', revoke: 'apikey', id: made.item.id })
+      { aim: 'web', on: 'auth', revoke: 'apikey', id: made.item.id })
     assert.strictEqual(revoked.ok, true)
     assert.strictEqual(revoked.item.revoked, true)
 

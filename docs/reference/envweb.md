@@ -122,9 +122,20 @@ Registered in `customise.js` via `hooks.js` (`addHtml` / `addFilter` /
 | `settings:sections` | html | extra settings sections |
 | `theme:modes` | filter | available theme mode list |
 
-## Messages used by the SPA
+## The browser surface
 
-- `aim:ent, cmd:list|load|save|remove, ent:'<zone>/<name>'` (+
-  `q`/`item`/`id`) — generic entity CRUD, membership-scoped.
-- `aim:auth, ...` — signin/signout/load, `change:pass`, `update:user`,
-  `remind:pass`.
+**Only `aim:web` is reachable from a browser.** The generated gateway
+allow-list is the literal `{ 'aim:web': true }`, and every message the SPA
+sends is declared in the model as an `aim:web` PROXY (a `web_*` action)
+forwarding to the real service message:
+
+- `aim:web,on:ent,cmd:list|load|save|remove, ent:'<zone>/<name>'` →
+  `aim:ent,cmd:*` (generic CRUD, membership-scoped)
+- `aim:web,on:auth,*` → `aim:auth,*` (session, settings, API keys)
+
+Service namespaces (`aim:auth`, `aim:ent`, `aim:todo`, `aim:api`) stay
+internal: posting one from a browser is rejected with `not-allowed`. The
+REST API has the same shape — the router posts `aim:api`, itself not
+browser-reachable. To expose a new browser operation, declare a proxy;
+never widen the allow-list. The generated
+`backend/test/unit/env/web/surface.test.ts` pins this contract.
