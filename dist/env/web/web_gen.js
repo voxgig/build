@@ -48,6 +48,14 @@ const WEB_FILES = [
     { frag: 'web/src/cmp/shell.js.frag', out: 'web/src/cmp/shell.js' },
     { frag: 'web/src/cmp/admin.js.frag', out: 'web/src/cmp/admin.js' },
     { frag: 'web/src/cmp/settings.js.frag', out: 'web/src/cmp/settings.js' },
+    // Per-component doc sidecars (mermaid structure + message diagrams),
+    // create-once next to each component.
+    { frag: 'web/src/cmp/app.md.frag', out: 'web/src/cmp/app.md' },
+    { frag: 'web/src/cmp/public.md.frag', out: 'web/src/cmp/public.md' },
+    { frag: 'web/src/cmp/auth.md.frag', out: 'web/src/cmp/auth.md' },
+    { frag: 'web/src/cmp/shell.md.frag', out: 'web/src/cmp/shell.md' },
+    { frag: 'web/src/cmp/admin.md.frag', out: 'web/src/cmp/admin.md' },
+    { frag: 'web/src/cmp/settings.md.frag', out: 'web/src/cmp/settings.md' },
     { frag: 'web/e2e/smoke.spec.js.frag', out: 'web/e2e/smoke.spec.js' },
     { frag: 'web/AGENTS.md.frag', out: 'web/AGENTS.md' },
     // Project docs (Diátaxis) for the web app, alongside the scaffold's
@@ -138,12 +146,6 @@ const web_gen = async (model, spec) => {
         }
     }
     for (const c of customs) {
-        const outrel = 'web/src/cmp/view/' + c.zone + '_' + c.name + '.js';
-        const dest = path_1.default.join(spec.root, outrel);
-        if (fs_1.default.existsSync(dest) && !spec.force) {
-            skipped.push(outrel);
-            continue;
-        }
         const vslots = Object.assign({}, slots, {
             canon: c.canon,
             zone: c.zone,
@@ -152,10 +154,19 @@ const web_gen = async (model, spec) => {
             className: 'VgView' + (0, util_1.camelify)(c.zone) + (0, util_1.camelify)(c.name),
             Label: (0, util_1.camelify)(c.name),
         });
-        const content = (0, generate_1.renderFragment)((0, generate_1.loadFragment)('web/src/cmp/view/custom-view.js.frag', spec, 'web'), vslots);
-        fs_1.default.mkdirSync(path_1.default.dirname(dest), { recursive: true });
-        fs_1.default.writeFileSync(dest, content);
-        created.push(outrel);
+        // The component starter plus its doc sidecar, both create-once.
+        for (const ext of ['js', 'md']) {
+            const outrel = 'web/src/cmp/view/' + c.zone + '_' + c.name + '.' + ext;
+            const dest = path_1.default.join(spec.root, outrel);
+            if (fs_1.default.existsSync(dest) && !spec.force) {
+                skipped.push(outrel);
+                continue;
+            }
+            const content = (0, generate_1.renderFragment)((0, generate_1.loadFragment)('web/src/cmp/view/custom-view.' + ext + '.frag', spec, 'web'), vslots);
+            fs_1.default.mkdirSync(path_1.default.dirname(dest), { recursive: true });
+            fs_1.default.writeFileSync(dest, content);
+            created.push(outrel);
+        }
     }
     // views.js — the generated index of custom views. Regenerated whenever the
     // set of custom views changes; a no-op run leaves it (and `created`) alone.

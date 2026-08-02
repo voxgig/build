@@ -30,7 +30,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run build && cd ../backend && PORT=${PORT} node dist/env/web/web.js`,
+    command: `npm run build && cd ../backend && PORT=${PORT} REPL=false node dist/env/web/web.js`,
     url: `http://localhost:${PORT}/`,
     timeout: 60000,
     reuseExistingServer: false,

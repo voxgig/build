@@ -19,6 +19,7 @@ import { resources_yml } from './env/lambda/res_yml'
 
 import { env_gen, ENV_FILES, ENV_SRC, KINDS as ENV_KINDS } from './env/env_gen'
 import { web_gen, WEB_FILES } from './env/web/web_gen'
+import { doc_gen } from './doc/doc_gen'
 
 import {
   generate, empty, TM,
@@ -55,6 +56,14 @@ const EnvWeb = {
 }
 
 
+// Docs: model-driven documentation (mermaid ER/message-flow/system-map
+// diagrams + per-service READMEs), regenerated every model-build. See
+// doc/doc_gen.ts.
+const Docs = {
+  doc_gen,
+}
+
+
 // Fragment tooling (used by voxgig-system template list/eject/diff, and
 // available to project code).
 const Fragments = {
@@ -69,6 +78,7 @@ export {
   EnvLambda,
   EnvGen,
   EnvWeb,
+  Docs,
   Fragments,
 
   // Building blocks for ejected project templates (src/gen/<name>.ts
