@@ -52,7 +52,28 @@ npm test        # node:test + coverage thresholds (test/*.test.ts)
   single trailing-newline strip) and verify by regenerating with
   `web_gen(model, { root: tmpdir, force: true })` and diffing.
 - `loadFragment` strips exactly one trailing newline — fragments end with
-  a blank line so output ends with a newline.
+  a blank line so output ends with a newline. **In practice none of the
+  `tm/web/backend/srv/ent/*.frag` files do**, so their generated output
+  ends without a newline while the committed reference app has one. The
+  parity check above therefore compares modulo that one byte. Fixing it
+  means adding the blank line to every fragment at once (and refreshing
+  the pinned fixtures), not one at a time.
+- **Entity access control is `@seneca/owner`, not hand-written checks.**
+  The generated `srv/ent/*` actions resolve the ownership axes
+  (`owner_id`, `project_id`) onto `custom.sysowner` and let the entity
+  layer decide; they do not filter rows. Two consequences:
+  - The generated `access.ts` imports `base` from `env/shared/basic`,
+    which `@voxgig/create-system` generates — so `web_gen` output needs a
+    scaffold whose `basic.ts` configures the `owner` options. An older
+    scaffold fails loudly at startup on `base.options.owner.fields`;
+    regenerate `basic.ts`. The import is deliberate: a duplicated field
+    list here would drift silently, and drift means an ownership field
+    that never gets stripped from client input.
+  - A tenant is only ever taken from a **stored** row on update, never
+    from the payload. Taking it from the payload lets a caller name a
+    project they do belong to, pass the membership check, and have owner
+    refine the query by that same project — overwriting another
+    project's row.
 
 ## Model gotchas (recur constantly)
 

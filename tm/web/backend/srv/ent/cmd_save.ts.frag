@@ -1,8 +1,23 @@
-import { principalOf, validCanon, scopeOf, myProjectIds } from './access'
+import {
+  principalOf, validCanon, scopeOf, projectOf, ownerOf, asOwner, asSystem,
+  stripOwned, isDenied,
+} from './access'
 
 // aim:ent,cmd:save  { ent:'zone/name', item:{...} }
-// Create or update, enforcing project-membership access. Creating a
-// proj/project auto-adds the creator as an owner member.
+//
+// Create or update. Row-level access is NOT enforced here: the save runs on
+// a delegate carrying custom.sysowner, and @seneca/owner injects the
+// ownership axes on create and refines the query on update - so an update
+// naming a row outside the caller's project simply does not find it.
+// Timestamps (t_c/t_m) are maintained by @seneca/entity-util.
+//
+// What this action must get right is WHICH TENANT the save acts in. On
+// create the payload names it (there is no row to contradict). On update
+// the tenant is read from the STORED row, and the payload's project field
+// is pinned to it. Taking the tenant from the payload would let a caller
+// name a project they DO belong to, pass the membership check, and have
+// owner refine the query by that same project - overwriting someone else's
+// row. This surface therefore does not move rows between projects.
 module.exports = function make_cmd_save() {
   return async function cmd_save(this: any, msg: any, meta: any) {
     const seneca = this
@@ -22,60 +37,66 @@ module.exports = function make_cmd_save() {
     }
 
     const data = Object.assign({}, msg.item)
-    const now = Date.now()
-    const isNew = null == data.id
 
-    if ('user' === scope.kind) {
-      if (!isNew) {
-        const existing = await seneca.entity(canon).load$(data.id)
-        if (existing && existing.owner_id !== user.id) {
-          return { ok: false, why: 'forbidden' }
-        }
-      }
-      data.owner_id = user.id
-    }
-    else if ('project' === scope.kind) {
-      if (!isNew) {
-        const myIds = await myProjectIds(seneca, user.id)
-        if (myIds.indexOf(data.id) < 0) {
-          return { ok: false, why: 'forbidden' }
-        }
-      }
-      data.owner_id = data.owner_id || user.id
-    }
-    else {
-      // 'scoped': must target a project the caller is a member of.
-      const via = (scope as any).via
-      const pid = data[via]
-      if (null == pid) {
+    // An id naming no existing row is a create with a client-chosen id, not
+    // an update: there is no stored tenant, and nothing to hijack.
+    const found = null == data.id
+      ? null
+      : await asSystem(seneca).entity(canon).load$(data.id)
+
+    let projectId: string | null = null
+
+    if (null == found) {
+      projectId = projectOf(model, canon, msg)
+      if ('scoped' === scope.kind && null == projectId) {
         return { ok: false, why: 'project-required' }
       }
-      const myIds = await myProjectIds(seneca, user.id)
-      if (myIds.indexOf(pid) < 0) {
+    }
+    else if ('project' === scope.kind) {
+      // The project IS the tenant, so updating one acts within itself.
+      projectId = found.id
+    }
+    else if ('scoped' === scope.kind) {
+      // Pinned to the stored row: the tenant is not settable from the payload.
+      projectId = found[(scope as any).via]
+    }
+
+    const owner = await ownerOf(seneca, user, projectId)
+    if (null == owner) {
+      return { ok: false, why: 'forbidden' }
+    }
+
+    // The ownership axes come from the delegate, never the payload - a row
+    // loaded by the client carries them, and re-sending them unchanged
+    // would otherwise be read as a claim.
+    stripOwned(data)
+
+    let item: any
+    try {
+      item = await asOwner(seneca, owner).entity(canon).data$(data).save$()
+    }
+    catch (err: any) {
+      if (isDenied(err)) {
         return { ok: false, why: 'forbidden' }
       }
-      data.owner_id = data.owner_id || user.id
+      throw err
+    }
+    if (null == item) {
+      return { ok: false, why: 'forbidden' }
     }
 
-    if (isNew) {
-      data.t_c = now
-    }
-    data.t_m = now
-
-    const item = await seneca.entity(canon).data$(data).save$()
-
-    // Creating a project makes the creator its first (owner) member.
-    if ('project' === scope.kind && isNew && item) {
-      await seneca.entity('proj/member').data$({
+    // Creating a project makes the creator its first (owner) member. This
+    // is bookkeeping for a project the caller is not yet a member of, so
+    // it cannot run as `member` - see the `system` role in basic.ts.
+    if ('project' === scope.kind && null == found) {
+      await asSystem(seneca).entity('proj/member').data$({
         project_id: item.id,
         user_id: user.id,
         role: 'owner',
         owner_id: user.id,
-        t_c: now,
-        t_m: now,
       }).save$()
     }
 
-    return { ok: !!item, item }
+    return { ok: true, item }
   }
 }
