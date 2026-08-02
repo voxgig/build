@@ -19,6 +19,7 @@ import { Local } from '@voxgig/system'
 
 import { basic, base } from '../shared/basic'
 import { seedDemo } from '../shared/seed'
+import { apiHandler } from './api'
 
 import Pkg from '../../../package.json'
 import Model from '../../../model/model.json'
@@ -125,6 +126,15 @@ async function run() {
     .use(Express.json())
     .use(new (CookieParser as any)())
     .post('/seneca', seneca.export('gateway-express/handler'))
+
+  // The strict-JSON REST API (model main.api), if active. Mounted with
+  // use() so req.path inside the handler is relative to the prefix.
+  const apiconf = (Model as any).main.api
+  if (apiconf && false !== apiconf.active) {
+    app.use(apiconf.prefix || '/api', apiHandler(seneca, Model))
+  }
+
+  app
     .get('/model.json',
       (_req: any, res: any) => res.sendFile(
         Path.join(__dirname, '..', '..', '..', 'model', 'model.json')))

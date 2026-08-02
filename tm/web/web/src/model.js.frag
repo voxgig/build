@@ -39,6 +39,10 @@ function entities() {
       continue
     }
     for (const name of Object.keys(e[zone])) {
+      // ux:{hide:true} keeps an entity out of the navigation entirely.
+      if (e[zone][name] && e[zone][name].ux && e[zone][name].ux.hide) {
+        continue
+      }
       out.push({
         zone,
         name,

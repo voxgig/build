@@ -128,3 +128,12 @@ a { color: var(--vg-primary); }
   padding: 0.5rem; font-size: 1rem; }
 .vg-auth-err { color: #b3261e; min-height: 1.2em; }
 .vg-auth-msg { color: #1a7f37; min-height: 1.2em; }
+
+/* API keys (Settings & security) */
+.vg-apikey-once { background: var(--vg-accent-bg); border: 1px solid var(--vg-border);
+  border-radius: var(--vg-radius); padding: 10px 12px; margin: 10px 0; }
+.vg-apikey-value { display: block; margin-top: 6px; word-break: break-all; user-select: all; }
+.vg-apikey-table { margin-top: 10px; }
+.vg-apikey-revoke { background: none; border: 1px solid var(--vg-border); border-radius: var(--vg-radius);
+  color: var(--vg-text); padding: 2px 10px; cursor: pointer; }
+.vg-apikey-revoke:hover { border-color: #b3261e; color: #b3261e; }

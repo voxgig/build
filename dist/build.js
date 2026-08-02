@@ -1,7 +1,7 @@
 "use strict";
 /* Copyright © 2022-2026 Voxgig Ltd, MIT License. */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.res_dynamo_yml = exports.CloudConfShape = exports.CoreConfShape = exports.MsgMetaShape = exports.renderFragment = exports.loadFragment = exports.TM = exports.empty = exports.generate = exports.Fragments = exports.Docs = exports.EnvWeb = exports.EnvGen = exports.EnvLambda = void 0;
+exports.res_dynamo_yml = exports.CloudConfShape = exports.CoreConfShape = exports.MsgMetaShape = exports.renderFragment = exports.loadFragment = exports.TM = exports.empty = exports.generate = exports.Fragments = exports.Api = exports.Docs = exports.EnvWeb = exports.EnvGen = exports.EnvLambda = void 0;
 // EnvLambda: generation of the Lambda deployment templates, built on the
 // jostraca templating library. The templates live in env/lambda/, one file
 // per output for convenience:
@@ -20,6 +20,7 @@ const res_yml_1 = require("./env/lambda/res_yml");
 const env_gen_1 = require("./env/env_gen");
 const web_gen_1 = require("./env/web/web_gen");
 const doc_gen_1 = require("./doc/doc_gen");
+const api_gen_1 = require("./api/api_gen");
 const generate_1 = require("./env/lambda/generate");
 Object.defineProperty(exports, "generate", { enumerable: true, get: function () { return generate_1.generate; } });
 Object.defineProperty(exports, "empty", { enumerable: true, get: function () { return generate_1.empty; } });
@@ -62,6 +63,13 @@ const Docs = {
     doc_gen: doc_gen_1.doc_gen,
 };
 exports.Docs = Docs;
+// Api: the strict-JSON REST API (model main.api) - OpenAPI spec from the
+// entity field definitions + generated request-validation shapes. See
+// api/api_gen.ts.
+const Api = {
+    api_gen: api_gen_1.api_gen,
+};
+exports.Api = Api;
 // Fragment tooling (used by voxgig-system template list/eject/diff, and
 // available to project code).
 const Fragments = {

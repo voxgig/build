@@ -20,6 +20,7 @@ import { resources_yml } from './env/lambda/res_yml'
 import { env_gen, ENV_FILES, ENV_SRC, KINDS as ENV_KINDS } from './env/env_gen'
 import { web_gen, WEB_FILES } from './env/web/web_gen'
 import { doc_gen } from './doc/doc_gen'
+import { api_gen } from './api/api_gen'
 
 import {
   generate, empty, TM,
@@ -64,6 +65,14 @@ const Docs = {
 }
 
 
+// Api: the strict-JSON REST API (model main.api) - OpenAPI spec from the
+// entity field definitions + generated request-validation shapes. See
+// api/api_gen.ts.
+const Api = {
+  api_gen,
+}
+
+
 // Fragment tooling (used by voxgig-system template list/eject/diff, and
 // available to project code).
 const Fragments = {
@@ -79,6 +88,7 @@ export {
   EnvGen,
   EnvWeb,
   Docs,
+  Api,
   Fragments,
 
   // Building blocks for ejected project templates (src/gen/<name>.ts

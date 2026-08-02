@@ -30,7 +30,12 @@ const bus = Seneca({
 // invalidates on writes, so repeated reads are served without a round-trip.
 // Registered AFTER .client() so the aim:* pin actions exist to be wrapped.
 if ('undefined' !== typeof SenecaBrowserStore) {
-  bus.use(SenecaBrowserStore, { pin: 'aim:*' })
+  bus.use(SenecaBrowserStore, {
+    pin: 'aim:*',
+    // Defaults plus 'revoke': aim:req,on:auth,revoke:apikey must
+    // invalidate the cached list:apikey reads.
+    write: ['save', 'remove', 'update', 'delete', 'create', 'done', 'set', 'add', 'revoke'],
+  })
 }
 
 // In-window devtools: a resizable/hideable pop-up showing live Seneca

@@ -64,10 +64,17 @@ declare const Docs: {
         created: string[];
     }>;
 };
+declare const Api: {
+    api_gen: (model: any, spec: {
+        root: string;
+    }) => Promise<{
+        created: string[];
+    }>;
+};
 declare const Fragments: {
     load: typeof loadFragment;
     render: typeof renderFragment;
     list: typeof listFragments;
     folder: string;
 };
-export { EnvLambda, EnvGen, EnvWeb, Docs, Fragments, generate, empty, TM, loadFragment, renderFragment, MsgMetaShape, CoreConfShape, CloudConfShape, res_dynamo_yml, };
+export { EnvLambda, EnvGen, EnvWeb, Docs, Api, Fragments, generate, empty, TM, loadFragment, renderFragment, MsgMetaShape, CoreConfShape, CloudConfShape, res_dynamo_yml, };

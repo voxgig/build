@@ -17,6 +17,9 @@ deployment artifacts and application code with the
 - **Docs** — model-driven documentation for generated projects: mermaid
   ER / message-flow / system-map diagrams and per-service READMEs,
   regenerated on every model-build.
+- **Api** — a strict-JSON REST API defined by the model (`main.api`):
+  uniform entity paths, API-key auth, an OpenAPI spec generated from the
+  entity field definitions, and generated request-validation shapes.
 
 Generation is normally driven by `npm run model-build` inside a project
 created with `npm create @voxgig/system` — you rarely call this package

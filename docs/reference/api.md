@@ -47,6 +47,15 @@ are pure functions of the model; marked AUTO-GENERATED).
 |---|---|
 | `doc_gen(model, spec)` | Generate `docs/reference/entities.md` (mermaid ER diagram from `ref` fields), `docs/reference/messages.md` (per-service message tables + flow diagram), `docs/reference/system-map.md` (architecture + dependency map), and a `README.md` per implemented service under `backend/src/srv/<srv>/`. `spec: { root, srvfolder? }`; returns `{ created }` (content-diffed) |
 
+### `Api`
+
+The strict-JSON REST API (model `main.api`), regenerated every
+model-build.
+
+| Member | Description |
+|---|---|
+| `api_gen(model, spec)` | Generate `backend/gen/api/openapi.json` (OpenAPI 3.1; schemas from entity field definitions, uniform `list_<zone>_<name>`-style operation ids for SDK generation) and `backend/src/srv/api/valid_gen.ts` (closed gubu request-validation shapes per exposed entity: create = required fields enforced, update = partial). `spec: { root }`; no-op unless the model declares `main.api`. Exposure: app entities by default, never the sys zone, per-entity overrides under `main.api.ent` |
+
 ### `Fragments`
 
 Fragment tooling (used by `voxgig-system template list/eject/diff`).

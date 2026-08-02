@@ -20,7 +20,9 @@ npm test        # jest (test/*.test.ts)
   artifacts; `env/web/web_gen.ts` — the web app generator (`WEB_FILES`
   manifest); `doc/doc_gen.ts` — model-driven docs (mermaid ERD /
   message-flow / system-map + per-service READMEs; regenerated,
-  content-diffed, AUTO-GENERATED headers).
+  content-diffed, AUTO-GENERATED headers); `api/api_gen.ts` — REST API
+  artifacts (OpenAPI spec from entity fields + valid_gen.ts request
+  shapes; same regeneration rules).
 - `shape/` — Gubu validators for model input.
 - `tm/` — jostraca text fragments (`*.frag`, `$$slot$$` placeholders):
   `tm/lambda/`, `tm/env/<kind>/`, `tm/web/`.
