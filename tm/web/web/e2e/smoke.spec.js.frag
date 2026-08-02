@@ -20,3 +20,4 @@ test('public site, sign in, and the app shell', async ({ page }) => {
   await expect(page.locator('.vg-user-btn')).toContainText('$$seedEmail$$')
   await expect(page.locator('.vg-navlink')).not.toHaveCount(0)
 })
+

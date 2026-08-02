@@ -133,22 +133,30 @@ export function projectOf(model: any, canon: string, msg: any): string | null {
   return null != q[via] ? q[via] : (null != item[via] ? item[via] : null)
 }
 
-// Build the @seneca/owner axes for a message: the acting user, plus the
-// project it acts in once membership is confirmed. Returns null when the
-// caller is not a member of the requested project, which the caller turns
-// into 'forbidden' - owner would deny the row anyway, this just gives a
+// The @seneca/owner axes for a user acting in a project. Pure: use it
+// only where membership is ALREADY established (project ids that came
+// out of the member table). Everywhere else use ownerOf.
+export function ownerFor(user: any, projectId: string | null): any {
+  // No project in play -> owner-only scoping (the `user` role).
+  return null == projectId
+    ? { owner_id: user.id, role: 'user' }
+    : { owner_id: user.id, project_id: projectId, role: 'member' }
+}
+
+// Same, but confirms membership first. Returns null when the caller is
+// not a member of the requested project, which the caller turns into
+// 'forbidden' - owner would deny the row anyway, this just gives a
 // precise reason instead of an empty result.
 export async function ownerOf(
   seneca: any, user: any, projectId: string | null
 ): Promise<any> {
-  // No project in play -> owner-only scoping (the `user` role).
   if (null == projectId) {
-    return { owner_id: user.id, role: 'user' }
+    return ownerFor(user, null)
   }
   if (!(await isMember(seneca, user.id, projectId))) {
     return null
   }
-  return { owner_id: user.id, project_id: projectId, role: 'member' }
+  return ownerFor(user, projectId)
 }
 
 // Run entity operations as the given owner: a delegate carrying
@@ -168,3 +176,4 @@ export function asSystem(seneca: any): any {
 export function publicUser(u: any): any {
   return u ? { id: u.id, name: u.name, email: u.email, handle: u.handle } : u
 }
+

@@ -55,3 +55,4 @@ class VgPublic extends HTMLElement {
 }
 
 customElements.define('vg-public', VgPublic)
+

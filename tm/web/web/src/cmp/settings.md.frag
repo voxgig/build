@@ -27,3 +27,4 @@ sequenceDiagram
 | Hook point | Kind | Effect |
 |---|---|---|
 | `settings:sections` | html | Extra settings sections |
+

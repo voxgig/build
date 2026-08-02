@@ -186,3 +186,4 @@ describe('auth session', () => {
     await seneca.close()
   })
 })
+

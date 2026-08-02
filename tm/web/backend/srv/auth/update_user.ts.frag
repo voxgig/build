@@ -12,3 +12,4 @@ module.exports = function make_update_user() {
     return { ok: true, user: { id: u.id, name: u.name, email: u.email, handle: u.handle } }
   }
 }
+

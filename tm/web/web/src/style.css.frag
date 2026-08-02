@@ -137,3 +137,4 @@ a { color: var(--vg-primary); }
 .vg-apikey-revoke { background: none; border: 1px solid var(--vg-border); border-radius: var(--vg-radius);
   color: var(--vg-text); padding: 2px 10px; cursor: pointer; }
 .vg-apikey-revoke:hover { border-color: #b3261e; color: #b3261e; }
+

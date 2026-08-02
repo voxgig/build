@@ -1,5 +1,5 @@
 import {
-  principalOf, validCanon, scopeOf, myProjectIds, ownerOf, asOwner, asSystem,
+  principalOf, validCanon, scopeOf, myProjectIds, ownerFor, asOwner, asSystem,
   publicUser,
 } from './access'
 
@@ -34,18 +34,20 @@ module.exports = function make_cmd_list() {
 
     // Not project data: owner scopes it to the acting user alone.
     if ('user' === scope.kind) {
-      const owner = await ownerOf(seneca, user, null)
+      const owner = ownerFor(user, null)
       return { ok: true, list: await asOwner(seneca, owner).entity(canon).list$(q) }
     }
 
+    // Every id below came OUT of the member table, so membership is
+    // already established - ownerFor, not ownerOf, or each one costs a
+    // redundant round trip re-proving what this list just read.
     const myIds = await myProjectIds(seneca, user.id)
 
     // The projects themselves: one load per membership row.
     if ('project' === scope.kind) {
       const projects: any[] = []
       for (const id of myIds) {
-        const owner = await ownerOf(seneca, user, id)
-        const p = owner && await asOwner(seneca, owner).entity(canon).load$(id)
+        const p = await asOwner(seneca, ownerFor(user, id)).entity(canon).load$(id)
         if (p && matches(p, q)) {
           projects.push(p)
         }
@@ -62,13 +64,10 @@ module.exports = function make_cmd_list() {
 
     let all: any[] = []
     for (const pid of ids) {
-      const owner = await ownerOf(seneca, user, pid)
-      if (null == owner) {
-        continue
-      }
       const sub = Object.assign({}, q)
       sub[via] = pid
-      all = all.concat(await asOwner(seneca, owner).entity(canon).list$(sub))
+      all = all.concat(
+        await asOwner(seneca, ownerFor(user, pid)).entity(canon).list$(sub))
     }
     return { ok: true, list: all }
   }
@@ -84,3 +83,4 @@ function matches(item: any, q: any) {
   }
   return true
 }
+

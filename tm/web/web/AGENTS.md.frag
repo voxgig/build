@@ -49,3 +49,4 @@ the entity menu, forms, and relationship navigation; `api.js` wraps the
 - `bus.sub` has no auto-unsubscribe: long-lived subscriptions in
   components must guard callbacks with `this.isConnected`.
 - Escape all user data with the local `esc()` helpers when building HTML.
+

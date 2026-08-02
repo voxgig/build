@@ -150,3 +150,4 @@ async function run() {
     version: Pkg.version,
   })
 }
+

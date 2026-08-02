@@ -46,3 +46,4 @@ flowchart TB
 | `shell:topbar:right` | html | Markup before the user menu |
 | `shell:sidebar:top` | html | Markup above the entity filter |
 | `shell:nav:items` | filter | Reorder/filter/relabel the entity menu |
+

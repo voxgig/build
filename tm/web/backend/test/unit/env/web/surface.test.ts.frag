@@ -106,3 +106,4 @@ describe('browser surface', () => {
     assert.ok(MSG.api, 'aim:api messages should still exist for the router')
   })
 })
+

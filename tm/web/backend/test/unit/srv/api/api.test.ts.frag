@@ -222,3 +222,4 @@ describe('api service', () => {
     await seneca.close()
   })
 })
+

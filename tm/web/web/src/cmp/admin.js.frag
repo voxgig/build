@@ -350,3 +350,4 @@ class VgEntityAdmin extends HTMLElement {
 
 
 customElements.define('vg-entity-admin', VgEntityAdmin)
+

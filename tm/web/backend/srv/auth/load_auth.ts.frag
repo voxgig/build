@@ -12,3 +12,4 @@ module.exports = function make_load_auth() {
     }
   }
 }
+

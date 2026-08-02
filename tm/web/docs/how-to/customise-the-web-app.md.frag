@@ -65,3 +65,4 @@ instead — see [Change the theme](change-the-theme.md).
 - As a last resort, edit the generated components directly — they are
   create-once and yours; just note that framework updates then need a
   manual merge.
+

@@ -122,3 +122,4 @@ class VgAuth extends HTMLElement {
 }
 
 customElements.define('vg-auth', VgAuth)
+

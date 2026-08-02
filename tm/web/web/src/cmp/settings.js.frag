@@ -175,3 +175,4 @@ function esc(s) {
 
 
 customElements.define('vg-settings', VgSettings)
+

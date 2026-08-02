@@ -21,3 +21,4 @@ module.exports = function make_signin_user() {
     return { ok: true, user: publicUser(out.user), login: out.login }
   }
 }
+

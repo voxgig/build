@@ -25,3 +25,4 @@ flowchart TB
 - Re-routing replaces `innerHTML`, tearing down the previous subtree —
   long-lived components must tolerate re-mounts (see the `isConnected`
   guard convention in shell/admin).
+

@@ -33,3 +33,4 @@ sequenceDiagram
 | Hook point | Kind | Effect |
 |---|---|---|
 | `auth:form:footer` | html | Extra links/markup under the form |
+

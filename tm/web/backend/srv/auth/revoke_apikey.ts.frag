@@ -20,3 +20,4 @@ module.exports = function make_revoke_apikey() {
     return { ok: !!saved, item: publicKey(saved) }
   }
 }
+

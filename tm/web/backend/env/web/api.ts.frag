@@ -148,3 +148,4 @@ async function authenticate(seneca: any, req: any): Promise<any> {
   delete d.salt
   return d
 }
+

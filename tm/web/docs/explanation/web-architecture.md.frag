@@ -47,3 +47,4 @@ treadmill in generated projects). The cost — manual re-render discipline —
 is contained by two conventions: explicit `reload()` calls after
 mutations, and a render token to discard stale async renders (see
 `cmp/admin.js`).
+
