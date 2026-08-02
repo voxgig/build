@@ -24,3 +24,4 @@ class VgApp extends HTMLElement {
 }
 
 customElements.define('vg-app', VgApp)
+

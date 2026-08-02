@@ -60,3 +60,4 @@ Hooks.addFilter('theme:modes', (modes) => [...modes, 'sepia'])
 `primary`, `primary-dark`, `bg`, `surface`, `text`, `muted`, `border`,
 `topbar-bg`, `topbar-fg`, `accent-bg`, `font`, `radius`, `shadow-card`.
 Any additional token you add becomes `--vg-<token>` too.
+

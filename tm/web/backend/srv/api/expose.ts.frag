@@ -30,3 +30,4 @@ export function exposedCanons(model: any): string[] {
   }
   return out.sort()
 }
+

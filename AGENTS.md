@@ -51,8 +51,35 @@ npm test        # node:test + coverage thresholds (test/*.test.ts)
   byte-identical (modulo `$$slot$$` substitution and `loadFragment`'s
   single trailing-newline strip) and verify by regenerating with
   `web_gen(model, { root: tmpdir, force: true })` and diffing.
-- `loadFragment` strips exactly one trailing newline — fragments end with
-  a blank line so output ends with a newline.
+- `loadFragment` strips exactly one trailing newline, so **every fragment
+  in `WEB_FILES` ends with a blank line** — otherwise the file it
+  generates has no trailing newline and can never be byte-identical to
+  the reference app. All 81 now do; keep it that way when adding one.
+  (Fragments used as embedded *slots* rather than whole files — the
+  `tm/lambda/res.*.yml` pieces — deliberately do not: there the strip is
+  what keeps the surrounding indentation intact.)
+  A whole-tree parity sweep is the check worth running after a fragment
+  change: regenerate with `web_gen({ force: true })` into a tmpdir and
+  compare every file against the reference app. Expect exact matches
+  everywhere except the create-once files the project owns and has
+  customised (`seed.ts`, `env/web/web.ts`, `web/package.json`,
+  `playwright.config.js`, `cmp/view/*.js`, `custom.css`, `customise.js`).
+- **Entity access control is `@seneca/owner`, not hand-written checks.**
+  The generated `srv/ent/*` actions resolve the ownership axes
+  (`owner_id`, `project_id`) onto `custom.sysowner` and let the entity
+  layer decide; they do not filter rows. Two consequences:
+  - The generated `access.ts` imports `base` from `env/shared/basic`,
+    which `@voxgig/create-system` generates — so `web_gen` output needs a
+    scaffold whose `basic.ts` configures the `owner` options. An older
+    scaffold fails loudly at startup on `base.options.owner.fields`;
+    regenerate `basic.ts`. The import is deliberate: a duplicated field
+    list here would drift silently, and drift means an ownership field
+    that never gets stripped from client input.
+  - A tenant is only ever taken from a **stored** row on update, never
+    from the payload. Taking it from the payload lets a caller name a
+    project they do belong to, pass the membership check, and have owner
+    refine the query by that same project — overwriting another
+    project's row.
 
 ## Model gotchas (recur constantly)
 

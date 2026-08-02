@@ -106,3 +106,4 @@ describe('entity browser proxies', () => {
     await seneca.close()
   })
 })
+

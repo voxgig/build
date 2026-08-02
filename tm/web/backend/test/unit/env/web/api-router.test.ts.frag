@@ -312,3 +312,4 @@ describe('rest api router', () => {
     await seneca.close()
   })
 })
+

@@ -48,3 +48,4 @@ this pattern in any new async render path.
 
 To replace this UI wholesale for one entity, use a custom view
 (`ux:{view:'custom'}` in the model).
+

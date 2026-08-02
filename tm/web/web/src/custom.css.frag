@@ -5,3 +5,4 @@
 :root {
   /* e.g. --vg-primary: #7c3aed; --vg-topbar-bg: #111827; */
 }
+

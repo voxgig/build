@@ -228,3 +228,4 @@ function esc(s) {
 
 
 customElements.define('vg-shell', VgShell)
+

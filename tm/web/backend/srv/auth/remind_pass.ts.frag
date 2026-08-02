@@ -32,3 +32,4 @@ module.exports = function make_remind_pass() {
     return { ok: true }
   }
 }
+

@@ -50,3 +50,4 @@ membership scoping and validation apply unchanged.
 Remove the `ux` declaration and run `model-build` — `views.js` drops the
 import and the entity falls back to the generic admin. Your component
 file stays (delete it manually if unwanted).
+

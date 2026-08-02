@@ -8,3 +8,4 @@ module.exports = function make_web_update_user() {
     return this.post('aim:auth,update:user', { user_id: user.id, data: msg.data })
   }
 }
+

@@ -95,3 +95,4 @@ failure-isolated.
 Tag `vg-view-<zone>-<name>`; properties `canon`, `projectId`, `detailId`,
 `onNavigate(canon, id)`; method `reload()`. Declared by
 `ux: { view: 'custom' }` on the model entity.
+

@@ -7,3 +7,4 @@ export function publicKey(item: any) {
   const d = 'function' === typeof item.data$ ? item.data$(false) : item
   return { id: d.id, name: d.name, prefix: d.prefix, revoked: !!d.revoked, t_c: d.t_c }
 }
+

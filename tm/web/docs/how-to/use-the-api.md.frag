@@ -50,3 +50,4 @@ SDK can be generated from it (e.g. with sdkgen).
 `backend/model/api.aontu` — `prefix`, `version`, `active`, and per-entity
 exposure (`ent: 'zone/name': { active: false }`). The sys zone is never
 exposed. Run `npm run model-build` after changes.
+

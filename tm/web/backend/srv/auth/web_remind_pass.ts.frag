@@ -4,3 +4,4 @@ module.exports = function make_web_remind_pass() {
     return this.post('aim:auth,remind:pass', { email: msg.email })
   }
 }
+

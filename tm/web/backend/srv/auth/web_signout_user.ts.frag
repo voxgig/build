@@ -14,3 +14,4 @@ module.exports = function make_web_signout_user() {
     return { ok: true, gateway$: { auth: { remove: true } } }
   }
 }
+

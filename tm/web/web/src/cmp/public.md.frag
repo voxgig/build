@@ -23,3 +23,4 @@ create-once and project-owned; replace the copy with your product's.
 ## Messages
 
 None of its own — sign-in flows through the embedded `vg-auth`.
+
