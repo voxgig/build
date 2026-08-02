@@ -49,6 +49,16 @@ async function run() {
 
   basic(seneca)
 
+  // Dev REPL (@seneca/repl): poke the running system with messages -
+  //   npx seneca-repl telnet://localhost:<port.repl>
+  // Disable with REPL=false; override the port with REPL_PORT.
+  if ('false' !== process.env.REPL) {
+    seneca.use('repl', {
+      port: parseInt(process.env.REPL_PORT || '', 10) ||
+        (Model as any).main.conf.port.repl,
+    })
+  }
+
   seneca
     .use('gateway', {
       // Allow auth + every service the model declares (aim:<srv>).

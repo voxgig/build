@@ -18,7 +18,9 @@ npm test        # jest (test/*.test.ts)
   `Fragments`, ejected-template building blocks).
 - `env/lambda/` — Lambda generators; `env/env_gen.ts` — environment
   artifacts; `env/web/web_gen.ts` — the web app generator (`WEB_FILES`
-  manifest).
+  manifest); `doc/doc_gen.ts` — model-driven docs (mermaid ERD /
+  message-flow / system-map + per-service READMEs; regenerated,
+  content-diffed, AUTO-GENERATED headers).
 - `shape/` — Gubu validators for model input.
 - `tm/` — jostraca text fragments (`*.frag`, `$$slot$$` placeholders):
   `tm/lambda/`, `tm/env/<kind>/`, `tm/web/`.

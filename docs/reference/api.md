@@ -38,6 +38,15 @@ The model-driven web app. See the [EnvWeb reference](envweb.md).
 | `web_gen(model, spec)` | Generate the SPA + backend web pieces. `spec: { root, tm?, env?, force? }`. Returns `{ created, skipped }` (sorted paths) |
 | `files` | `WEB_FILES` — fragment → output manifest |
 
+### `Docs`
+
+Model-driven documentation, regenerated every model-build (all outputs
+are pure functions of the model; marked AUTO-GENERATED).
+
+| Member | Description |
+|---|---|
+| `doc_gen(model, spec)` | Generate `docs/reference/entities.md` (mermaid ER diagram from `ref` fields), `docs/reference/messages.md` (per-service message tables + flow diagram), `docs/reference/system-map.md` (architecture + dependency map), and a `README.md` per implemented service under `backend/src/srv/<srv>/`. `spec: { root, srvfolder? }`; returns `{ created }` (content-diffed) |
+
 ### `Fragments`
 
 Fragment tooling (used by `voxgig-system template list/eject/diff`).

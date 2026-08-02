@@ -14,6 +14,9 @@ deployment artifacts and application code with the
   (public site, login, app shell, generic entity CRUD with relationship
   navigation, settings), backend web runner, auth + generic entity
   services, design themes, customisation hooks, and custom entity views.
+- **Docs** — model-driven documentation for generated projects: mermaid
+  ER / message-flow / system-map diagrams and per-service READMEs,
+  regenerated on every model-build.
 
 Generation is normally driven by `npm run model-build` inside a project
 created with `npm create @voxgig/system` — you rarely call this package

@@ -47,7 +47,12 @@ Custom-view fragments additionally get `canon`, `zone`, `name`, `tag`
   `cmp/{app,public,auth,shell,admin,settings}.js`, plus
   `cmp/view/<zone>_<name>.js` per custom-view entity. E2e:
   `web/e2e/smoke.spec.js`, `playwright.config.js`.
-- **Backend** `backend/src/`: `env/web/web.ts` (Express + gateway runner),
+- **Docs**: `web/AGENTS.md`, five Diátaxis docs under `docs/` (see the
+  file manifest), and a doc sidecar per component
+  (`web/src/cmp/<name>.md`, mermaid structure + message diagrams; custom
+  views get `cmp/view/<zone>_<name>.md` beside their starter).
+- **Backend** `backend/src/`: `env/web/web.ts` (Express + gateway runner
+  — also starts a dev REPL on `conf.port.repl`; `REPL=false` disables),
   `env/shared/seed.ts` (create-once seed stub), `srv/auth/*` (signin,
   signout, load, change-pass, update-user, remind-pass + `web_` wrappers),
   `srv/ent/*` (generic CRUD: `cmd_list/load/save/remove`, `access.ts`
