@@ -220,8 +220,12 @@ describe('env-web', () => {
       Path.join(out, 'backend/src/env/web/web.ts'), 'utf8')
     assert.ok((runner).includes("name: 'shop-auth'"))
     assert.ok((runner).includes('alice@example.com'))
-    // generic allow derived from the model services
-    assert.ok((runner).includes('Object.keys((Model as any).main.srv)'))
+    // THE BROWSER SURFACE: only aim:web is reachable from a browser, and
+    // it is a literal so it can be reviewed. It must never be widened to
+    // the service namespaces (a browser reaching aim:auth or aim:ent
+    // directly bypasses the declared proxies).
+    assert.ok((runner).includes("allow: { 'aim:web': true }"))
+    assert.ok(!(runner).includes('Object.keys((Model as any).main.srv)'))
 
     const html = Fs.readFileSync(Path.join(out, 'web/index.html'), 'utf8')
     assert.ok((html).includes('<title>Shop</title>'))

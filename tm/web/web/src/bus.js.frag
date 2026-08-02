@@ -1,7 +1,7 @@
 // The browser-side Seneca service bus. All component state and all
 // backend communication flow through messages on this bus:
 //
-//   aim:*             -> the backend gateway (/seneca) via the
+//   aim:web,*         -> the backend gateway (/seneca) via the
 //                        seneca-browser fetch transport (cookie auth)
 //   cmp:*             -> local component plugins (state)
 //
@@ -23,16 +23,16 @@ const bus = Seneca({
   },
 })
   .test()
-  .client({ type: 'browser', pin: 'aim:*' })
+  .client({ type: 'browser', pin: 'aim:web' })
 
 
-// Transparent state cache (Redux-like): caches aim:* query results and
+// Transparent state cache (Redux-like): caches aim:web query results and
 // invalidates on writes, so repeated reads are served without a round-trip.
-// Registered AFTER .client() so the aim:* pin actions exist to be wrapped.
+// Registered AFTER .client() so the aim:web pin actions exist to be wrapped.
 if ('undefined' !== typeof SenecaBrowserStore) {
   bus.use(SenecaBrowserStore, {
-    pin: 'aim:*',
-    // Defaults plus 'revoke': aim:req,on:auth,revoke:apikey must
+    pin: 'aim:web',
+    // Defaults plus 'revoke': aim:web,on:auth,revoke:apikey must
     // invalidate the cached list:apikey reads.
     write: ['save', 'remove', 'update', 'delete', 'create', 'done', 'set', 'add', 'revoke'],
   })
@@ -40,10 +40,10 @@ if ('undefined' !== typeof SenecaBrowserStore) {
 
 // In-window devtools: a resizable/hideable pop-up showing live Seneca
 // message flows, config, and (via the store plugin above) the cache tree.
-// aim:* messages are the remote (backend) calls. Loaded as a global script
+// aim:web messages are the remote (backend) calls. Loaded as a global script
 // in index.html; guarded so a missing bundle never breaks the app.
 if ('undefined' !== typeof SenecaBrowserDebug) {
-  bus.use(SenecaBrowserDebug, { remotePins: 'aim:*' })
+  bus.use(SenecaBrowserDebug, { remotePins: 'aim:web' })
 }
 
 

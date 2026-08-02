@@ -35,7 +35,7 @@ module.exports = function make_cmd_list() {
       const projects: any[] = []
       for (const id of myIds) {
         const p = await seneca.entity('proj/project').load$(id)
-        if (p) {
+        if (p && matches(p, q)) {
           projects.push(p)
         }
       }
@@ -60,4 +60,15 @@ module.exports = function make_cmd_list() {
     }
     return { ok: true, list: all }
   }
+}
+
+// Simple exact-match filter (the membership-scoped project list is loaded
+// by id, so the query can't go through list$).
+function matches(item: any, q: any) {
+  for (const k of Object.keys(q || {})) {
+    if (item[k] !== q[k]) {
+      return false
+    }
+  }
+  return true
 }

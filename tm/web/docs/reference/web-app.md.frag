@@ -27,16 +27,29 @@ points, and theme contract.*
 
 ## Backend messages used
 
-| Message | Purpose |
-|---|---|
-| `aim:ent,cmd:list,ent:<canon>` (+`q`) | List (membership/project-scoped) |
-| `aim:ent,cmd:load,ent:<canon>` (+`id`) | Load one |
-| `aim:ent,cmd:save,ent:<canon>` (+`item`) | Create/update |
-| `aim:ent,cmd:remove,ent:<canon>` (+`id`) | Delete |
-| `aim:auth,load:auth` | Current principal |
-| `aim:auth,signin:user` / `signout:user` | Session |
-| `aim:auth,change:pass` / `update:user` | Settings/security |
-| `aim:auth,remind:pass` | Password reminder (server stub) |
+**The browser may only send `aim:web` messages.** The gateway allow-list
+names that one namespace, and every message the SPA sends is declared in
+the model as an `aim:web` PROXY that forwards to the real service message
+(`web_*` action files). Service namespaces (`aim:auth`, `aim:ent`,
+`aim:api`, ...) are internal: posting one from a browser is rejected with
+`not-allowed`. API-key clients have the same shape - the REST router
+posts `aim:api`, which is likewise not browser-reachable.
+
+| Browser message | Proxies to | Purpose |
+|---|---|---|
+| `aim:web,on:ent,cmd:list,ent:<canon>` (+`q`) | `aim:ent,cmd:list` | List (membership/project-scoped) |
+| `aim:web,on:ent,cmd:load,ent:<canon>` (+`id`) | `aim:ent,cmd:load` | Load one |
+| `aim:web,on:ent,cmd:save,ent:<canon>` (+`item`) | `aim:ent,cmd:save` | Create/update |
+| `aim:web,on:ent,cmd:remove,ent:<canon>` (+`id`) | `aim:ent,cmd:remove` | Delete |
+| `aim:web,on:auth,load:auth` | `aim:auth,load:auth` | Current principal |
+| `aim:web,on:auth,signin:user` / `signout:user` | `aim:auth,*` | Session (sets/clears the cookie) |
+| `aim:web,on:auth,change:pass` / `update:user` | `aim:auth,*` | Settings & security |
+| `aim:web,on:auth,remind:pass` | `aim:auth,remind:pass` | Password reminder (server stub) |
+| `aim:web,on:auth,create:apikey` / `list:apikey` / `revoke:apikey` | `aim:auth,*` | API keys |
+
+To expose a new operation to the browser, declare an `aim:web` proxy for
+it in the model and implement the `web_*` action - never widen the
+allow-list.
 
 ## Hook points
 

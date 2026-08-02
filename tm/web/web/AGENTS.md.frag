@@ -21,11 +21,14 @@ data.
 
 `main.js` imports theme/css, the bus, all components, `views.js`
 (generated index of custom views), and `customise.js` (project hooks).
-All data flows are Seneca messages on `bus.js`: `aim:*` messages travel
-to the backend gateway; `cmp:*` and events stay local. The UI is
+All data flows are Seneca messages on `bus.js`. **Only `aim:web`
+messages leave the browser** - that is the sole namespace the gateway
+accepts, and each one is a declared proxy to a real service message;
+`cmp:*` and events stay local. The transport pin is `aim:web` too, so a
+stray service-message post fails locally instead of travelling. The UI is
 model-driven at runtime — `model.js` fetches `/model.json` and derives
 the entity menu, forms, and relationship navigation; `api.js` wraps the
-generic `aim:ent` CRUD and `aim:auth` messages.
+`aim:web,on:ent,cmd:*` CRUD proxies and the `aim:web,on:auth,*` proxies.
 
 ## Editing rules
 

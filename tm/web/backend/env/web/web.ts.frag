@@ -62,10 +62,13 @@ async function run() {
 
   seneca
     .use('gateway', {
-      // Allow auth + every service the model declares (aim:<srv>).
-      allow: Object.keys((Model as any).main.srv).reduce(
-        (a: any, n: string) => (a['aim:' + n] = true, a),
-        { 'aim:req,on:auth': true }),
+      // THE BROWSER SURFACE. Only aim:web is reachable from a browser:
+      // every message the SPA may send is declared in the model as an
+      // aim:web PROXY that forwards to the real service message. Service
+      // namespaces (aim:auth, aim:ent, ...) stay internal, so a browser
+      // cannot post one directly. API-key clients have their own proxy
+      // layer (aim:api behind the REST router, see ./api.ts).
+      allow: { 'aim:web': true },
     })
     .use('gateway-express', {
       // gateway-express sets/clears the auth cookie when a result carries

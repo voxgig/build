@@ -45,7 +45,7 @@ describe('auth session', () => {
     const { seneca } = await withUser()
 
     const out = await seneca.post(
-      { aim: 'req', on: 'auth', signin: 'user', email: 'alice@ex.com', password: 'alice-pass-01' })
+      { aim: 'web', on: 'auth', signin: 'user', email: 'alice@ex.com', password: 'alice-pass-01' })
     assert.strictEqual(out.ok, true)
     // gateway-auth (express_cookie) sets the cookie from this field.
     assert.ok(out.gateway$.auth.token)
@@ -53,7 +53,7 @@ describe('auth session', () => {
     assert.strictEqual(out.user.pass, undefined)
 
     const bad = await seneca.post(
-      { aim: 'req', on: 'auth', signin: 'user', email: 'alice@ex.com', password: 'wrong' })
+      { aim: 'web', on: 'auth', signin: 'user', email: 'alice@ex.com', password: 'wrong' })
     assert.strictEqual(bad.ok, false)
     assert.strictEqual(bad.gateway$, undefined)
     assert.ok(bad.why)
@@ -96,7 +96,7 @@ describe('auth session', () => {
 
     // The gateway principal carries both the user and the login token.
     const out = await seneca.post({
-      aim: 'req', on: 'auth', signout: 'user',
+      aim: 'web', on: 'auth', signout: 'user',
       custom$: { principal: { user, token } },
     })
     assert.strictEqual(out.ok, true)
@@ -107,7 +107,7 @@ describe('auth session', () => {
     assert.strictEqual(after[0].active, false)
 
     // Signing out with no principal at all is still a clean no-op.
-    const anon = await seneca.post({ aim: 'req', on: 'auth', signout: 'user' })
+    const anon = await seneca.post({ aim: 'web', on: 'auth', signout: 'user' })
     assert.strictEqual(anon.ok, true)
 
     await seneca.close()
@@ -117,11 +117,11 @@ describe('auth session', () => {
   test('load:auth reports the signed-in user, or nobody', async () => {
     const { seneca, user } = await withUser()
 
-    const anon = await seneca.post({ aim: 'req', on: 'auth', load: 'auth' })
+    const anon = await seneca.post({ aim: 'web', on: 'auth', load: 'auth' })
     assert.strictEqual(anon.ok, true)
     assert.strictEqual(anon.user, undefined)
 
-    const signed = await as(seneca, user, { aim: 'req', on: 'auth', load: 'auth' })
+    const signed = await as(seneca, user, { aim: 'web', on: 'auth', load: 'auth' })
     assert.strictEqual(signed.ok, true)
     assert.strictEqual(signed.user.email, 'alice@ex.com')
     assert.strictEqual(signed.user.pass, undefined)
@@ -145,14 +145,14 @@ describe('auth session', () => {
     const { seneca, user } = await withUser()
 
     const out = await as(seneca, user,
-      { aim: 'req', on: 'auth', update: 'user', data: { name: 'Alicia' } })
+      { aim: 'web', on: 'auth', update: 'user', data: { name: 'Alicia' } })
     assert.strictEqual(out.ok, true)
 
     const check = await seneca.post('sys:user,get:user', { email: 'alice@ex.com' })
     assert.strictEqual(check.user.name, 'Alicia')
 
     const anon = await seneca.post(
-      { aim: 'req', on: 'auth', update: 'user', data: { name: 'Mallory' } })
+      { aim: 'web', on: 'auth', update: 'user', data: { name: 'Mallory' } })
     assert.strictEqual(anon.ok, false)
     assert.strictEqual(anon.why, 'not-authenticated')
 
@@ -164,9 +164,9 @@ describe('auth session', () => {
     const { seneca } = await withUser()
 
     const known = await seneca.post(
-      { aim: 'req', on: 'auth', remind: 'pass', email: 'alice@ex.com' })
+      { aim: 'web', on: 'auth', remind: 'pass', email: 'alice@ex.com' })
     const unknown = await seneca.post(
-      { aim: 'req', on: 'auth', remind: 'pass', email: 'nobody@ex.com' })
+      { aim: 'web', on: 'auth', remind: 'pass', email: 'nobody@ex.com' })
 
     // Same answer either way (no user enumeration), and nothing is sent.
     assert.strictEqual(known.ok, true)
