@@ -1,0 +1,122 @@
+# Reference: EnvWeb
+
+*Diátaxis: reference — the generated web app: inputs, outputs, and
+extension points.*
+
+## `web_gen(model, spec)`
+
+| `spec` field | Meaning |
+|---|---|
+| `root` | Project root (holds `backend/` and `web/`) |
+| `tm` | Project `tm/web` folder for fragment shadowing (optional) |
+| `env` | The model env entry: `port`, `users`, `e2eport` (optional) |
+| `force` | Overwrite existing files (default: create-once) |
+
+Returns `{ created, skipped }` — sorted lists of project-relative paths.
+
+## Generation semantics
+
+- **Create-once** (the default for every file in `WEB_FILES`): if the
+  output exists it is skipped. The generated frontend is *developer-owned*;
+  framework updates require a forced regen or manual merge.
+- **Regenerated from the model** (content-diffed, only rewritten on
+  change):
+  - `web/src/views.js` — index importing every custom entity view.
+  - `web/src/theme.css` — CSS variables from `main.theme`.
+
+## Render slots
+
+Available in every fragment (`$$slot$$`):
+
+| Slot | Value |
+|---|---|
+| `name` / `Name` | `main.conf.core.name`, plain and camelified |
+| `users` | JSON of the seed users (env `users` or built-in defaults) |
+| `seedEmail` / `seedPassword` | first seed user's credentials |
+| `e2eport` | env `e2eport`, default backend port + 10 |
+
+Custom-view fragments additionally get `canon`, `zone`, `name`, `tag`
+(`vg-view-<zone>-<name>`), `className`, `Label`.
+
+## Generated output (by area)
+
+- **Frontend** `web/src/`: `main.js`, `bus.js` (browser Seneca bus),
+  `model.js` (runtime model: entities, refs graph, labels), `api.js`
+  (generic entity + auth client), `hooks.js`, `theme.js`, `style.css`,
+  `customise.js` + `custom.css` (developer entry points),
+  `cmp/{app,public,auth,shell,admin,settings}.js`, plus
+  `cmp/view/<zone>_<name>.js` per custom-view entity. E2e:
+  `web/e2e/smoke.spec.js`, `playwright.config.js`.
+- **Backend** `backend/src/`: `env/web/web.ts` (Express + gateway runner),
+  `env/shared/seed.ts` (create-once seed stub), `srv/auth/*` (signin,
+  signout, load, change-pass, update-user, remind-pass + `web_` wrappers),
+  `srv/ent/*` (generic CRUD: `cmd_list/load/save/remove`, `access.ts`
+  membership scoping).
+
+The authoritative manifest is `WEB_FILES` in `env/web/web_gen.ts`.
+
+## Model inputs
+
+### Entities (`main.ent.<zone>.<name>`)
+
+- Fields with a `ref: '<zone>/<name>'` attribute define the relationship
+  graph (stored as string ids; `kind` stays `String`).
+- `ux: { view: 'custom' }` replaces the generic admin with a hand-coded
+  component `vg-view-<zone>-<name>` (starter generated create-once).
+  Component contract: properties `canon`, `projectId`, `detailId`,
+  `onNavigate(canon, id)`; method `reload()`.
+
+### Theme (`main.theme`)
+
+```
+mode: 'light'                  # default mode
+modes: {
+  light: { <token>: <value> }  # any number of named modes
+  dark:  { ... }
+}
+```
+
+Standard tokens: `primary`, `primary-dark`, `bg`, `surface`, `text`,
+`muted`, `border`, `topbar-bg`, `topbar-fg`, `accent-bg`, `font`,
+`radius`, `shadow-card`. Any token becomes `--vg-<token>`. Emitted as:
+
+```css
+:root, :root[data-theme-mode="light"] { --vg-bg: ...; }
+:root[data-theme-mode="dark"] { --vg-bg: ...; }
+```
+
+`theme.js` persists the chosen mode (localStorage `vg-theme-mode`) and
+applies it via the `data-theme-mode` attribute; its mode list passes
+through the `theme:modes` filter hook.
+
+## Hook points
+
+Registered in `customise.js` via `hooks.js` (`addHtml` / `addFilter` /
+`addAction`); all synchronous and failure-isolated.
+
+| Point | Kind | Context / value |
+|---|---|---|
+| `shell:topbar:right` | html | `{ user }` |
+| `shell:sidebar:top` | html | `{ user }` |
+| `shell:nav:items` | filter | entity list for the nav menu |
+| `admin:list:toolbar` | html | list toolbar region |
+| `admin:list:items` | filter | rows before render |
+| `admin:list:columns` | filter | column defs |
+| `admin:row:actions` | html | per-row action cell (`{ item, canon }`) |
+| `admin:list:after` | action | `{ root, canon, items }` after render |
+| `admin:form:fields` | filter | form field defs |
+| `admin:form:extra` | html | extra form markup |
+| `admin:form:after` | action | after form render |
+| `admin:save:data` | filter | payload before save |
+| `admin:save:after` | action | after successful save |
+| `public:sections` | html | extra public-site sections |
+| `auth:form:footer` | html | login form footer |
+| `settings:sections` | html | extra settings sections |
+| `theme:modes` | filter | available theme mode list |
+
+## Messages used by the SPA
+
+- `aim:ent, cmd:list|load|save|remove, ent:'<zone>/<name>'` (+
+  `q`/`item`/`id`) — generic entity CRUD, membership-scoped.
+- `aim:auth, ...` — signin/signout/load, `change:pass`, `update:user`,
+  `remind:pass`.

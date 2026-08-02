@@ -49,6 +49,15 @@ const WEB_FILES = [
     { frag: 'web/src/cmp/admin.js.frag', out: 'web/src/cmp/admin.js' },
     { frag: 'web/src/cmp/settings.js.frag', out: 'web/src/cmp/settings.js' },
     { frag: 'web/e2e/smoke.spec.js.frag', out: 'web/e2e/smoke.spec.js' },
+    { frag: 'web/AGENTS.md.frag', out: 'web/AGENTS.md' },
+    // Project docs (Diátaxis) for the web app, alongside the scaffold's
+    // backend docs (@voxgig/create-system DocsPart). Create-once like all
+    // WEB_FILES: the project owns its docs after generation.
+    { frag: 'docs/how-to/customise-the-web-app.md.frag', out: 'docs/how-to/customise-the-web-app.md' },
+    { frag: 'docs/how-to/change-the-theme.md.frag', out: 'docs/how-to/change-the-theme.md' },
+    { frag: 'docs/how-to/add-a-custom-entity-view.md.frag', out: 'docs/how-to/add-a-custom-entity-view.md' },
+    { frag: 'docs/reference/web-app.md.frag', out: 'docs/reference/web-app.md' },
+    { frag: 'docs/explanation/web-architecture.md.frag', out: 'docs/explanation/web-architecture.md' },
     // Backend web runner + auth service (backend/src/...)
     { frag: 'backend/env/web/web.ts.frag', out: 'backend/src/env/web/web.ts' },
     { frag: 'backend/env/shared/seed.ts.frag', out: 'backend/src/env/shared/seed.ts' },
