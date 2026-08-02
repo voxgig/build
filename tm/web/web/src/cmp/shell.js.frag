@@ -7,6 +7,8 @@
 import { bus, onEvent } from '../bus.js'
 import * as Model from '../model.js'
 import * as Api from '../api.js'
+import * as Hooks from '../hooks.js'
+import * as Theme from '../theme.js'
 
 
 class VgShell extends HTMLElement {
@@ -30,9 +32,14 @@ class VgShell extends HTMLElement {
       this.openEntity(start.canon)
     }
 
-    // The project selector refreshes when projects change (e.g. a new one
-    // is created in the admin).
-    onEvent('projects-changed', () => this.loadProjects())
+    // The project selector refreshes when projects change (e.g. a new one is
+    // created). Guard with isConnected: bus.sub has no auto-unsubscribe, so a
+    // torn-down shell (sign-out→in re-mounts it) must not act on stale events.
+    onEvent('projects-changed', () => {
+      if (this.isConnected) {
+        this.loadProjects()
+      }
+    })
   }
 
   // ---- data ----
@@ -74,9 +81,11 @@ class VgShell extends HTMLElement {
 
   mountAdmin(canon, detailId) {
     const main = this.querySelector('#vg-main')
-    if (!this.admin || this.admin.parentNode !== main) {
+    // A custom view (ux:{view:'custom'}) replaces the generic admin.
+    const tag = Model.customViewTag(canon) || 'vg-entity-admin'
+    if (!this.admin || this.admin.parentNode !== main || this.admin.localName !== tag) {
       main.innerHTML = ''
-      this.admin = document.createElement('vg-entity-admin')
+      this.admin = document.createElement(tag)
       this.admin.onNavigate = (c, id) => this.openEntity(c, id)
       main.appendChild(this.admin)
     }
@@ -99,11 +108,14 @@ class VgShell extends HTMLElement {
             <select id="vg-project"></select>
           </div>
           <div class="vg-spacer"></div>
+          ${Hooks.html('shell:topbar:right', { user: this.user })}
           <div class="vg-usermenu" id="vg-usermenu">
             <button class="vg-user-btn" id="vg-user-btn">
               <span>${this.user ? this.user.email : ''}</span> <span class="vg-caret">▾</span>
             </button>
             <div class="vg-user-dropdown" id="vg-user-dropdown" hidden>
+              ${Theme.modes().length > 1
+                ? `<a href="#" id="vg-theme-toggle">Theme: ${esc(Theme.current())}</a>` : ''}
               <a href="#" id="vg-nav-settings">Settings &amp; security</a>
               <a href="#" id="vg-signout">Sign out</a>
             </div>
@@ -111,6 +123,7 @@ class VgShell extends HTMLElement {
         </header>
         <div class="vg-body">
           <aside class="vg-sidebar">
+            ${Hooks.html('shell:sidebar:top', { user: this.user })}
             <input class="vg-ent-filter" id="vg-ent-filter" placeholder="Filter…" />
             <nav id="vg-entnav"></nav>
           </aside>
@@ -131,6 +144,14 @@ class VgShell extends HTMLElement {
     }
     document.addEventListener('click', () => { dropdown.hidden = true })
 
+    const themeToggle = this.querySelector('#vg-theme-toggle')
+    if (themeToggle) {
+      themeToggle.onclick = (ev) => {
+        ev.preventDefault()
+        ev.stopPropagation()
+        themeToggle.textContent = 'Theme: ' + Theme.nextMode()
+      }
+    }
     this.querySelector('#vg-nav-settings').onclick = (ev) => {
       ev.preventDefault()
       dropdown.hidden = true
@@ -170,7 +191,9 @@ class VgShell extends HTMLElement {
   renderNav(filter) {
     const nav = this.querySelector('#vg-entnav')
     const f = (filter || '').toLowerCase()
-    const ents = Model.entities().filter((e) => e.canon.toLowerCase().indexOf(f) >= 0)
+    // Hook: reorder/filter/relabel the entity menu.
+    const all = Hooks.filter('shell:nav:items', Model.entities(), {})
+    const ents = all.filter((e) => e.canon.toLowerCase().indexOf(f) >= 0)
     const byZone = {}
     for (const e of ents) {
       (byZone[e.zone] = byZone[e.zone] || []).push(e)

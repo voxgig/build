@@ -4,6 +4,7 @@
 
 import { bus, emit } from '../bus.js'
 import { remindPass } from '../api.js'
+import * as Hooks from '../hooks.js'
 
 
 bus.use(function auth_cmp() {
@@ -73,6 +74,7 @@ class VgAuth extends HTMLElement {
         <label>Password <input name="password" type="password" required /></label>
         <button type="submit">Sign in</button>
         <a href="#" class="vg-link" id="vg-forgot">Forgot password?</a>
+        ${Hooks.html('auth:form:footer', {})}
         <div class="vg-auth-err" id="vg-auth-err"></div>
       </form>`
     this.querySelector('#vg-forgot').onclick = (ev) => {

@@ -3,7 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EntShape = void 0;
 const gubu_1 = require("gubu");
 const { Open, Skip } = gubu_1.Gubu;
-const EntShape = (0, gubu_1.Gubu)({
+// Open: entities may carry extra attributes beyond the deployment-relevant
+// ones below (e.g. `ux` for frontend view hints), which this generator ignores.
+const EntShape = (0, gubu_1.Gubu)(Open({
     id: {
         field: 'id'
     },
@@ -23,6 +25,6 @@ const EntShape = (0, gubu_1.Gubu)({
         active: false
     }),
     custom: Skip(String),
-}, { prefix: 'Entity' });
+}), { prefix: 'Entity' });
 exports.EntShape = EntShape;
 //# sourceMappingURL=ent.js.map
