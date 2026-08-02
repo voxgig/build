@@ -5,6 +5,9 @@
 // web_gen branches beyond the plain manifest (custom views, views.js,
 // theme.css).
 
+import { describe, test } from 'node:test'
+import assert from 'node:assert'
+
 import Fs from 'fs'
 import Os from 'os'
 import Path from 'path'
@@ -114,7 +117,7 @@ describe('doc_gen', () => {
     const root = tmpProject(['thing'])
 
     const res = await Docs.doc_gen(model, { root })
-    expect(res.created).toEqual([
+    assert.deepEqual(res.created, [
       'backend/src/srv/thing/README.md',
       'docs/reference/entities.md',
       'docs/reference/messages.md',
@@ -122,37 +125,37 @@ describe('doc_gen', () => {
     ])
 
     const ents = read(root, 'docs/reference/entities.md')
-    expect(ents).toContain('erDiagram')
-    expect(ents).toContain('shop_product ||--o{ shop_order : "product_id"')
-    expect(ents).toContain('| `shop/product` |')
-    expect(ents).toContain('custom view')
-    expect(ents).toContain('product_id FK')
+    assert.ok((ents).includes('erDiagram'))
+    assert.ok((ents).includes('shop_product ||--o{ shop_order : "product_id"'))
+    assert.ok((ents).includes('| `shop/product` |'))
+    assert.ok((ents).includes('custom view'))
+    assert.ok((ents).includes('product_id FK'))
 
     const msgs = read(root, 'docs/reference/messages.md')
-    expect(msgs).toContain('flowchart LR')
-    expect(msgs).toContain('`aim:thing,save:item` | `src/srv/thing/save_item.ts`')
-    expect(msgs).toContain('web_save_item')
+    assert.ok((msgs).includes('flowchart LR'))
+    assert.ok((msgs).includes('`aim:thing,save:item` | `src/srv/thing/save_item.ts`'))
+    assert.ok((msgs).includes('web_save_item'))
 
     const map = read(root, 'docs/reference/system-map.md')
-    expect(map).toContain('subgraph spa[Web SPA]')
-    expect(map).toContain('view_shop_product')
-    expect(map).toContain('srv_thing -.depends.-> srv_other')
-    expect(map).toContain('env_local')
-    expect(map).not.toContain('env_docker')
+    assert.ok((map).includes('subgraph spa[Web SPA]'))
+    assert.ok((map).includes('view_shop_product'))
+    assert.ok((map).includes('srv_thing -.depends.-> srv_other'))
+    assert.ok((map).includes('env_local'))
+    assert.ok(!(map).includes('env_docker'))
 
     const readme = read(root, 'backend/src/srv/thing/README.md')
-    expect(readme).toContain('# Service: thing (generated)')
-    expect(readme).toContain('Requires a signed-in user')
-    expect(readme).toContain('save_item')
-    expect(readme).toContain('```mermaid')
+    assert.ok((readme).includes('# Service: thing (generated)'))
+    assert.ok((readme).includes('Requires a signed-in user'))
+    assert.ok((readme).includes('save_item'))
+    assert.ok((readme).includes('```mermaid'))
 
     // Content-diff: an unchanged model regenerates nothing.
     const again = await Docs.doc_gen(model, { root })
-    expect(again.created).toEqual([])
+    assert.deepEqual(again.created, [])
 
     // Services without a folder get no README (only 'thing' exists).
-    expect(Fs.existsSync(
-      Path.join(root, 'backend/src/srv/other/README.md'))).toBe(false)
+    assert.strictEqual(Fs.existsSync(
+      Path.join(root, 'backend/src/srv/other/README.md')), false)
   })
 
   test('system map without web env uses plain client node', async () => {
@@ -162,8 +165,8 @@ describe('doc_gen', () => {
     const root = tmpProject()
     await Docs.doc_gen(model, { root })
     const map = read(root, 'docs/reference/system-map.md')
-    expect(map).toContain('client([Clients])')
-    expect(map).not.toContain('subgraph spa')
+    assert.ok((map).includes('client([Clients])'))
+    assert.ok(!(map).includes('subgraph spa'))
   })
 })
 
@@ -175,57 +178,56 @@ describe('api_gen', () => {
     const root = tmpProject(['api'])
 
     const res = await Api.api_gen(model, { root })
-    expect(res.created).toEqual([
+    assert.deepEqual(res.created, [
       'backend/gen/api/openapi.json',
       'backend/src/srv/api/valid_gen.ts',
     ])
 
     const spec = JSON.parse(read(root, 'backend/gen/api/openapi.json'))
-    expect(spec.openapi).toBe('3.1.0')
-    expect(spec.info.title).toBe('demo API')
-    expect(spec.servers).toEqual([{ url: '/api' }])
+    assert.strictEqual(spec.openapi, '3.1.0')
+    assert.strictEqual(spec.info.title, 'demo API')
+    assert.deepEqual(spec.servers, [{ url: '/api' }])
     // shop/order is deactivated, sys never exposed.
-    expect(Object.keys(spec.paths)).toEqual(
-      ['/v1/shop/product', '/v1/shop/product/{id}'])
+    assert.deepEqual(Object.keys(spec.paths), ['/v1/shop/product', '/v1/shop/product/{id}'])
     const schema = spec.components.schemas.ShopProduct
-    expect(schema.required).toEqual(['title'])
-    expect(schema.properties.id.readOnly).toBe(true)
-    expect(schema.properties.title.type).toBe('string')
-    expect(schema.properties.price.type).toBe('number')
-    expect(schema.properties.live.type).toBe('boolean')
-    expect(schema.additionalProperties).toBe(false)
-    expect(spec.paths['/v1/shop/product'].get.operationId).toBe('list_shop_product')
-    expect(spec.paths['/v1/shop/product'].post.responses['201']).toBeDefined()
-    expect(spec.paths['/v1/shop/product/{id}'].delete).toBeDefined()
-    expect(spec.components.securitySchemes.bearerAuth.scheme).toBe('bearer')
+    assert.deepEqual(schema.required, ['title'])
+    assert.strictEqual(schema.properties.id.readOnly, true)
+    assert.strictEqual(schema.properties.title.type, 'string')
+    assert.strictEqual(schema.properties.price.type, 'number')
+    assert.strictEqual(schema.properties.live.type, 'boolean')
+    assert.strictEqual(schema.additionalProperties, false)
+    assert.strictEqual(spec.paths['/v1/shop/product'].get.operationId, 'list_shop_product')
+    assert.notStrictEqual(spec.paths['/v1/shop/product'].post.responses['201'], undefined)
+    assert.notStrictEqual(spec.paths['/v1/shop/product/{id}'].delete, undefined)
+    assert.strictEqual(spec.components.securitySchemes.bearerAuth.scheme, 'bearer')
 
     const valid = read(root, 'backend/src/srv/api/valid_gen.ts')
-    expect(valid).toContain('AUTO-GENERATED')
-    expect(valid).toContain("shapes['shop/product']")
-    expect(valid).not.toContain("shapes['shop/order']")
-    expect(valid).toContain('title: String,')
-    expect(valid).toContain('price: Skip(Number),')
+    assert.ok((valid).includes('AUTO-GENERATED'))
+    assert.ok((valid).includes("shapes['shop/product']"))
+    assert.ok(!(valid).includes("shapes['shop/order']"))
+    assert.ok((valid).includes('title: String,'))
+    assert.ok((valid).includes('price: Skip(Number),'))
     // update shape: everything optional.
-    expect(valid).toContain('title: Skip(String),')
+    assert.ok((valid).includes('title: Skip(String),'))
     // Server-managed fields excluded from the shapes (the header comment
     // names them, so check the shape-entry form).
-    expect(valid).not.toContain('owner_id:')
+    assert.ok(!(valid).includes('owner_id:'))
 
     // Content-diff no-op.
     const again = await Api.api_gen(model, { root })
-    expect(again.created).toEqual([])
+    assert.deepEqual(again.created, [])
   })
 
   test('no main.api is a no-op; missing srv/api skips valid_gen', async () => {
     const model = makeModel()
     delete model.main.api
     const root = tmpProject()
-    expect((await Api.api_gen(model, { root })).created).toEqual([])
+    assert.deepEqual((await Api.api_gen(model, { root })).created, [])
 
     const model2 = makeModel()
     const root2 = tmpProject()  // no backend/src/srv/api folder
     const res2 = await Api.api_gen(model2, { root: root2 })
-    expect(res2.created).toEqual(['backend/gen/api/openapi.json'])
+    assert.deepEqual(res2.created, ['backend/gen/api/openapi.json'])
   })
 })
 
@@ -239,25 +241,25 @@ describe('web_gen model-driven outputs', () => {
     const res = await EnvWeb.web_gen(model, { root })
 
     // Custom view starter + doc sidecar, generated index, theme css.
-    expect(res.created).toContain('web/src/cmp/view/shop_product.js')
-    expect(res.created).toContain('web/src/cmp/view/shop_product.md')
-    expect(res.created).toContain('web/src/views.js')
-    expect(res.created).toContain('web/src/theme.css')
+    assert.ok((res.created).includes('web/src/cmp/view/shop_product.js'))
+    assert.ok((res.created).includes('web/src/cmp/view/shop_product.md'))
+    assert.ok((res.created).includes('web/src/views.js'))
+    assert.ok((res.created).includes('web/src/theme.css'))
 
     const view = read(root, 'web/src/cmp/view/shop_product.js')
-    expect(view).toContain('vg-view-shop-product')
+    assert.ok((view).includes('vg-view-shop-product'))
     const views = read(root, 'web/src/views.js')
-    expect(views).toContain("import './cmp/view/shop_product.js'")
+    assert.ok((views).includes("import './cmp/view/shop_product.js'"))
 
     const theme = read(root, 'web/src/theme.css')
-    expect(theme).toContain(':root[data-theme-mode="light"]')
-    expect(theme).toContain(':root[data-theme-mode="dark"]')
-    expect(theme).toContain('--vg-primary: #111111;')
+    assert.ok((theme).includes(':root[data-theme-mode="light"]'))
+    assert.ok((theme).includes(':root[data-theme-mode="dark"]'))
+    assert.ok((theme).includes('--vg-primary: #111111;'))
 
     // Create-once: a second run creates nothing and skips everything.
     const again = await EnvWeb.web_gen(model, { root })
-    expect(again.created).toEqual([])
-    expect(again.skipped).toContain('web/src/cmp/view/shop_product.js')
+    assert.deepEqual(again.created, [])
+    assert.ok((again.skipped).includes('web/src/cmp/view/shop_product.js'))
 
     // Hand edits to create-once files survive; views.js/theme.css follow
     // the model: dropping the custom view + theme removes/regenerates.
@@ -265,14 +267,14 @@ describe('web_gen model-driven outputs', () => {
     delete model2.main.ent.shop.product.ux
     model2.main.theme.modes = { light: { primary: '#222222' } }
     const res2 = await EnvWeb.web_gen(model2, { root })
-    expect(res2.created).toContain('web/src/views.js')
-    expect(res2.created).toContain('web/src/theme.css')
-    expect(read(root, 'web/src/views.js')).not.toContain('shop_product')
-    expect(read(root, 'web/src/theme.css')).not.toContain('dark')
+    assert.ok((res2.created).includes('web/src/views.js'))
+    assert.ok((res2.created).includes('web/src/theme.css'))
+    assert.ok(!(read(root, 'web/src/views.js')).includes('shop_product'))
+    assert.ok(!(read(root, 'web/src/theme.css')).includes('dark'))
 
     // force regenerates existing files.
     const res3 = await EnvWeb.web_gen(model2, { root, force: true })
-    expect(res3.created).toContain('web/src/main.js')
+    assert.ok((res3.created).includes('web/src/main.js'))
   })
 
   test('theme absent generates no theme.css', async () => {
@@ -281,7 +283,7 @@ describe('web_gen model-driven outputs', () => {
     delete model.main.ent.shop.product.ux
     const root = tmpProject()
     const res = await EnvWeb.web_gen(model, { root })
-    expect(res.created).not.toContain('web/src/theme.css')
-    expect(Fs.existsSync(Path.join(root, 'web/src/theme.css'))).toBe(false)
+    assert.ok(!(res.created).includes('web/src/theme.css'))
+    assert.strictEqual(Fs.existsSync(Path.join(root, 'web/src/theme.css')), false)
   })
 })

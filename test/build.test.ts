@@ -1,6 +1,9 @@
 /* Copyright (c) 2022 Richard Rodger and other contributors, MIT License */
 
 
+import { describe, test } from 'node:test'
+import assert from 'node:assert'
+
 import {
   EnvLambda
 } from '../build'
@@ -14,7 +17,7 @@ import {
 describe('build', () => {
 
   test('happy.lambda', () => {
-    expect(EnvLambda).toBeDefined()
+    assert.notStrictEqual(EnvLambda, undefined)
   })
 
 

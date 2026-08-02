@@ -8,6 +8,9 @@
 // queue defs, dynamo tables, ts and js handler langs). The refactor must
 // reproduce it byte for byte.
 
+import { describe, test } from 'node:test'
+import assert from 'node:assert'
+
 import Fs from 'fs'
 import Os from 'os'
 import Path from 'path'
@@ -47,19 +50,17 @@ describe('envlambda-jostraca', () => {
       folder: genTs, filename: 'res.yml', custom: null as any,
     })
 
-    expect(read(Path.join(genTs, 'srv.yml'))).toEqual(fixture('rich-ts/srv.yml'))
-    expect(read(Path.join(genTs, 'res.yml'))).toEqual(fixture('rich-ts/res.yml'))
+    assert.deepEqual(read(Path.join(genTs, 'srv.yml')), fixture('rich-ts/srv.yml'))
+    assert.deepEqual(read(Path.join(genTs, 'res.yml')), fixture('rich-ts/res.yml'))
 
     for (const name of ['alpha', 'beta', 'delta', 'gamma']) {
-      expect(read(Path.join(handlerTs, name + '.ts')))
-        .toEqual(fixture('rich-ts/' + name + '.ts.txt'))
-      expect(read(Path.join(handlerJs, name + '.js')))
-        .toEqual(fixture('rich-js/' + name + '.js.txt'))
+      assert.deepEqual(read(Path.join(handlerTs, name + '.ts')), fixture('rich-ts/' + name + '.ts.txt'))
+      assert.deepEqual(read(Path.join(handlerJs, name + '.js')), fixture('rich-js/' + name + '.js.txt'))
     }
 
     // customkind (kind=custom) and nolambda (no env.lambda) are skipped.
-    expect(Fs.existsSync(Path.join(handlerTs, 'customkind.ts'))).toEqual(false)
-    expect(Fs.existsSync(Path.join(handlerTs, 'nolambda.ts'))).toEqual(false)
+    assert.deepEqual(Fs.existsSync(Path.join(handlerTs, 'customkind.ts')), false)
+    assert.deepEqual(Fs.existsSync(Path.join(handlerTs, 'nolambda.ts')), false)
   })
 
 })
@@ -80,24 +81,23 @@ describe('fragment-shadowing', () => {
     await EnvLambda.srv_yml(model, { folder: gen, tm } as any)
 
     const srv = Fs.readFileSync(Path.join(gen, 'srv.yml'), 'utf8')
-    expect(srv).toContain('# custom alpha (memory 2048)')
-    expect(srv).not.toContain('handler:')
+    assert.ok((srv).includes('# custom alpha (memory 2048)'))
+    assert.ok(!(srv).includes('handler:'))
 
     // Un-shadowed fragments still come from the package.
     const gen2 = Path.join(out, 'gen2')
     await EnvLambda.srv_yml(model, { folder: gen2 } as any)
-    expect(Fs.readFileSync(Path.join(gen2, 'srv.yml'), 'utf8'))
-      .toContain('handler: dist/handler/lambda/alpha.handler')
+    assert.ok((Fs.readFileSync(Path.join(gen2, 'srv.yml'), 'utf8')).includes('handler: dist/handler/lambda/alpha.handler'))
   })
 
 
   test('fragment-listing', () => {
     const { Fragments } = require('../build')
     const names = Fragments.list()
-    expect(names).toContain('srv.yml.frag')
-    expect(names).toContain('srv_handler.ts.frag')
-    expect(names).toContain('res.role.yml.frag')
-    expect(names).toContain('res.queue.yml.frag')
+    assert.ok((names).includes('srv.yml.frag'))
+    assert.ok((names).includes('srv_handler.ts.frag'))
+    assert.ok((names).includes('res.role.yml.frag'))
+    assert.ok((names).includes('res.queue.yml.frag'))
   })
 
 })
@@ -130,37 +130,32 @@ describe('env-gen', () => {
     await EnvGen.env_gen(envmodel, { folder: gen, src })
 
     // deployment artifacts per env
-    expect(Fs.readFileSync(Path.join(gen, 'local', 'run.sh'), 'utf8'))
-      .toContain('npm run local')
-    expect(Fs.existsSync(Path.join(gen, 'basic', 'acme-backend.service')))
-      .toEqual(true)
-    expect(Fs.readFileSync(Path.join(gen, 'docker', 'Dockerfile'), 'utf8'))
-      .toContain('FROM node:20-slim')
-    expect(Fs.existsSync(Path.join(gen, 'vm', 'cloud-init.yaml')))
-      .toEqual(true)
+    assert.ok((Fs.readFileSync(Path.join(gen, 'local', 'run.sh'), 'utf8')).includes('npm run local'))
+    assert.deepEqual(Fs.existsSync(Path.join(gen, 'basic', 'acme-backend.service')), true)
+    assert.ok((Fs.readFileSync(Path.join(gen, 'docker', 'Dockerfile'), 'utf8')).includes('FROM node:20-slim'))
+    assert.deepEqual(Fs.existsSync(Path.join(gen, 'vm', 'cloud-init.yaml')), true)
     const sls = Fs.readFileSync(Path.join(gen, 'aws', 'serverless.yml'), 'utf8')
-    expect(sls).toContain('service: acme-backend')
-    expect(sls).toContain('region: eu-west-1')
-    expect(sls).toContain("stage: ${opt:stage, 'stg'}")
-    expect(sls).toContain('functions: ${file(./srv.yml)}')
-    expect(Fs.existsSync(Path.join(gen, 'azure', 'host.json'))).toEqual(true)
-    expect(Fs.readFileSync(Path.join(gen, 'cloudflare', 'wrangler.toml'),
-      'utf8')).toContain('name = "acme-backend"')
+    assert.ok((sls).includes('service: acme-backend'))
+    assert.ok((sls).includes('region: eu-west-1'))
+    assert.ok((sls).includes("stage: ${opt:stage, 'stg'}"))
+    assert.ok((sls).includes('functions: ${file(./srv.yml)}'))
+    assert.deepEqual(Fs.existsSync(Path.join(gen, 'azure', 'host.json')), true)
+    assert.ok((Fs.readFileSync(Path.join(gen, 'cloudflare', 'wrangler.toml'),
+      'utf8')).includes('name = "acme-backend"'))
 
     // disabled env not generated
-    expect(Fs.existsSync(Path.join(gen, 'off'))).toEqual(false)
+    assert.deepEqual(Fs.existsSync(Path.join(gen, 'off')), false)
 
     // runtime entries (create-once)
     const basicEntry = Path.join(src, 'basic', 'basic.ts')
-    expect(Fs.readFileSync(basicEntry, 'utf8')).toContain("env: 'basic'")
-    expect(Fs.existsSync(Path.join(src, 'lambda', 'lambda.ts'))).toEqual(true)
-    expect(Fs.existsSync(Path.join(src, 'cloudflare', 'worker.ts')))
-      .toEqual(true)
+    assert.ok((Fs.readFileSync(basicEntry, 'utf8')).includes("env: 'basic'"))
+    assert.deepEqual(Fs.existsSync(Path.join(src, 'lambda', 'lambda.ts')), true)
+    assert.deepEqual(Fs.existsSync(Path.join(src, 'cloudflare', 'worker.ts')), true)
 
     // create-once: user edit survives regeneration
     Fs.writeFileSync(basicEntry, '// user owned\n')
     await EnvGen.env_gen(envmodel, { folder: gen, src })
-    expect(Fs.readFileSync(basicEntry, 'utf8')).toEqual('// user owned\n')
+    assert.deepEqual(Fs.readFileSync(basicEntry, 'utf8'), '// user owned\n')
   })
 
 
@@ -169,8 +164,8 @@ describe('env-gen', () => {
     const out = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'vb-envgen-'))
     const bad = { main: { conf: { core: { name: 'x' } },
       env: { weird: { active: true } } } }
-    await expect(EnvGen.env_gen(bad, { folder: out }))
-      .rejects.toThrow(/unknown environment kind: weird/)
+    await assert.rejects(EnvGen.env_gen(bad, { folder: out }),
+      { message: /unknown environment kind: weird/ })
   })
 
 
@@ -185,8 +180,7 @@ describe('env-gen', () => {
     const gen = Path.join(out, 'gen')
     await EnvGen.env_gen({ main: { conf: { core: { name: 'acme' } },
       env: { aws: { active: true } } } }, { folder: gen, tm })
-    expect(Fs.readFileSync(Path.join(gen, 'aws', 'serverless.yml'), 'utf8'))
-      .toContain('service: custom-acme')
+    assert.ok((Fs.readFileSync(Path.join(gen, 'aws', 'serverless.yml'), 'utf8')).includes('service: custom-acme'))
   })
 
 })
@@ -213,35 +207,34 @@ describe('env-web', () => {
       'web/src/bus.js', 'web/src/cmp/admin.js', 'web/e2e/smoke.spec.js',
       'backend/src/env/web/web.ts', 'backend/src/srv/auth/auth-srv.ts',
     ]) {
-      expect(Fs.existsSync(Path.join(out, f))).toEqual(true)
+      assert.deepEqual(Fs.existsSync(Path.join(out, f)), true)
     }
 
     // slots rendered
     const pkg = JSON.parse(
       Fs.readFileSync(Path.join(out, 'web/package.json'), 'utf8'))
-    expect(pkg.name).toEqual('shop-web')
-    expect(pkg.devDependencies['seneca-browser']).toBeDefined()
+    assert.deepEqual(pkg.name, 'shop-web')
+    assert.notStrictEqual(pkg.devDependencies['seneca-browser'], undefined)
 
     const runner = Fs.readFileSync(
       Path.join(out, 'backend/src/env/web/web.ts'), 'utf8')
-    expect(runner).toContain("name: 'shop-auth'")
-    expect(runner).toContain('alice@example.com')
+    assert.ok((runner).includes("name: 'shop-auth'"))
+    assert.ok((runner).includes('alice@example.com'))
     // generic allow derived from the model services
-    expect(runner).toContain('Object.keys((Model as any).main.srv)')
+    assert.ok((runner).includes('Object.keys((Model as any).main.srv)'))
 
     const html = Fs.readFileSync(Path.join(out, 'web/index.html'), 'utf8')
-    expect(html).toContain('<title>Shop</title>')
+    assert.ok((html).includes('<title>Shop</title>'))
 
     const e2e = Fs.readFileSync(Path.join(out, 'web/e2e/smoke.spec.js'), 'utf8')
-    expect(e2e).toContain("'alice@example.com'")
+    assert.ok((e2e).includes("'alice@example.com'"))
 
     // create-once: an existing file is not overwritten
     Fs.writeFileSync(Path.join(out, 'web/src/bus.js'), '// mine\n')
     const res2 = await EnvWeb.web_gen(model, { root: out, env: {} })
-    expect(res2.created).toEqual([])
-    expect(Fs.readFileSync(Path.join(out, 'web/src/bus.js'), 'utf8'))
-      .toEqual('// mine\n')
-    expect(res.created.length).toBeGreaterThan(15)
+    assert.deepEqual(res2.created, [])
+    assert.deepEqual(Fs.readFileSync(Path.join(out, 'web/src/bus.js'), 'utf8'), '// mine\n')
+    assert.ok(((res.created.length) > (15)))
   })
 
 
@@ -252,7 +245,7 @@ describe('env-web', () => {
       main: { conf: { core: { name: 'shop' } }, srv: {},
         env: { web: { active: true } } },
     }, { folder: Path.join(out, 'gen'), root: out })
-    expect(Fs.existsSync(Path.join(out, 'web/index.html'))).toEqual(true)
+    assert.deepEqual(Fs.existsSync(Path.join(out, 'web/index.html')), true)
   })
 
 })
