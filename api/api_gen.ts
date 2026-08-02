@@ -6,9 +6,15 @@
 //
 //   backend/gen/api/openapi.json      OpenAPI 3.1 spec; schemas from the
 //                                     entity field definitions
+//   backend/gen/api/openapi.yaml      the same spec in YAML - the format
+//                                     most SDK/codegen tools (incl.
+//                                     @voxgig/sdkgen) expect
 //   backend/src/srv/api/valid_gen.ts  gubu shapes per exposed entity op,
 //                                     used by the api service to validate
 //                                     request bodies (strict: closed)
+//
+// The JSON and YAML are the SAME object (openapi(model)), just serialized
+// twice - they never diverge.
 //
 // Exposure rules (same as the api service's expose.ts): application
 // entities are exposed by default, the sys zone never is, per-entity
@@ -16,6 +22,7 @@
 
 import Fs from 'fs'
 import Path from 'path'
+import Yaml from 'js-yaml'
 
 
 type ApiSpec = {
@@ -322,10 +329,24 @@ const api_gen = async (model: any, spec: ApiSpec) => {
     return { created }
   }
 
-  const spec_json = JSON.stringify(openapi(model), null, 2) + '\n'
+  const doc = openapi(model)
+
+  const spec_json = JSON.stringify(doc, null, 2) + '\n'
   if (writeIfChanged(
     Path.join(spec.root, 'backend', 'gen', 'api', 'openapi.json'), spec_json)) {
     created.push('backend/gen/api/openapi.json')
+  }
+
+  // YAML of the SAME object. noRefs is REQUIRED: the spec reuses $ref
+  // objects (the Error schema ref appears in every error response, each
+  // entity ref in several operations), and without noRefs js-yaml emits
+  // anchors/aliases (&ref_0 / *ref_0) that most OpenAPI codegen tools -
+  // including @voxgig/sdkgen - do not resolve. lineWidth:-1 stops long
+  // strings (descriptions, the server url) being line-folded.
+  const spec_yaml = Yaml.dump(doc, { noRefs: true, lineWidth: -1 })
+  if (writeIfChanged(
+    Path.join(spec.root, 'backend', 'gen', 'api', 'openapi.yaml'), spec_yaml)) {
+    created.push('backend/gen/api/openapi.yaml')
   }
 
   // The validation shapes land next to the api service - only when the

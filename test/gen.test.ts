@@ -180,6 +180,7 @@ describe('api_gen', () => {
     const res = await Api.api_gen(model, { root })
     assert.deepEqual(res.created, [
       'backend/gen/api/openapi.json',
+      'backend/gen/api/openapi.yaml',
       'backend/src/srv/api/valid_gen.ts',
     ])
 
@@ -200,6 +201,15 @@ describe('api_gen', () => {
     assert.notStrictEqual(spec.paths['/v1/shop/product'].post.responses['201'], undefined)
     assert.notStrictEqual(spec.paths['/v1/shop/product/{id}'].delete, undefined)
     assert.strictEqual(spec.components.securitySchemes.bearerAuth.scheme, 'bearer')
+
+    // The YAML is the same document, and must parse back to it - byte
+    // equality is not the point, structural equality is.
+    const Yaml = require('js-yaml')
+    const yamlText = read(root, 'backend/gen/api/openapi.yaml')
+    const fromYaml = Yaml.load(yamlText)
+    assert.deepEqual(fromYaml, spec)
+    // noRefs: no YAML anchors/aliases, which codegen tools choke on.
+    assert.ok(!/[&*]ref_\d/.test(yamlText), 'yaml must not contain anchors/aliases')
 
     const valid = read(root, 'backend/src/srv/api/valid_gen.ts')
     assert.ok((valid).includes('AUTO-GENERATED'))
@@ -227,7 +237,10 @@ describe('api_gen', () => {
     const model2 = makeModel()
     const root2 = tmpProject()  // no backend/src/srv/api folder
     const res2 = await Api.api_gen(model2, { root: root2 })
-    assert.deepEqual(res2.created, ['backend/gen/api/openapi.json'])
+    assert.deepEqual(res2.created, [
+      'backend/gen/api/openapi.json',
+      'backend/gen/api/openapi.yaml',
+    ])
   })
 })
 
