@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/build",
-  "version": "4.9.1",
+  "version": "4.9.2",
   "main": "dist/build.js",
   "type": "commonjs",
   "types": "dist/build.d.ts",
@@ -19,12 +19,12 @@
   },
   "scripts": {
     "model-s01": "voxgig-model test/s01/model/model.aontu",
-    "test": "jest --coverage",
-    "test-some": "jest -t",
-    "test-watch": "jest --coverage --watchAll",
+    "test": "node --enable-source-maps --experimental-test-coverage --test-coverage-exclude='dist-test/test/**' --test-coverage-lines=95 --test-coverage-functions=85 --test-coverage-branches=78 --test \"dist-test/test/**/*.test.js\"",
+    "test-some": "node --enable-source-maps --test --test-name-pattern=\"$npm_config_pattern\" \"dist-test/test/**/*.test.js\"",
+    "test-watch": "node --enable-source-maps --test --watch \"dist-test/test/**/*.test.js\"",
     "watch": "tsc -w -d",
-    "build": "tsc -d",
-    "clean": "rm -rf node_modules yarn.lock package-lock.json",
+    "build": "tsc -d && tsc -p test && cp -r test/fixture test/richmodel.js dist-test/test/",
+    "clean": "rm -rf dist dist-test node_modules yarn.lock package-lock.json",
     "reset": "npm run clean && npm i && npm run build && npm test",
     "repo-tag": "REPO_VERSION=`node -e \"console.log(require('./package').version)\"` && echo TAG: v$REPO_VERSION && git commit -a -m v$REPO_VERSION && git push && git tag v$REPO_VERSION && git push --tags;",
     "repo-publish": "npm run clean && npm i && npm run repo-publish-quick",
@@ -53,14 +53,11 @@
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.12",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "26.1.2",
     "@voxgig/model": "^9.2.4",
     "@voxgig/system": "^1.2.0",
     "esbuild": "^0.23.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.2.2",
     "typescript": "^5.5.3"
   }
 }

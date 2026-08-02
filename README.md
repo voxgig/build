@@ -46,7 +46,7 @@ Working on this repo with an AI agent? See [AGENTS.md](AGENTS.md).
 ```bash
 npm install
 npm run build   # tsc -> dist/ (dist is committed; always rebuild before commit)
-npm test        # jest
+npm test        # node:test + coverage thresholds
 ```
 
 ## License

@@ -8,8 +8,8 @@ file is operational guidance.
 ## Commands
 
 ```bash
-npm run build   # tsc -> dist/
-npm test        # jest (test/*.test.ts)
+npm run build   # tsc -> dist/ + dist-test/ (tests)
+npm test        # node:test + coverage thresholds (test/*.test.ts)
 ```
 
 ## Layout
