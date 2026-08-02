@@ -13,11 +13,19 @@ git commit -m 'ci: activate workflow'
 
 ## What runs
 
-`npm ci` → `npm run build` → committed-`dist/` check → `npm test`, on every
-push and pull request.
+`npm install` → `npm run build` → clean-`dist/` check → `npm test`, on
+every push and pull request.
 
-The coverage gate is the one already in `npm test`: lines 95%, functions
-85%, branches 78%. Coverage uploads as an `lcov` artifact.
+`npm install`, not `npm ci`: this repo **gitignores** `package-lock.json`
+(`.gitignore:109`), and `npm ci` refuses to run without a committed
+lockfile (`EUSAGE`). `cache: npm` is omitted for the same reason — it
+hashes a lockfile that is not there.
+
+The coverage gate is in `npm test`: lines 95%, functions 85%, branches
+78%. That one script both enforces the gate and emits the `lcov` artifact
+— deliberately not split into a separate `test-cov` copy of the same
+threshold literals, which would drift the moment either side moved and
+let a developer's local gate differ from CI's.
 
 The `dist is committed and current` step matters more here than in a normal
 package: `dist/` is committed and projects overlay this package, so a stale
@@ -64,7 +72,12 @@ npm **provenance** attestation, which a local publish does not.
 1. Create an npm **automation** token with publish rights on the
    `@voxgig` scope (automation tokens bypass 2FA, which CI needs).
 2. Add it as a repository secret named `NPM_TOKEN`.
-3. `git mv ci/release.yml .github/workflows/release.yml`
+3. `mkdir -p .github/workflows && git mv ci/release.yml .github/workflows/release.yml`
+
+   The `mkdir` is not optional: `.github/workflows/` does not exist in
+   this repo yet, and activating the release workflow on its own (without
+   first activating `ci.yml`) fails with
+   `fatal: renaming 'ci/release.yml' failed: No such file or directory`.
 
 ### Release
 
@@ -74,8 +87,11 @@ git tag v4.11.0
 git push origin v4.11.0
 ```
 
-Installs, builds, checks the committed `dist/` is current, tests, checks
-the tag matches `package.json`, then publishes with provenance. Dry-run
+Installs, builds, checks `dist/` is clean (**including untracked files** —
+`git diff` alone would miss a newly emitted file that `npm pack` then
+ships), tests, checks the tag matches `package.json`, then publishes with
+provenance under a dist-tag derived from the version: a prerelease like
+`v4.12.0-rc1` goes to `next`, never `latest`. Dry-run
 it first from the Actions tab (*release → Run workflow*) — that path
 packs and verifies without publishing and needs no token.
 
