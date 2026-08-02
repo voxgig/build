@@ -56,6 +56,20 @@ async function remindPass(email) {
   return bus.post({ aim: 'req', on: 'auth', remind: 'pass', email })
 }
 
+// ---- API access keys (REST API auth; Settings & security) ---------------
+
+async function createApikey(name) {
+  return bus.post({ aim: 'req', on: 'auth', create: 'apikey', name })
+}
+
+async function listApikeys() {
+  return bus.post({ aim: 'req', on: 'auth', list: 'apikey' })
+}
+
+async function revokeApikey(id) {
+  return bus.post({ aim: 'req', on: 'auth', revoke: 'apikey', id })
+}
+
 export {
   list,
   load,
@@ -68,4 +82,7 @@ export {
   changePass,
   updateUser,
   remindPass,
+  createApikey,
+  listApikeys,
+  revokeApikey,
 }
