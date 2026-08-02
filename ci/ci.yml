@@ -1,0 +1,60 @@
+# CI for @voxgig/build: compile, run the generator suite with its coverage
+# gate, and check that the committed dist/ matches the sources.
+#
+# DORMANT. This file is not active while it lives in ci/ - GitHub only runs
+# workflows under .github/workflows/. See ci/README.md to activate.
+
+name: ci
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: install
+        run: npm ci
+
+      - name: build
+        run: npm run build
+
+      # dist/ is COMMITTED here - projects overlay this package, so a stale
+      # dist silently ships old behaviour downstream. If the build changed
+      # it, the last commit was made without rebuilding.
+      - name: dist is committed and current
+        run: |
+          if ! git diff --quiet -- dist; then
+            echo '::error::build changed committed dist/ - run `npm run build` and commit the result'
+            git --no-pager diff --stat -- dist
+            exit 1
+          fi
+
+      # `test-cov` is `test` plus lcov output - same suite, same coverage
+      # gate (lines 95, functions 85, branches 78), one run. Do NOT try to
+      # append the reporter flags with `npm test -- ...`: they land after
+      # the positional glob and node silently ignores them.
+      - name: test
+        run: npm run test-cov
+
+      - name: upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.lcov
+          if-no-files-found: warn
