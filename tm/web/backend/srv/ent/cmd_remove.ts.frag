@@ -34,6 +34,12 @@ module.exports = function make_cmd_remove() {
       ? found.id
       : found[(scope as any).via]
 
+    // A scoped row with no stored tenant is an anomaly, not user-scoped
+    // data - refuse it rather than let ownerOf downgrade to owner-only.
+    if ('scoped' === scope.kind && null == projectId) {
+      return { ok: false, why: 'forbidden' }
+    }
+
     const owner = await ownerOf(seneca, user, projectId)
     if (null == owner) {
       return { ok: false, why: 'forbidden' }
