@@ -71,6 +71,7 @@ const WEB_FILES = [
     { frag: 'backend/env/web/web.ts.frag', out: 'backend/src/env/web/web.ts' },
     { frag: 'backend/env/shared/seed.ts.frag', out: 'backend/src/env/shared/seed.ts' },
     { frag: 'backend/srv/auth/auth-srv.ts.frag', out: 'backend/src/srv/auth/auth-srv.ts' },
+    { frag: 'backend/srv/auth/user_util.ts.frag', out: 'backend/src/srv/auth/user_util.ts' },
     { frag: 'backend/srv/auth/get_info.ts.frag', out: 'backend/src/srv/auth/get_info.ts' },
     { frag: 'backend/srv/auth/signin_user.ts.frag', out: 'backend/src/srv/auth/signin_user.ts' },
     { frag: 'backend/srv/auth/signout_user.ts.frag', out: 'backend/src/srv/auth/signout_user.ts' },
@@ -100,6 +101,16 @@ const WEB_FILES = [
     { frag: 'backend/srv/api/on_ent.ts.frag', out: 'backend/src/srv/api/on_ent.ts' },
     { frag: 'backend/srv/api/expose.ts.frag', out: 'backend/src/srv/api/expose.ts' },
     { frag: 'backend/env/web/api.ts.frag', out: 'backend/src/env/web/api.ts' },
+    // Unit tests for what EnvWeb generates (node:test). They are
+    // MODEL-DRIVEN - the entity under test and its payloads come from the
+    // model - so they hold for any entity graph, and they stand in for
+    // other services with mock messages rather than booting them.
+    { frag: 'backend/test/unit/srv/api/api.setup.ts.frag', out: 'backend/test/unit/srv/api/api.setup.ts' },
+    { frag: 'backend/test/unit/srv/api/api.test.ts.frag', out: 'backend/test/unit/srv/api/api.test.ts' },
+    { frag: 'backend/test/unit/srv/auth/auth.setup.ts.frag', out: 'backend/test/unit/srv/auth/auth.setup.ts' },
+    { frag: 'backend/test/unit/srv/auth/apikey.test.ts.frag', out: 'backend/test/unit/srv/auth/apikey.test.ts' },
+    { frag: 'backend/test/unit/srv/auth/session.test.ts.frag', out: 'backend/test/unit/srv/auth/session.test.ts' },
+    { frag: 'backend/test/unit/env/web/api-router.test.ts.frag', out: 'backend/test/unit/env/web/api-router.test.ts' },
     // Generic entity service (parameterised CRUD, membership-scoped).
     { frag: 'backend/srv/ent/ent-srv.ts.frag', out: 'backend/src/srv/ent/ent-srv.ts' },
     { frag: 'backend/srv/ent/access.ts.frag', out: 'backend/src/srv/ent/access.ts' },
