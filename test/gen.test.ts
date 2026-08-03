@@ -197,6 +197,32 @@ describe('api_gen', () => {
     assert.strictEqual(schema.properties.price.type, 'number')
     assert.strictEqual(schema.properties.live.type, 'boolean')
     assert.strictEqual(schema.additionalProperties, false)
+    // Request schemas are NOT the entity schema: managed fields are gone
+    // (the server's closed shapes reject them outright), and update is
+    // wholly optional because it is a partial update. Regression: both
+    // bodies used to $ref the entity schema, so a generated SDK sent `id`
+    // in the PUT body and every update came back 400.
+    const createSchema = spec.components.schemas.ShopProductCreate
+    const updateSchema = spec.components.schemas.ShopProductUpdate
+    assert.deepEqual(createSchema.required, ['title'])
+    assert.strictEqual(updateSchema.required, undefined)
+    for (const s of [createSchema, updateSchema]) {
+      assert.strictEqual(s.additionalProperties, false)
+      assert.deepEqual(Object.keys(s.properties), ['live', 'price', 'title'])
+      assert.strictEqual(s.properties.id, undefined)
+      assert.strictEqual(s.properties.owner_id, undefined)
+    }
+    assert.deepEqual(spec.paths['/v1/shop/product'].post.requestBody
+      .content['application/json'].schema,
+      { $ref: '#/components/schemas/ShopProductCreate' })
+    assert.deepEqual(spec.paths['/v1/shop/product/{id}'].put.requestBody
+      .content['application/json'].schema,
+      { $ref: '#/components/schemas/ShopProductUpdate' })
+    // Responses still carry the full entity, managed fields included.
+    assert.deepEqual(spec.paths['/v1/shop/product/{id}'].get.responses['200']
+      .content['application/json'].schema.properties.item,
+      { $ref: '#/components/schemas/ShopProduct' })
+
     assert.strictEqual(spec.paths['/v1/shop/product'].get.operationId, 'list_shop_product')
     assert.notStrictEqual(spec.paths['/v1/shop/product'].post.responses['201'], undefined)
     assert.notStrictEqual(spec.paths['/v1/shop/product/{id}'].delete, undefined)

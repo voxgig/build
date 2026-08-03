@@ -5,7 +5,10 @@
 // content-diffed, AUTO-GENERATED):
 //
 //   backend/gen/api/openapi.json      OpenAPI 3.1 spec; schemas from the
-//                                     entity field definitions
+//                                     entity field definitions (an entity
+//                                     response schema plus <Name>Create /
+//                                     <Name>Update request schemas, which
+//                                     mirror the gubu shapes below)
 //   backend/gen/api/openapi.yaml      the same spec in YAML - the format
 //                                     most SDK/codegen tools (incl.
 //                                     @voxgig/sdkgen) expect
@@ -180,7 +183,47 @@ function openapi(model: any) {
       ...(required.length ? { required } : {}),
     }
 
+    // Request bodies are NOT the entity schema. The entity schema describes
+    // what comes back - it carries the server-managed fields, and its
+    // `required` list is the create contract. What the server ACCEPTS is
+    // narrower, and differs per op (see validGenTs, which derives the
+    // enforcing gubu shapes from these same fields):
+    //
+    //   create  managed fields rejected; required fields required
+    //   update  managed fields rejected; everything optional (partial)
+    //
+    // Marking the managed fields `readOnly` on the entity schema is not
+    // enough on its own. It is the correct OpenAPI signal, but a closed
+    // schema (`additionalProperties: false`) plus `readOnly` is a
+    // combination most codegen tools ignore - they emit a request type with
+    // every property - so a generated client sends `id` and the closed gubu
+    // shape rejects the whole body with 400. Separate request schemas say
+    // the same thing in a form every tool understands.
+    const writable = flds.filter((f) => !f.managed)
+    const writableProps: any = {}
+    for (const f of writable) {
+      writableProps[f.name] = { type: KINDTYPE[f.kind], title: f.label }
+      if (f.ref) {
+        writableProps[f.name].description = 'Reference to ' + f.ref
+      }
+    }
+    const writableRequired = writable.filter((f) => f.required).map((f) => f.name)
+
+    schemas[sname + 'Create'] = {
+      type: 'object',
+      additionalProperties: false,
+      properties: writableProps,
+      ...(writableRequired.length ? { required: writableRequired } : {}),
+    }
+    schemas[sname + 'Update'] = {
+      type: 'object',
+      additionalProperties: false,
+      properties: writableProps,
+    }
+
     const ref = { $ref: '#/components/schemas/' + sname }
+    const createRef = { $ref: '#/components/schemas/' + sname + 'Create' }
+    const updateRef = { $ref: '#/components/schemas/' + sname + 'Update' }
     const errRef = { $ref: '#/components/schemas/Error' }
     const errResponses = {
       '400': { description: 'Invalid request', content: { 'application/json': { schema: errRef } } },
@@ -231,7 +274,7 @@ function openapi(model: any) {
         tags: [e.canon],
         requestBody: {
           required: true,
-          content: { 'application/json': { schema: ref } },
+          content: { 'application/json': { schema: createRef } },
         },
         responses: { '201': itemResult('The created ' + e.name), ...errResponses },
       },
@@ -250,7 +293,7 @@ function openapi(model: any) {
         tags: [e.canon],
         requestBody: {
           required: true,
-          content: { 'application/json': { schema: ref } },
+          content: { 'application/json': { schema: updateRef } },
         },
         responses: { '200': itemResult('The updated ' + e.name), ...errResponses },
       },
