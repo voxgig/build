@@ -44,6 +44,12 @@ export function apiHandler(seneca: any, model: any) {
         return res.sendFile(Path.join(
           __dirname, '..', '..', '..', 'gen', 'api', 'openapi.json'))
       }
+      // The same spec as YAML - the format most codegen/SDK tools want.
+      if ('GET' === req.method && '/openapi.yaml' === req.path) {
+        res.type('application/yaml')
+        return res.sendFile(Path.join(
+          __dirname, '..', '..', '..', 'gen', 'api', 'openapi.yaml'))
+      }
 
       // Path (relative to the mount prefix): /<version>/<zone>/<name>[/<id>]
       const parts = String(req.path || '').split('/').filter((p: string) => '' !== p)

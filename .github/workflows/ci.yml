@@ -1,8 +1,8 @@
 # CI for @voxgig/build: compile, run the generator suite with its coverage
 # gate, and check that the committed dist/ matches the sources.
 #
-# DORMANT. This file is not active while it lives in ci/ - GitHub only runs
-# workflows under .github/workflows/. See ci/README.md to activate.
+# ACTIVE. Runs on every push and pull request. ci/README.md has the notes,
+# including why the dist/ check uses `git status` rather than `git diff`.
 
 name: ci
 
@@ -25,10 +25,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
 
       - name: install
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: build
         run: npm run build
@@ -38,18 +37,24 @@ jobs:
       # it, the last commit was made without rebuilding.
       - name: dist is committed and current
         run: |
-          if ! git diff --quiet -- dist; then
-            echo '::error::build changed committed dist/ - run `npm run build` and commit the result'
-            git --no-pager diff --stat -- dist
+          # `git diff` alone ignores UNTRACKED files, so a newly emitted
+          # dist/ file that was never committed would pass this check -
+          # while `npm pack` ships it, because the manifest takes the
+          # whole directory. `git status --porcelain` covers modified and
+          # untracked together.
+          DIRTY=$(git status --porcelain -- dist)
+          if [ -n "$DIRTY" ]; then
+            echo '::error::dist/ is not clean - run `npm run build` and commit the result'
+            echo "$DIRTY"
             exit 1
           fi
 
-      # `test-cov` is `test` plus lcov output - same suite, same coverage
-      # gate (lines 95, functions 85, branches 78), one run. Do NOT try to
-      # append the reporter flags with `npm test -- ...`: they land after
-      # the positional glob and node silently ignores them.
+      # `npm test` IS the coverage command (gate: lines 95, functions 85,
+      # branches 78) and emits lcov. Kept as ONE script rather than a
+      # separate test-cov copy, so the thresholds cannot drift between
+      # what a developer runs and what CI enforces.
       - name: test
-        run: npm run test-cov
+        run: npm test
 
       - name: upload coverage
         if: always()

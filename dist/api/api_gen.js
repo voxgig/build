@@ -10,16 +10,26 @@ exports.api_gen = void 0;
 // content-diffed, AUTO-GENERATED):
 //
 //   backend/gen/api/openapi.json      OpenAPI 3.1 spec; schemas from the
-//                                     entity field definitions
+//                                     entity field definitions (an entity
+//                                     response schema plus <Name>Create /
+//                                     <Name>Update request schemas, which
+//                                     mirror the gubu shapes below)
+//   backend/gen/api/openapi.yaml      the same spec in YAML - the format
+//                                     most SDK/codegen tools (incl.
+//                                     @voxgig/sdkgen) expect
 //   backend/src/srv/api/valid_gen.ts  gubu shapes per exposed entity op,
 //                                     used by the api service to validate
 //                                     request bodies (strict: closed)
+//
+// The JSON and YAML are the SAME object (openapi(model)), just serialized
+// twice - they never diverge.
 //
 // Exposure rules (same as the api service's expose.ts): application
 // entities are exposed by default, the sys zone never is, per-entity
 // overrides live under main.api.ent.
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const js_yaml_1 = __importDefault(require("js-yaml"));
 // Server-managed fields: never client-writable (and readOnly in OpenAPI).
 const MANAGED = ['id', 'owner_id', 't_c', 't_m'];
 function apiConf(model) {
@@ -154,7 +164,45 @@ function openapi(model) {
             properties,
             ...(required.length ? { required } : {}),
         };
+        // Request bodies are NOT the entity schema. The entity schema describes
+        // what comes back - it carries the server-managed fields, and its
+        // `required` list is the create contract. What the server ACCEPTS is
+        // narrower, and differs per op (see validGenTs, which derives the
+        // enforcing gubu shapes from these same fields):
+        //
+        //   create  managed fields rejected; required fields required
+        //   update  managed fields rejected; everything optional (partial)
+        //
+        // Marking the managed fields `readOnly` on the entity schema is not
+        // enough on its own. It is the correct OpenAPI signal, but a closed
+        // schema (`additionalProperties: false`) plus `readOnly` is a
+        // combination most codegen tools ignore - they emit a request type with
+        // every property - so a generated client sends `id` and the closed gubu
+        // shape rejects the whole body with 400. Separate request schemas say
+        // the same thing in a form every tool understands.
+        const writable = flds.filter((f) => !f.managed);
+        const writableProps = {};
+        for (const f of writable) {
+            writableProps[f.name] = { type: KINDTYPE[f.kind], title: f.label };
+            if (f.ref) {
+                writableProps[f.name].description = 'Reference to ' + f.ref;
+            }
+        }
+        const writableRequired = writable.filter((f) => f.required).map((f) => f.name);
+        schemas[sname + 'Create'] = {
+            type: 'object',
+            additionalProperties: false,
+            properties: writableProps,
+            ...(writableRequired.length ? { required: writableRequired } : {}),
+        };
+        schemas[sname + 'Update'] = {
+            type: 'object',
+            additionalProperties: false,
+            properties: writableProps,
+        };
         const ref = { $ref: '#/components/schemas/' + sname };
+        const createRef = { $ref: '#/components/schemas/' + sname + 'Create' };
+        const updateRef = { $ref: '#/components/schemas/' + sname + 'Update' };
         const errRef = { $ref: '#/components/schemas/Error' };
         const errResponses = {
             '400': { description: 'Invalid request', content: { 'application/json': { schema: errRef } } },
@@ -204,7 +252,7 @@ function openapi(model) {
                 tags: [e.canon],
                 requestBody: {
                     required: true,
-                    content: { 'application/json': { schema: ref } },
+                    content: { 'application/json': { schema: createRef } },
                 },
                 responses: { '201': itemResult('The created ' + e.name), ...errResponses },
             },
@@ -223,7 +271,7 @@ function openapi(model) {
                 tags: [e.canon],
                 requestBody: {
                     required: true,
-                    content: { 'application/json': { schema: ref } },
+                    content: { 'application/json': { schema: updateRef } },
                 },
                 responses: { '200': itemResult('The updated ' + e.name), ...errResponses },
             },
@@ -293,9 +341,20 @@ const api_gen = async (model, spec) => {
     if (null == (model.main && model.main.api)) {
         return { created };
     }
-    const spec_json = JSON.stringify(openapi(model), null, 2) + '\n';
+    const doc = openapi(model);
+    const spec_json = JSON.stringify(doc, null, 2) + '\n';
     if (writeIfChanged(path_1.default.join(spec.root, 'backend', 'gen', 'api', 'openapi.json'), spec_json)) {
         created.push('backend/gen/api/openapi.json');
+    }
+    // YAML of the SAME object. noRefs is REQUIRED: the spec reuses $ref
+    // objects (the Error schema ref appears in every error response, each
+    // entity ref in several operations), and without noRefs js-yaml emits
+    // anchors/aliases (&ref_0 / *ref_0) that most OpenAPI codegen tools -
+    // including @voxgig/sdkgen - do not resolve. lineWidth:-1 stops long
+    // strings (descriptions, the server url) being line-folded.
+    const spec_yaml = js_yaml_1.default.dump(doc, { noRefs: true, lineWidth: -1 });
+    if (writeIfChanged(path_1.default.join(spec.root, 'backend', 'gen', 'api', 'openapi.yaml'), spec_yaml)) {
+        created.push('backend/gen/api/openapi.yaml');
     }
     // The validation shapes land next to the api service - only when the
     // service is implemented (its folder exists).

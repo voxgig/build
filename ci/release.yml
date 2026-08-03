@@ -1,0 +1,101 @@
+# Publish @voxgig/build to npm when a version tag is pushed.
+#
+# DORMANT. GitHub only runs workflows under .github/workflows/.
+# Activating this needs an NPM_TOKEN repository secret - see ci/README.md.
+#
+# This exists because the local publish path (`npm run repo-publish`)
+# requires the `aql` vault CLI and a logged-in npm session. Publishing
+# from CI needs neither on any individual machine: the token lives in the
+# repository's secrets, and a tag is the trigger.
+
+name: release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  # Allows a dry run without tagging anything.
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Pack and verify only - do not publish'
+        type: boolean
+        default: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required for npm provenance.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: install
+        run: npm install --no-audit --no-fund
+
+      - name: build
+        run: npm run build
+
+      # dist/ is committed. If the build changes it, the tag points at a
+      # tree whose committed output is stale - do not publish that.
+      - name: dist is committed and current
+        run: |
+          # `git diff` alone ignores UNTRACKED files, so a newly emitted
+          # dist/ file that was never committed would pass this check -
+          # while `npm pack` ships it, because the manifest takes the
+          # whole directory. `git status --porcelain` covers modified and
+          # untracked together.
+          DIRTY=$(git status --porcelain -- dist)
+          if [ -n "$DIRTY" ]; then
+            echo '::error::dist/ is not clean - the tag points at a stale or incomplete tree'
+            echo "$DIRTY"
+            exit 1
+          fi
+
+      - name: test
+        run: npm test
+
+      # The tag and package.json must agree, or you publish a version
+      # nobody can find from the git history.
+      - name: tag matches package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          TAG=${GITHUB_REF_NAME#v}
+          if [ "$PKG" != "$TAG" ]; then
+            echo "::error::tag $TAG does not match package.json $PKG"
+            exit 1
+          fi
+          echo "publishing $PKG"
+
+      - name: publish (dry run)
+        if: github.event_name == 'workflow_dispatch'
+        run: npm publish --access public --dry-run
+
+      # A PRERELEASE tag (v1.2.3-rc1) must publish under its own dist-tag.
+      # Without --tag npm uses `latest`, which would point every plain
+      # `npm i` at an unstable build; npm 11 refuses outright. The tag
+      # trigger accepts prereleases, so this has to be derived, not assumed.
+      - name: derive dist-tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VER=${GITHUB_REF_NAME#v}
+          case "$VER" in
+            *-*) echo "NPM_DIST_TAG=next" >> "$GITHUB_ENV" ;;
+            *)   echo "NPM_DIST_TAG=latest" >> "$GITHUB_ENV" ;;
+          esac
+          echo "publishing $VER under dist-tag ${NPM_DIST_TAG:-(see above)}"
+
+      - name: publish
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: npm publish --access public --provenance --tag "$NPM_DIST_TAG"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

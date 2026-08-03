@@ -180,6 +180,7 @@ describe('api_gen', () => {
     const res = await Api.api_gen(model, { root })
     assert.deepEqual(res.created, [
       'backend/gen/api/openapi.json',
+      'backend/gen/api/openapi.yaml',
       'backend/src/srv/api/valid_gen.ts',
     ])
 
@@ -196,10 +197,45 @@ describe('api_gen', () => {
     assert.strictEqual(schema.properties.price.type, 'number')
     assert.strictEqual(schema.properties.live.type, 'boolean')
     assert.strictEqual(schema.additionalProperties, false)
+    // Request schemas are NOT the entity schema: managed fields are gone
+    // (the server's closed shapes reject them outright), and update is
+    // wholly optional because it is a partial update. Regression: both
+    // bodies used to $ref the entity schema, so a generated SDK sent `id`
+    // in the PUT body and every update came back 400.
+    const createSchema = spec.components.schemas.ShopProductCreate
+    const updateSchema = spec.components.schemas.ShopProductUpdate
+    assert.deepEqual(createSchema.required, ['title'])
+    assert.strictEqual(updateSchema.required, undefined)
+    for (const s of [createSchema, updateSchema]) {
+      assert.strictEqual(s.additionalProperties, false)
+      assert.deepEqual(Object.keys(s.properties), ['live', 'price', 'title'])
+      assert.strictEqual(s.properties.id, undefined)
+      assert.strictEqual(s.properties.owner_id, undefined)
+    }
+    assert.deepEqual(spec.paths['/v1/shop/product'].post.requestBody
+      .content['application/json'].schema,
+      { $ref: '#/components/schemas/ShopProductCreate' })
+    assert.deepEqual(spec.paths['/v1/shop/product/{id}'].put.requestBody
+      .content['application/json'].schema,
+      { $ref: '#/components/schemas/ShopProductUpdate' })
+    // Responses still carry the full entity, managed fields included.
+    assert.deepEqual(spec.paths['/v1/shop/product/{id}'].get.responses['200']
+      .content['application/json'].schema.properties.item,
+      { $ref: '#/components/schemas/ShopProduct' })
+
     assert.strictEqual(spec.paths['/v1/shop/product'].get.operationId, 'list_shop_product')
     assert.notStrictEqual(spec.paths['/v1/shop/product'].post.responses['201'], undefined)
     assert.notStrictEqual(spec.paths['/v1/shop/product/{id}'].delete, undefined)
     assert.strictEqual(spec.components.securitySchemes.bearerAuth.scheme, 'bearer')
+
+    // The YAML is the same document, and must parse back to it - byte
+    // equality is not the point, structural equality is.
+    const Yaml = require('js-yaml')
+    const yamlText = read(root, 'backend/gen/api/openapi.yaml')
+    const fromYaml = Yaml.load(yamlText)
+    assert.deepEqual(fromYaml, spec)
+    // noRefs: no YAML anchors/aliases, which codegen tools choke on.
+    assert.ok(!/[&*]ref_\d/.test(yamlText), 'yaml must not contain anchors/aliases')
 
     const valid = read(root, 'backend/src/srv/api/valid_gen.ts')
     assert.ok((valid).includes('AUTO-GENERATED'))
@@ -227,7 +263,10 @@ describe('api_gen', () => {
     const model2 = makeModel()
     const root2 = tmpProject()  // no backend/src/srv/api folder
     const res2 = await Api.api_gen(model2, { root: root2 })
-    assert.deepEqual(res2.created, ['backend/gen/api/openapi.json'])
+    assert.deepEqual(res2.created, [
+      'backend/gen/api/openapi.json',
+      'backend/gen/api/openapi.yaml',
+    ])
   })
 })
 
