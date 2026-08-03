@@ -1,15 +1,11 @@
-# CI workflow (dormant)
+# CI
 
-GitHub only runs workflows found under `.github/workflows/`. This lives in
-`ci/`, so it is **inert** until deliberately activated.
+`ci.yml` is **active**, at `.github/workflows/ci.yml`. It ran dormant in
+this folder while it was being built; it now runs on every push and pull
+request. This folder keeps the notes, and `release.yml` — which stays
+dormant on purpose, see below.
 
-## Activate
-
-```bash
-mkdir -p .github/workflows
-git mv ci/ci.yml .github/workflows/ci.yml
-git commit -m 'ci: activate workflow'
-```
+Verified before activation: build clean, `dist/` clean, 16/16 tests.
 
 ## What runs
 
@@ -72,12 +68,10 @@ npm **provenance** attestation, which a local publish does not.
 1. Create an npm **automation** token with publish rights on the
    `@voxgig` scope (automation tokens bypass 2FA, which CI needs).
 2. Add it as a repository secret named `NPM_TOKEN`.
-3. `mkdir -p .github/workflows && git mv ci/release.yml .github/workflows/release.yml`
+3. `git mv ci/release.yml .github/workflows/release.yml`
 
-   The `mkdir` is not optional: `.github/workflows/` does not exist in
-   this repo yet, and activating the release workflow on its own (without
-   first activating `ci.yml`) fails with
-   `fatal: renaming 'ci/release.yml' failed: No such file or directory`.
+   `.github/workflows/` now exists (`ci.yml` lives there), so this move
+   no longer needs a `mkdir` of its own.
 
 ### Release
 

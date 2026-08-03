@@ -1,8 +1,8 @@
 # CI for @voxgig/build: compile, run the generator suite with its coverage
 # gate, and check that the committed dist/ matches the sources.
 #
-# DORMANT. This file is not active while it lives in ci/ - GitHub only runs
-# workflows under .github/workflows/. See ci/README.md to activate.
+# ACTIVE. Runs on every push and pull request. ci/README.md has the notes,
+# including why the dist/ check uses `git status` rather than `git diff`.
 
 name: ci
 
