@@ -15,7 +15,7 @@ import Express from 'express'
 import CookieParser from 'cookie-parser'
 
 import Seneca from 'seneca'
-import { Local } from '@voxgig/system'
+import { Local, context } from '@voxgig/system'
 
 import { basic, base } from '../shared/basic'
 import { seedDemo } from '../shared/seed'
@@ -40,11 +40,10 @@ async function run() {
 
   const seneca = Seneca(deep(base.seneca, { tag: '$$name$$-web' }))
 
-  seneca.context.model = Model
-  seneca.context.env = 'local'
-  seneca.context.stage = 'local'
-  seneca.context.srvname = 'all'
-  seneca.context.pkg = Pkg
+  // Runtime context: model/pkg/env/stage/srvname. env is 'web' - this IS
+  // the web environment entry. It reported 'local' before context()
+  // existed, which no longer matched the entry it was generated for.
+  context(seneca, Model, Pkg, { env: 'web' })
 
   seneca.test()
 
