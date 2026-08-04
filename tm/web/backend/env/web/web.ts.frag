@@ -15,7 +15,7 @@ import Express from 'express'
 import CookieParser from 'cookie-parser'
 
 import Seneca from 'seneca'
-import { Local, context } from '@voxgig/system'
+import { Local, context, devtools } from '@voxgig/system'
 
 import { basic, base } from '../shared/basic'
 import { seedDemo } from '../shared/seed'
@@ -45,19 +45,16 @@ async function run() {
   // existed, which no longer matched the entry it was generated for.
   context(seneca, Model, Pkg, { env: 'web' })
 
-  seneca.test()
+  // Dev-only behaviour, from the model: seneca.test() and the @seneca/repl
+  // dev REPL -   npx seneca-repl telnet://localhost:<conf.port.repl>
+  //
+  // Declared in main.conf.dev, overridable per environment in
+  // main.env.web.dev, and at runtime with SENECA_TEST / SENECA_REPL /
+  // SENECA_REPL_PORT. Both default to OFF, so this entry only gets them if
+  // the model asks.
+  devtools(seneca, Model, { env: 'web' })
 
   basic(seneca)
-
-  // Dev REPL (@seneca/repl): poke the running system with messages -
-  //   npx seneca-repl telnet://localhost:<port.repl>
-  // Disable with REPL=false; override the port with REPL_PORT.
-  if ('false' !== process.env.REPL) {
-    seneca.use('repl', {
-      port: parseInt(process.env.REPL_PORT || '', 10) ||
-        (Model as any).main.conf.port.repl,
-    })
-  }
 
   seneca
     .use('gateway', {

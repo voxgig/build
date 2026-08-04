@@ -5,7 +5,7 @@
 // (main.env.$$env$$).
 
 import Seneca from 'seneca'
-import { Local, context } from '@voxgig/system'
+import { Local, context, devtools } from '@voxgig/system'
 
 import { basic, base } from '../shared/basic'
 
@@ -29,6 +29,13 @@ async function run() {
   // Runtime context: model/pkg/env/stage/srvname. `stage` resolves from
   // STAGE, then the model's main.env.$$env$$.stage, then the env name.
   context(seneca, Model, Pkg, { env: '$$env$$' })
+
+  // Dev-only behaviour, from the model: seneca.test() and the @seneca/repl
+  // dev REPL. Declared in main.conf.dev, overridable per environment in
+  // main.env.$$env$$.dev, and at runtime with SENECA_TEST / SENECA_REPL /
+  // SENECA_REPL_PORT. Both default to OFF - a long-lived server picks up
+  // neither unless the model asks for it.
+  devtools(seneca, Model, { env: '$$env$$' })
 
   basic(seneca)
 
