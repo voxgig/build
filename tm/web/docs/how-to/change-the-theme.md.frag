@@ -23,7 +23,7 @@ Then regenerate:
 cd backend && npm run model-build
 ```
 
-`web/src/theme.css` is rewritten: every token becomes a CSS variable
+`$$fe$$/src/theme.css` is rewritten: every token becomes a CSS variable
 (`--vg-primary`, ...) scoped to its mode
 (`:root[data-theme-mode="light"]`; the default mode also on `:root`).
 Do not edit `theme.css` by hand — it regenerates from the model.
@@ -38,7 +38,7 @@ choice persists (localStorage `vg-theme-mode`).
 
 ## Override per project without touching the model
 
-`web/src/custom.css` loads after the theme:
+`$$fe$$/src/custom.css` loads after the theme:
 
 ```css
 :root { --vg-radius: 10px; }                      /* all modes */
@@ -48,7 +48,7 @@ choice persists (localStorage `vg-theme-mode`).
 ## Add modes or intercept the mode list at runtime
 
 ```js
-// web/src/customise.js
+// $$fe$$/src/customise.js
 import * as Hooks from './hooks.js'
 Hooks.addFilter('theme:modes', (modes) => [...modes, 'sepia'])
 ```

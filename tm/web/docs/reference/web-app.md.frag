@@ -3,7 +3,7 @@
 *Diátaxis: reference — the generated SPA's structure, messages, hook
 points, and theme contract.*
 
-## Files (web/src/)
+## Files ($$fe$$/src/)
 
 | File | Role | Regenerated? |
 |---|---|---|

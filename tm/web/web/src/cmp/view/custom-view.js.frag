@@ -39,7 +39,7 @@ class $$className$$ extends HTMLElement {
           `<li>${String(null == it[labelField] ? it.id : it[labelField])}</li>`).join('')
           || '<li class="vg-muted">Nothing yet.</li>'}</ul>
         <p class="vg-hint">Hand-coded custom view — edit
-          web/src/cmp/view/$$zone$$_$$name$$.js to build it out.</p>
+          $$fe$$/src/cmp/view/$$zone$$_$$name$$.js to build it out.</p>
       </div>`
   }
 }
