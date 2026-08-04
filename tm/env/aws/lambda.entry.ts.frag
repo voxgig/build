@@ -6,7 +6,7 @@
 // shared setup (src/env/shared/basic.ts).
 
 import Seneca from 'seneca'
-import { Live } from '@voxgig/system'
+import { Live, context } from '@voxgig/system'
 
 import { basic, base } from '../shared/basic'
 
@@ -32,11 +32,10 @@ async function getSeneca(srvname: string, complete: Function): Promise<any> {
       timeout: srv.env.lambda.timeout * 60 * 1000,
     })).test()
 
-    seneca.context.model = Model
-    seneca.context.srvname = srvname
-    seneca.context.stage = STAGE
-    seneca.context.env = 'lambda'
-    seneca.context.pkg = Pkg
+    // Runtime context: model/pkg/env/stage/srvname. Lambda is the one
+    // deployment with a service PER function, so srvname is explicit, and
+    // STAGE is resolved here (above) rather than left to context().
+    context(seneca, Model, Pkg, { env: 'lambda', srvname, stage: STAGE })
 
     basic(seneca, { reload: { active: false } })
 

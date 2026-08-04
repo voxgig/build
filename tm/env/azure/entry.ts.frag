@@ -4,6 +4,7 @@
 // wire the Seneca gateway the way src/env/lambda/lambda.ts does for AWS.
 
 import Seneca from 'seneca'
+import { context } from '@voxgig/system'
 
 import { basic, base } from '../shared/basic'
 
@@ -19,9 +20,9 @@ async function getSeneca(): Promise<any> {
       tag: '$$name$$-azure@' + Pkg.version,
     })).test()
 
-    seneca.context.model = Model
-    seneca.context.env = 'azure'
-    seneca.context.pkg = Pkg
+    // Runtime context: model/pkg/env/stage/srvname. This entry used to set
+    // only model/env/pkg - `stage` and `srvname` were simply missing.
+    context(seneca, Model, Pkg, { env: 'azure' })
 
     basic(seneca, { reload: { active: false } })
 

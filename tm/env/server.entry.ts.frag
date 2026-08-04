@@ -5,7 +5,7 @@
 // (main.env.$$env$$).
 
 import Seneca from 'seneca'
-import { Local } from '@voxgig/system'
+import { Local, context } from '@voxgig/system'
 
 import { basic, base } from '../shared/basic'
 
@@ -26,11 +26,9 @@ async function run() {
     log: { level: envdef.log || 'warn' },
   }, envdef.seneca || {}))
 
-  seneca.context.model = Model
-  seneca.context.env = '$$env$$'
-  seneca.context.stage = process.env.STAGE || '$$env$$'
-  seneca.context.srvname = 'all'
-  seneca.context.pkg = Pkg
+  // Runtime context: model/pkg/env/stage/srvname. `stage` resolves from
+  // STAGE, then the model's main.env.$$env$$.stage, then the env name.
+  context(seneca, Model, Pkg, { env: '$$env$$' })
 
   basic(seneca)
 

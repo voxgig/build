@@ -36,6 +36,14 @@ npm test        # node:test + coverage thresholds (test/*.test.ts)
 - **Generator output is pinned byte-exact** by `test/fixture`. If an
   intentional output change fails tests, refresh the fixtures and say so
   in the commit.
+- **The generated code's `@voxgig/system` floor is undeclared, so mind it
+  by hand.** This package has no dependency on `@voxgig/system` — the code
+  it EMITS imports one, and the project's own `package.json` supplies it.
+  Nothing checks the two agree. Every env entry now calls
+  `context(seneca, Model, Pkg, { env })`, which needs
+  **`@voxgig/system` >= 1.12.0**; a project on an older one fails to
+  compile with `'context' is not exported`. Raise this note whenever a
+  fragment starts using a newer export.
 - **The browser surface is `aim:web` only.** The generated gateway
   allow-list must stay the literal `{ 'aim:web': true }`; browser
   operations are added as model-declared `aim:web` proxies (`web_*`
