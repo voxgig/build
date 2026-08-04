@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/build",
-  "version": "4.11.0",
+  "version": "4.12.0",
   "main": "dist/build.js",
   "type": "commonjs",
   "types": "dist/build.d.ts",
