@@ -325,4 +325,63 @@ describe('web_gen model-driven outputs', () => {
     assert.ok(!(res.created).includes('web/src/theme.css'))
     assert.strictEqual(Fs.existsSync(Path.join(root, 'web/src/theme.css')), false)
   })
+
+
+  // env web `dir` renames the frontend folder. Everything that names it has
+  // to move together - the manifest, the model-driven files written outside
+  // it (views.js, theme.css, custom views), and the static path the backend
+  // runner serves. A half-applied rename is worse than none: the SPA would
+  // build into one folder and be served from another.
+  test('dir renames the frontend folder, and nothing is left behind', async () => {
+    const model = makeModel()
+    const root = tmpProject()
+
+    const res = await EnvWeb.web_gen(model, { root, env: { dir: 'frontend' } })
+
+    for (const rel of [
+      'frontend/package.json',
+      'frontend/index.html',
+      'frontend/playwright.config.js',
+      'frontend/src/main.js',
+      'frontend/src/views.js',
+      'frontend/src/theme.css',
+      'frontend/src/cmp/view/shop_product.js',
+      'frontend/e2e/smoke.spec.js',
+    ]) {
+      assert.ok((res.created).includes(rel), 'missing ' + rel)
+      assert.ok(Fs.existsSync(Path.join(root, rel)), 'not written ' + rel)
+    }
+
+    // No stragglers: nothing may still be written to web/.
+    assert.strictEqual(Fs.existsSync(Path.join(root, 'web')), false)
+    assert.strictEqual(res.created.filter((f: string) => f.startsWith('web/')).length, 0)
+
+    // The backend runner must serve the renamed folder, not 'web'.
+    const runner = read(root, 'backend/src/env/web/web.ts')
+    assert.ok((runner).includes("'frontend', 'dist'"))
+    assert.ok(!(runner).includes("'web', 'dist'"))
+
+    // The backend web runner itself is NOT the frontend and never moves,
+    // nor does the aim:web message namespace.
+    assert.ok(Fs.existsSync(Path.join(root, 'backend/src/env/web/web.ts')))
+    assert.ok((runner).includes("allow: { 'aim:web': true }"))
+  })
+
+
+  test('dir defaults to web, and rejects a path escape', async () => {
+    const model = makeModel()
+    const root = tmpProject()
+
+    // Absent, empty and undefined all mean 'web' - an existing project that
+    // says nothing must not move.
+    const res = await EnvWeb.web_gen(model, { root, env: {} })
+    assert.ok((res.created).includes('web/package.json'))
+
+    for (const bad of ['../escape', 'a/../..', '', 42, '/abs/path']) {
+      await assert.rejects(
+        () => EnvWeb.web_gen(makeModel(), { root: tmpProject(), env: { dir: bad } }),
+        /must be a non-empty relative folder name/,
+        'accepted ' + JSON.stringify(bad))
+    }
+  })
 })

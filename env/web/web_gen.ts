@@ -31,35 +31,35 @@ const WEB_FILES: { frag: string, out: string }[] = [
   // an app shell (nav / project selector / user menu / collapsible entity
   // menu), and generic CRUD with relationship navigation. All runtime
   // model-driven (model.js reads /model.json), so it fits any entity graph.
-  { frag: 'web/package.json.frag', out: 'web/package.json' },
-  { frag: 'web/index.html.frag', out: 'web/index.html' },
-  { frag: 'web/playwright.config.js.frag', out: 'web/playwright.config.js' },
-  { frag: 'web/src/main.js.frag', out: 'web/src/main.js' },
-  { frag: 'web/src/bus.js.frag', out: 'web/src/bus.js' },
-  { frag: 'web/src/model.js.frag', out: 'web/src/model.js' },
-  { frag: 'web/src/api.js.frag', out: 'web/src/api.js' },
-  { frag: 'web/src/hooks.js.frag', out: 'web/src/hooks.js' },
-  { frag: 'web/src/theme.js.frag', out: 'web/src/theme.js' },
-  { frag: 'web/src/customise.js.frag', out: 'web/src/customise.js' },
-  { frag: 'web/src/custom.css.frag', out: 'web/src/custom.css' },
-  { frag: 'web/src/style.css.frag', out: 'web/src/style.css' },
-  { frag: 'web/src/cmp/app.js.frag', out: 'web/src/cmp/app.js' },
-  { frag: 'web/src/cmp/public.js.frag', out: 'web/src/cmp/public.js' },
-  { frag: 'web/src/cmp/auth.js.frag', out: 'web/src/cmp/auth.js' },
-  { frag: 'web/src/cmp/shell.js.frag', out: 'web/src/cmp/shell.js' },
-  { frag: 'web/src/cmp/admin.js.frag', out: 'web/src/cmp/admin.js' },
-  { frag: 'web/src/cmp/settings.js.frag', out: 'web/src/cmp/settings.js' },
+  { frag: 'web/package.json.frag', out: '$$fe$$/package.json' },
+  { frag: 'web/index.html.frag', out: '$$fe$$/index.html' },
+  { frag: 'web/playwright.config.js.frag', out: '$$fe$$/playwright.config.js' },
+  { frag: 'web/src/main.js.frag', out: '$$fe$$/src/main.js' },
+  { frag: 'web/src/bus.js.frag', out: '$$fe$$/src/bus.js' },
+  { frag: 'web/src/model.js.frag', out: '$$fe$$/src/model.js' },
+  { frag: 'web/src/api.js.frag', out: '$$fe$$/src/api.js' },
+  { frag: 'web/src/hooks.js.frag', out: '$$fe$$/src/hooks.js' },
+  { frag: 'web/src/theme.js.frag', out: '$$fe$$/src/theme.js' },
+  { frag: 'web/src/customise.js.frag', out: '$$fe$$/src/customise.js' },
+  { frag: 'web/src/custom.css.frag', out: '$$fe$$/src/custom.css' },
+  { frag: 'web/src/style.css.frag', out: '$$fe$$/src/style.css' },
+  { frag: 'web/src/cmp/app.js.frag', out: '$$fe$$/src/cmp/app.js' },
+  { frag: 'web/src/cmp/public.js.frag', out: '$$fe$$/src/cmp/public.js' },
+  { frag: 'web/src/cmp/auth.js.frag', out: '$$fe$$/src/cmp/auth.js' },
+  { frag: 'web/src/cmp/shell.js.frag', out: '$$fe$$/src/cmp/shell.js' },
+  { frag: 'web/src/cmp/admin.js.frag', out: '$$fe$$/src/cmp/admin.js' },
+  { frag: 'web/src/cmp/settings.js.frag', out: '$$fe$$/src/cmp/settings.js' },
 
   // Per-component doc sidecars (mermaid structure + message diagrams),
   // create-once next to each component.
-  { frag: 'web/src/cmp/app.md.frag', out: 'web/src/cmp/app.md' },
-  { frag: 'web/src/cmp/public.md.frag', out: 'web/src/cmp/public.md' },
-  { frag: 'web/src/cmp/auth.md.frag', out: 'web/src/cmp/auth.md' },
-  { frag: 'web/src/cmp/shell.md.frag', out: 'web/src/cmp/shell.md' },
-  { frag: 'web/src/cmp/admin.md.frag', out: 'web/src/cmp/admin.md' },
-  { frag: 'web/src/cmp/settings.md.frag', out: 'web/src/cmp/settings.md' },
-  { frag: 'web/e2e/smoke.spec.js.frag', out: 'web/e2e/smoke.spec.js' },
-  { frag: 'web/AGENTS.md.frag', out: 'web/AGENTS.md' },
+  { frag: 'web/src/cmp/app.md.frag', out: '$$fe$$/src/cmp/app.md' },
+  { frag: 'web/src/cmp/public.md.frag', out: '$$fe$$/src/cmp/public.md' },
+  { frag: 'web/src/cmp/auth.md.frag', out: '$$fe$$/src/cmp/auth.md' },
+  { frag: 'web/src/cmp/shell.md.frag', out: '$$fe$$/src/cmp/shell.md' },
+  { frag: 'web/src/cmp/admin.md.frag', out: '$$fe$$/src/cmp/admin.md' },
+  { frag: 'web/src/cmp/settings.md.frag', out: '$$fe$$/src/cmp/settings.md' },
+  { frag: 'web/e2e/smoke.spec.js.frag', out: '$$fe$$/e2e/smoke.spec.js' },
+  { frag: 'web/AGENTS.md.frag', out: '$$fe$$/AGENTS.md' },
 
   // Project docs (Diátaxis) for the web app, alongside the scaffold's
   // backend docs (@voxgig/create-system DocsPart). Create-once like all
@@ -149,18 +149,50 @@ const DEFAULT_USERS = [
 ]
 
 
+// The frontend folder name, from the model env entry (`web: { dir: ... }`).
+// Defaults to 'web', so a project that says nothing keeps the layout it
+// already has. Everything that names the folder - the WEB_FILES output
+// paths, views.js, theme.css, and the static path the backend runner
+// serves - goes through this one value, via the $$fe$$ slot.
+//
+// Only the FOLDER moves. The `aim:web` message namespace is unrelated and
+// must never follow it: the gateway allow-list is the literal
+// { 'aim:web': true }, and backend/src/env/web/ is the backend runner, not
+// the SPA.
+const DEFAULT_FE = 'web'
+
+// Absent means 'web'. ANYTHING ELSE provided is validated rather than
+// silently defaulted - `dir: ''` is a mistake, not a request for 'web', and
+// defaulting it would generate the whole SPA into the project root.
+function feDir(envdef: any): string {
+  const dir = null == envdef ? undefined : envdef.dir
+  if (null == dir) {
+    return DEFAULT_FE
+  }
+  if ('string' !== typeof dir || '' === dir || dir.split('/').includes('..') ||
+    Path.isAbsolute(dir)) {
+    throw new Error(
+      'EnvWeb: env web `dir` must be a non-empty relative folder name, got: ' +
+      JSON.stringify(dir))
+  }
+  return dir
+}
+
+
 // web_gen(model, spec): generate the frontend + backend web pieces into
 // the project. spec.root is the project root (parent of backend/); files
 // that already exist are left untouched (create-once).
 const web_gen = async (model: any, spec: {
-  root: string       // project root (holds backend/ and web/)
+  root: string       // project root (holds backend/ and the frontend folder)
   tm?: string        // project tm/web folder (fragment shadowing)
-  env?: any          // the model env entry (config: port, users)
+  env?: any          // the model env entry (config: port, users, dir)
   force?: boolean    // overwrite existing files (default: create-once)
 }) => {
 
   const core = CoreConfShape(model.main.conf.core)
   const envdef = spec.env || {}
+
+  const fe = feDir(envdef)
 
   const users = envdef.users || DEFAULT_USERS
   const seed = users[0] || DEFAULT_USERS[0]
@@ -170,6 +202,7 @@ const web_gen = async (model: any, spec: {
   const slots: Record<string, any> = {
     name: core.name,
     Name: camelify(core.name),
+    fe,
     users: JSON.stringify(users, null, 2),
     e2eport: envdef.e2eport || (port + 10),
     seedEmail: seed.email,
@@ -219,7 +252,7 @@ const web_gen = async (model: any, spec: {
     })
     // The component starter plus its doc sidecar, both create-once.
     for (const ext of ['js', 'md']) {
-      const outrel = 'web/src/cmp/view/' + c.zone + '_' + c.name + '.' + ext
+      const outrel = fe + '/src/cmp/view/' + c.zone + '_' + c.name + '.' + ext
       const dest = Path.join(spec.root, outrel)
       if (Fs.existsSync(dest) && !spec.force) {
         skipped.push(outrel)
@@ -235,7 +268,7 @@ const web_gen = async (model: any, spec: {
 
   // views.js — the generated index of custom views. Regenerated whenever the
   // set of custom views changes; a no-op run leaves it (and `created`) alone.
-  const viewsRel = 'web/src/views.js'
+  const viewsRel = fe + '/src/views.js'
   const viewsPath = Path.join(spec.root, viewsRel)
   const viewsBody =
     '// AUTO-GENERATED: imports every custom entity view (model entities declaring\n' +
@@ -244,7 +277,7 @@ const web_gen = async (model: any, spec: {
     customs.map((c) => `import './cmp/view/${c.zone}_${c.name}.js'`).join('\n') + '\n'
   const existingViews = Fs.existsSync(viewsPath) ? Fs.readFileSync(viewsPath, 'utf8') : null
   if (existingViews !== viewsBody) {
-    Fs.mkdirSync(Path.join(spec.root, 'web/src'), { recursive: true })
+    Fs.mkdirSync(Path.join(spec.root, fe, 'src'), { recursive: true })
     Fs.writeFileSync(viewsPath, viewsBody)
     created.push(viewsRel)
   }
@@ -268,12 +301,12 @@ const web_gen = async (model: any, spec: {
       '/* AUTO-GENERATED from the model theme (main.theme) — do not edit.\n' +
       '   Override tokens in custom.css; add modes via the theme:modes hook. */\n\n' +
       blocks.join('\n\n') + '\n'
-    const themePath = Path.join(spec.root, 'web/src/theme.css')
+    const themePath = Path.join(spec.root, fe, 'src/theme.css')
     const existingTheme = Fs.existsSync(themePath) ? Fs.readFileSync(themePath, 'utf8') : null
     if (existingTheme !== themeBody) {
-      Fs.mkdirSync(Path.join(spec.root, 'web/src'), { recursive: true })
+      Fs.mkdirSync(Path.join(spec.root, fe, 'src'), { recursive: true })
       Fs.writeFileSync(themePath, themeBody)
-      created.push('web/src/theme.css')
+      created.push(fe + '/src/theme.css')
     }
   }
 

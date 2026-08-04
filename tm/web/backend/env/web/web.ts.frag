@@ -1,6 +1,6 @@
 
 // Local web runner: the local in-memory backend plus an HTTP layer for
-// the SPA - express serving web/dist, the model, and a single seneca
+// the SPA - express serving the frontend dist, the model, and a single seneca
 // gateway endpoint (/seneca) that the browser-side Seneca bus posts
 // messages to (seneca-browser fetch transport). Cookie auth via
 // @seneca/gateway-auth (express_cookie): signin sets the todo-auth
@@ -120,10 +120,12 @@ async function run() {
   await seedDemo(seneca, usersByEmail)
 
   const app = Express()
-  // web/ is a sibling of backend/; from dist/env/local go up to the
-  // project root, then web/dist.
+  // The frontend folder is a sibling of backend/; from dist/env/local go
+  // up to the project root, then into its dist. The folder name comes from
+  // the model (env web `dir`, default 'web'), so it stays in step if the
+  // project renames it.
   const webdist = Path.join(
-    __dirname, '..', '..', '..', '..', 'web', 'dist')
+    __dirname, '..', '..', '..', '..', '$$fe$$', 'dist')
 
   app
     .use(Express.json())

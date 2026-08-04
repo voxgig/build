@@ -17,9 +17,9 @@ shop: product: ux: { view: 'custom' }
 cd backend && npm run model-build
 ```
 
-This creates `web/src/cmp/view/shop_product.js` (a working starter
+This creates `$$fe$$/src/cmp/view/shop_product.js` (a working starter
 component — create-once, so your edits survive every future build) and
-regenerates `web/src/views.js`, the index that imports all custom views.
+regenerates `$$fe$$/src/views.js`, the index that imports all custom views.
 The shell now mounts `<vg-view-shop-product>` instead of the generic
 `<vg-entity-admin>` for that entity.
 

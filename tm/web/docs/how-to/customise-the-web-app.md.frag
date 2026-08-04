@@ -4,13 +4,13 @@
 without editing generated components.*
 
 Customisations live in two create-once files that survive regeneration:
-`web/src/customise.js` (hook registrations) and `web/src/custom.css`
+`$$fe$$/src/customise.js` (hook registrations) and `$$fe$$/src/custom.css`
 (style overrides).
 
 ## Inject or change HTML
 
 ```js
-// web/src/customise.js
+// $$fe$$/src/customise.js
 import * as Hooks from './hooks.js'
 
 Hooks.addHtml('shell:topbar:right', () => '<span class="vg-badge">Beta</span>')
@@ -46,7 +46,7 @@ and skipped). The full list of points is in the
 ## Override styles
 
 Generated styles use CSS variables from the theme. Override tokens or add
-rules in `web/src/custom.css`:
+rules in `$$fe$$/src/custom.css`:
 
 ```css
 :root { --vg-primary: #7c3aed; }
