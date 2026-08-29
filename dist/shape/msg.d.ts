@@ -2,6 +2,10 @@ declare const MsgMetaShape: {
     <V>(root?: V | undefined, ctx?: import("gubu").Context): V & {
         file: import("gubu").Node<StringConstructor>;
         params: import("gubu").Node<{}>;
+        doc: import("gubu").Node<StringConstructor>;
+        out: import("gubu").Node<{}>;
+        web: import("gubu").Node<{}>;
+        api: import("gubu").Node<{}>;
         transport: import("gubu").Node<{
             queue: {
                 active: boolean;
@@ -13,6 +17,10 @@ declare const MsgMetaShape: {
     valid: <V>(root?: V | undefined, ctx?: import("gubu").Context) => root is V & {
         file: import("gubu").Node<StringConstructor>;
         params: import("gubu").Node<{}>;
+        doc: import("gubu").Node<StringConstructor>;
+        out: import("gubu").Node<{}>;
+        web: import("gubu").Node<{}>;
+        api: import("gubu").Node<{}>;
         transport: import("gubu").Node<{
             queue: {
                 active: boolean;
@@ -61,6 +69,10 @@ declare const MsgMetaShape: {
     node(): import("gubu").Node<{
         file: import("gubu").Node<StringConstructor>;
         params: import("gubu").Node<{}>;
+        doc: import("gubu").Node<StringConstructor>;
+        out: import("gubu").Node<{}>;
+        web: import("gubu").Node<{}>;
+        api: import("gubu").Node<{}>;
         transport: import("gubu").Node<{
             queue: {
                 active: boolean;

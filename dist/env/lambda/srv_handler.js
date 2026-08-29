@@ -6,6 +6,7 @@ exports.srv_handler = void 0;
 // bootstrapping Seneca via the env folder and delegating to gateway-lambda.
 const util_1 = require("@voxgig/util");
 const msg_1 = require("../../shape/msg");
+const util_2 = require("../../util");
 const generate_1 = require("./generate");
 // Only create if does not exist
 const srv_handler = async (model, spec) => {
@@ -40,7 +41,10 @@ const srv_handler = async (model, spec) => {
         //       }
         let prepare = '';
         let complete = '';
-        (0, util_1.dive)(model.main.msg.aim[name], 128).map((entry) => {
+        // aimmsgs and msgindex read both message declaration shapes; dive()
+        // cannot, because fed a flat definition it walks the metadata and emits
+        // one entry per scalar field. See util.ts.
+        (0, util_2.aimmsgs)(model.main.msg, name).map((entry) => {
             var _a, _b;
             let path = ['aim', name, ...entry[0]];
             let msgMeta = (0, msg_1.MsgMetaShape)(entry[1]);
@@ -50,13 +54,15 @@ const srv_handler = async (model, spec) => {
   seneca.listen({type:'sqs',pin:'${pin}'})`;
             }
         });
+        const msgmeta = (0, util_2.msgindex)(model.main.msg);
         (0, util_1.dive)(model.main.srv[name].out, 128).map((entry) => {
             var _a, _b;
             let path = entry[0];
-            let msgMetaMaybe = (0, util_1.get)(model.main.msg, path);
-            // console.log(name, path, msgMetaMaybe)
-            if (msgMetaMaybe === null || msgMetaMaybe === void 0 ? void 0 : msgMetaMaybe.$) {
-                let msgMeta = (0, msg_1.MsgMetaShape)(msgMetaMaybe === null || msgMetaMaybe === void 0 ? void 0 : msgMetaMaybe.$);
+            // Looked up by pattern rather than by descending main.msg, so a
+            // declared-shape message resolves too.
+            let msgMetaMaybe = msgmeta[path.join(',')];
+            if (msgMetaMaybe) {
+                let msgMeta = (0, msg_1.MsgMetaShape)(msgMetaMaybe);
                 let pin = (0, util_1.pinify)(path);
                 if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
                     complete += `

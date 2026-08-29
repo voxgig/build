@@ -11,6 +11,7 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const util_1 = require("@voxgig/util");
 const msg_1 = require("../../shape/msg");
+const util_2 = require("../../util");
 const conf_1 = require("../../shape/conf");
 const res_dynamo_yml_1 = require("../../yml/res_dynamo_yml");
 const generate_1 = require("./generate");
@@ -37,7 +38,10 @@ const resources_yml = async (model, spec) => {
         prefixContent +
             await (0, res_dynamo_yml_1.res_dynamo_yml)(model, { dynamoResources, region, accountid });
     // content +=
-    let queueDefs = (0, util_1.dive)(model.main.msg, 128).map((entry) => {
+    // msgentries reads both message declaration shapes; dive() cannot, because
+    // fed a flat definition it walks the metadata and emits one entry per
+    // scalar field. See util.ts.
+    let queueDefs = (0, util_2.msgentries)(model.main.msg).map((entry) => {
         var _a, _b, _c;
         let path = entry[0];
         let msgMeta = (0, msg_1.MsgMetaShape)(entry[1]);

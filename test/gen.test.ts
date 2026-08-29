@@ -158,6 +158,62 @@ describe('doc_gen', () => {
       Path.join(root, 'backend/src/srv/other/README.md')), false)
   })
 
+  // The declared message shape from @voxgig/model 10.1.0: a flat entry per
+  // message, keyed by name, with the pattern as data. Selection here is by
+  // PATTERN, so where a declaration lives in the model makes no difference to
+  // what the docs say.
+  test('reads declared-shape messages, and both shapes together', async () => {
+    const model = makeModel()
+    model.main.msg = {
+      // Declared shape.
+      get_info: { pat: [{ aim: 'thing' }, { get: 'info' }] },
+      save_item: {
+        pat: [{ aim: 'thing' }, { save: 'item' }],
+        doc: 'Save an item',
+      },
+      // The gateway route stays a chain: its last pattern pair is save:item,
+      // so the declared shape would want the key `save_item` too, which the
+      // message above already holds. See AGENTS.md.
+      aim: {
+        req: {
+          on: { thing: { save: { item: { $: { file: './web_save_item' } } } } },
+        },
+      },
+    }
+
+    const root = tmpProject(['thing'])
+    await Docs.doc_gen(model, { root })
+
+    const msgs = read(root, 'docs/reference/messages.md')
+    // Identical rows to the chain fixture: same patterns, same action files.
+    assert.ok((msgs).includes('`aim:thing,get:info` | `src/srv/thing/get_info.ts`'))
+    assert.ok((msgs).includes('`aim:thing,save:item` | `src/srv/thing/save_item.ts`'))
+    // ...and the chain-declared gateway route alongside them.
+    assert.ok((msgs).includes('web_save_item'))
+
+    const readme = read(root, 'backend/src/srv/thing/README.md')
+    assert.ok((readme).includes('save_item'))
+  })
+
+
+  // A definition may name its action file, exactly as a '$' leaf could.
+  test('declared-shape file overrides the last-pair convention', async () => {
+    const model = makeModel()
+    model.main.msg = {
+      get_info: {
+        pat: [{ aim: 'thing' }, { get: 'info' }],
+        file: './custom_info',
+      },
+    }
+
+    const root = tmpProject(['thing'])
+    await Docs.doc_gen(model, { root })
+
+    const msgs = read(root, 'docs/reference/messages.md')
+    assert.ok((msgs).includes('`aim:thing,get:info` | `src/srv/thing/custom_info.ts`'))
+  })
+
+
   test('system map without web env uses plain client node', async () => {
     const model = makeModel()
     model.main.env.web.active = false
