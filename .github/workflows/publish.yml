@@ -1,17 +1,15 @@
 # Releases @voxgig/build: publishes to npm AND writes the git tag.
 #
-# ⚠️ NOT YET USABLE: npm trusted publishing must be registered first.
-#
-# On npmjs.com, for the @voxgig/build package, add a trusted publisher for
-# owner `voxgig`, repository `build`, workflow filename `publish.yml`. Until
-# that exists, the OIDC exchange is refused as
+# npm trusted publishing is registered for this package (verified: 4.15.0
+# published through this workflow with provenance). If it is ever
+# de-registered, or this file is renamed, the OIDC exchange is refused as
 #
 #   npm error 404 Not Found - PUT https://registry.npmjs.org/@voxgig%2fbuild
 #
 # — a 404, not a 403, so as not to leak whether the package exists. It reads
 # as "the package does not exist", which is nonsense and costs an hour if you
-# have not seen it before. Everything up to the publish step still runs, so a
-# dispatch before registration fails at the end rather than doing damage.
+# have not seen it before. The fix is to re-add the trusted publisher on
+# npmjs.com for owner `voxgig`, repository `build`, workflow `publish.yml`.
 #
 # ONE FILE, BECAUSE NPM ALLOWS EXACTLY ONE. The trusted publisher binds a
 # single workflow FILENAME, so only this file can publish and anything that
