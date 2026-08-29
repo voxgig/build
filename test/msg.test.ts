@@ -3,8 +3,8 @@
 // The message declaration readers (util.ts). main.msg has two shapes and
 // everything that walks messages goes through these:
 //
-//   legacy chain    aim: web: { save: item: { '$': { file: './web_save_item' } } }
-//   declared        save_item: { pat: [ {aim: web}, {save: item} ] }
+//   declared      main: msg: [ { pat: [ {aim: web}, {save: item} ] } ]
+//   legacy chain  aim: web: { save: item: { '$': { file: './web_save_item' } } }
 //
 // msgentries is a drop-in for @voxgig/util's dive() over a message tree, so
 // the chain cases below also pin the behaviour the generators relied on
@@ -49,38 +49,45 @@ describe('msg', () => {
   })
 
 
-  test('msgentries reads declared definitions', () => {
+  test('msgentries reads a declared list', () => {
     assert.deepEqual(
-      msgentries({ save_item: { pat: [{ aim: 'web' }, { save: 'item' }] } }),
+      msgentries([{ pat: [{ aim: 'web' }, { save: 'item' }] }]),
       [[['aim', 'web', 'save', 'item'], {}]])
 
     // meta is the definition without its pattern.
     assert.deepEqual(
-      msgentries({
-        save_item: {
-          pat: [{ aim: 'web' }, { save: 'item' }],
-          doc: 'Save an item',
-          file: './custom',
-        }
-      }),
+      msgentries([{
+        pat: [{ aim: 'web' }, { save: 'item' }],
+        doc: 'Save an item',
+        file: './custom',
+      }]),
       [[['aim', 'web', 'save', 'item'], { doc: 'Save an item', file: './custom' }]])
 
-    // Both shapes in one model.
+    // THE REASON THE SHAPE IS A LIST: a gateway proxy and the message it
+    // forwards to share their last pattern pair, so a map keyed by message
+    // name could not hold both.
     assert.deepEqual(
-      msgentries({
-        aim: { thing: { get: { info: {} } } },
-        save_item: { pat: [{ aim: 'web' }, { save: 'item' }] },
-      }),
+      msgentries([
+        { pat: [{ aim: 'todo' }, { save: 'item' }] },
+        { pat: [{ aim: 'web' }, { on: 'todo' }, { save: 'item' }], file: './web_save_item' },
+      ]),
       [
-        [['aim', 'thing', 'get', 'info'], {}],
-        [['aim', 'web', 'save', 'item'], {}],
+        [['aim', 'todo', 'save', 'item'], {}],
+        [['aim', 'web', 'on', 'todo', 'save', 'item'], { file: './web_save_item' }],
       ])
 
-    // Malformed pairs are dropped rather than thrown on. A pair holding two
-    // keys is dropped whole: guessing which was meant would silently produce
-    // a pattern nobody declared.
+    assert.deepEqual(msgentries([]), [])
+
+    // Elements that are not definitions are skipped rather than thrown on.
     assert.deepEqual(
-      msgentries({ x: { pat: [{ a: 'b' }, 'nope', null, [], { c: 'd', e: 'f' }] } }),
+      msgentries([null, 'nope', {}, { pat: [{ a: 'b' }] }]),
+      [[['a', 'b'], {}]])
+
+    // Malformed pairs are dropped. A pair holding two keys is dropped whole:
+    // guessing which was meant would silently produce a pattern nobody
+    // declared.
+    assert.deepEqual(
+      msgentries([{ pat: [{ a: 'b' }, 'nope', null, [], { c: 'd', e: 'f' }] }]),
       [[['a', 'b'], {}]])
   })
 
@@ -90,27 +97,30 @@ describe('msg', () => {
     assert.deepEqual(aimmsgs(chain, 'thing'), [[['get', 'info'], {}]])
     assert.deepEqual(aimmsgs(chain, 'other'), [[['list', 'all'], {}]])
 
-    // A declared definition lives at main.msg.<name>, never under main.msg.aim,
-    // so position-based lookup would miss it entirely.
-    const declared = { get_info: { pat: [{ aim: 'thing' }, { get: 'info' }] } }
+    // A declared definition is an element of main.msg, not a node under
+    // main.msg.aim, so position-based lookup would miss it entirely.
+    const declared = [{ pat: [{ aim: 'thing' }, { get: 'info' }] }]
     assert.deepEqual(aimmsgs(declared, 'thing'), [[['get', 'info'], {}]])
 
     // A service with no messages yields nothing rather than throwing.
     assert.deepEqual(aimmsgs(chain, 'absent'), [])
     assert.deepEqual(aimmsgs({}, 'thing'), [])
+    assert.deepEqual(aimmsgs([], 'thing'), [])
   })
 
 
   test('msgindex keys metadata by pattern path', () => {
-    const index = msgindex({
+    const fromChain = msgindex({
       aim: { thing: { save: { item: { $: { transport: { queue: { active: true } } } } } } },
-      get_info: { pat: [{ aim: 'thing' }, { get: 'info' }], doc: 'Info' },
     })
-
-    assert.deepEqual(index['aim,thing,save,item'],
+    assert.deepEqual(fromChain['aim,thing,save,item'],
       { transport: { queue: { active: true } } })
-    assert.deepEqual(index['aim,thing,get,info'], { doc: 'Info' })
-    assert.strictEqual(index['aim,thing,absent,msg'], undefined)
+    assert.strictEqual(fromChain['aim,thing,absent,msg'], undefined)
+
+    const fromList = msgindex([
+      { pat: [{ aim: 'thing' }, { get: 'info' }], doc: 'Info' },
+    ])
+    assert.deepEqual(fromList['aim,thing,get,info'], { doc: 'Info' })
   })
 
 })
