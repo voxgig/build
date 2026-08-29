@@ -9,6 +9,7 @@ import Path from 'path'
 import { dive, camelify } from '@voxgig/util'
 
 import { MsgMetaShape } from '../../shape/msg'
+import { msgentries } from '../../util'
 import { CoreConfShape, CloudConfShape } from '../../shape/conf'
 
 import { res_dynamo_yml } from '../../yml/res_dynamo_yml'
@@ -58,7 +59,10 @@ const resources_yml = async (model: any, spec: {
     await res_dynamo_yml(model, { dynamoResources, region, accountid })
 
   // content +=
-  let queueDefs = dive(model.main.msg, 128).map((entry: any) => {
+  // msgentries reads both message declaration shapes; dive() cannot, because
+  // fed a flat definition it walks the metadata and emits one entry per
+  // scalar field. See util.ts.
+  let queueDefs = msgentries(model.main.msg).map((entry: any) => {
     let path = entry[0]
     let msgMeta = MsgMetaShape(entry[1])
 

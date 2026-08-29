@@ -18,30 +18,11 @@ exports.doc_gen = void 0;
 //   backend/src/srv/<srv>/README.md   one per implemented service
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const util_1 = require("../util");
 const GENMARK = (what) => `<!-- AUTO-GENERATED from the model by @voxgig/build (${what}) - do not edit. -->`;
 // Sanitize a canon or name into a mermaid-safe node id.
 const mid = (s) => String(s).replace(/[^A-Za-z0-9_]/g, '_');
 // ---- model walkers ----
-// Leaf message patterns under a msg subtree. A leaf is a node with no
-// child objects other than the '$' metadata entry. Returns
-// [{ path: ['save','item'], meta: {file?} }].
-function msgLeaves(node, prefix = []) {
-    const out = [];
-    const keys = Object.keys(node || {}).filter((k) => '$' !== k);
-    if (0 === keys.length && 0 < prefix.length) {
-        return [{ path: prefix, meta: (node && node.$) || {} }];
-    }
-    for (const k of keys) {
-        if (node[k] && 'object' === typeof node[k]) {
-            out.push(...msgLeaves(node[k], [...prefix, k]));
-        }
-        else if (0 < prefix.length) {
-            // Scalar child: treat the current node as a leaf with options.
-            return [{ path: prefix, meta: (node && node.$) || {} }];
-        }
-    }
-    return out;
-}
 // Pattern string for a leaf under aim:<srv>: 'aim:todo,save:item'.
 const patstr = (aim, path) => {
     let s = 'aim:' + aim;
@@ -59,10 +40,16 @@ const actfile = (path, meta) => {
     const last = path.slice(-2);
     return last.join('_');
 };
-// The services and their messages, from main.srv[].in + main.msg.aim.
+// The services and their messages, from main.srv[].in + the messages aimed at
+// each service.
+//
+// Selection is by PATTERN (via aimmsgs), not by descending main.msg.aim, so
+// both message declaration shapes are read: a declared-shape definition lives
+// at main.msg.<name> with `aim` as its first pattern pair, and never under
+// main.msg.aim at all.
 function services(model) {
     const srvs = model.main.srv || {};
-    const aim = (model.main.msg && model.main.msg.aim) || {};
+    const msg = (model.main && model.main.msg) || {};
     const out = [];
     for (const name of Object.keys(srvs)) {
         const srv = srvs[name];
@@ -73,7 +60,13 @@ function services(model) {
             if ('req' === k) {
                 const on = (inaim.req && inaim.req.on) || {};
                 for (const rk of Object.keys(on)) {
-                    for (const leaf of msgLeaves((aim.req && aim.req.on && aim.req.on[rk]) || {})) {
+                    for (const entry of (0, util_1.aimmsgs)(msg, 'req')) {
+                        // aim:req messages carry on:<srv> as their next pair; the rest is
+                        // the message the route proxies.
+                        if ('on' !== entry[0][0] || rk !== entry[0][1]) {
+                            continue;
+                        }
+                        const leaf = { path: entry[0].slice(2), meta: entry[1] };
                         routes.push({
                             raw: leaf, on: rk,
                             file: actfile(leaf.path, leaf.meta),
@@ -82,10 +75,10 @@ function services(model) {
                 }
             }
             else {
-                for (const leaf of msgLeaves(aim[k] || {})) {
+                for (const entry of (0, util_1.aimmsgs)(msg, k)) {
                     own.push({
-                        pattern: patstr(k, leaf.path),
-                        file: actfile(leaf.path, leaf.meta),
+                        pattern: patstr(k, entry[0]),
+                        file: actfile(entry[0], entry[1]),
                     });
                 }
             }

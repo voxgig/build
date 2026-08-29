@@ -3,9 +3,10 @@
 // Lambda handler template: one handler source file per lambda service,
 // bootstrapping Seneca via the env folder and delegating to gateway-lambda.
 
-import { dive, get, pinify } from '@voxgig/util'
+import { dive, pinify } from '@voxgig/util'
 
 import { MsgMetaShape } from '../../shape/msg'
+import { aimmsgs, msgindex } from '../../util'
 
 import { generate, loadFragment, renderFragment } from './generate'
 
@@ -61,7 +62,10 @@ const srv_handler = async (model: any, spec: {
       let complete = ''
 
 
-      dive(model.main.msg.aim[name], 128).map((entry: any) => {
+      // aimmsgs and msgindex read both message declaration shapes; dive()
+      // cannot, because fed a flat definition it walks the metadata and emits
+      // one entry per scalar field. See util.ts.
+      aimmsgs(model.main.msg, name).map((entry: any) => {
         let path = ['aim', name, ...entry[0]]
         let msgMeta = MsgMetaShape(entry[1])
         let pin = pinify(path)
@@ -72,12 +76,15 @@ const srv_handler = async (model: any, spec: {
       })
 
 
+      const msgmeta = msgindex(model.main.msg)
+
       dive(model.main.srv[name].out, 128).map((entry: any) => {
         let path = entry[0]
-        let msgMetaMaybe = get(model.main.msg, path)
-        // console.log(name, path, msgMetaMaybe)
-        if (msgMetaMaybe?.$) {
-          let msgMeta = MsgMetaShape(msgMetaMaybe?.$)
+        // Looked up by pattern rather than by descending main.msg, so a
+        // declared-shape message resolves too.
+        let msgMetaMaybe = msgmeta[path.join(',')]
+        if (msgMetaMaybe) {
+          let msgMeta = MsgMetaShape(msgMetaMaybe)
           let pin = pinify(path)
 
           if (msgMeta.transport?.queue?.active) {
