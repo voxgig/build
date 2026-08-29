@@ -9,22 +9,20 @@ function indent(text: string, size: number) {
 }
 
 
-// A message definition declares its pattern as a LIST; a chain node never
-// does, because every value in a chain node is a map - the next pattern level,
-// or the '$' leaf. So this tells the two shapes apart even for a legacy
-// pattern pair spelled `pat:`. It is the same discriminator @voxgig/model
-// validates the declared shape with (see its producer/msg.ts).
+// A message definition declares its pattern as a LIST, so it is told apart
+// from a chain node - whose values are always maps, the next pattern level or
+// the '$' leaf - even when spelled `pat:`. Same discriminator @voxgig/model
+// validates the declared shape with.
 function ismsgdef(val: any): boolean {
   return null != val && 'object' === typeof val &&
     !Array.isArray(val) && Array.isArray(val.pat)
 }
 
 
-// The pattern of a declared-shape definition, flattened to the pair sequence
-// [k,v,k,v,...] the chain walk produces. A malformed pair is skipped rather
-// than thrown on: @voxgig/model fails the build on those, so one arriving here
-// came from somewhere else and dropping it degrades better than crashing a
-// generator.
+// The pattern of a definition, flattened to the pair sequence [k,v,k,v,...]
+// the chain walk produces. A malformed pair is skipped rather than thrown on:
+// @voxgig/model fails the build on those, so one arriving here came from
+// somewhere else and dropping it degrades better than crashing a generator.
 function msgdefpairs(def: any): string[] {
   const pairs: string[] = []
 
@@ -42,16 +40,21 @@ function msgdefpairs(def: any): string[] {
 }
 
 
-// Flatten a main.msg subtree to [path, meta] entries, reading BOTH declaration
-// shapes: the legacy chain, where the nesting is the pattern and '$' carries
-// the metadata, and the declared shape, where a flat entry's `pat` list IS the
-// pattern.
+// Flatten main.msg to [path, meta] entries, reading BOTH declaration shapes:
+//
+//   the DECLARED shape, a LIST of definitions whose `pat` list IS the pattern;
+//   the LEGACY chain, where the nesting is the pattern and '$' carries the
+//   metadata.
+//
+// A list rather than a map keyed by message name, because a gateway proxy and
+// the message it forwards to necessarily share their last pattern pair
+// (aim:web,on:todo,save:item proxies aim:todo,save:item), so any key derived
+// from that pair would collide and the two could not both be declared.
 //
 // This is a drop-in for @voxgig/util's dive() over a message tree - same entry
 // shape, same '$' handling, same even-length pair paths that pinify() and the
-// queue-name builders assume - with one extra branch for definitions. dive()
-// cannot be used directly any more: fed a definition it would walk the
-// metadata and emit one entry per scalar field.
+// queue-name builders assume. dive() cannot be used directly any more: fed a
+// definition it would walk the metadata and emit one entry per scalar field.
 function msgentries(node: any, depth: number = 128): [string[], any][] {
   const out: [string[], any][] = []
   walkmsgs(node, [], depth, out)
@@ -66,16 +69,23 @@ function walkmsgs(
     return
   }
 
+  // The declared shape: each element carries its own pattern.
+  if (Array.isArray(node)) {
+    for (const def of node) {
+      if (ismsgdef(def)) {
+        const meta = { ...def }
+        delete meta.pat
+        out.push([prefix.concat(msgdefpairs(def)), meta])
+      }
+    }
+    return
+  }
+
   for (const key of Object.keys(node)) {
     const child = node[key]
 
     if ('$' === key) {
       out.push([prefix.slice(), child])
-    }
-    else if (ismsgdef(child)) {
-      const meta = { ...child }
-      delete meta.pat
-      out.push([prefix.concat(msgdefpairs(child)), meta])
     }
     else if (depth <= 1 || null == child || 'object' !== typeof child ||
       0 === Object.keys(child).length) {

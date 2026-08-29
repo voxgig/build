@@ -91,42 +91,41 @@ npm test        # node:test + coverage thresholds (test/*.test.ts)
 
 ## Message declarations: two shapes
 
-`main.msg` has two shapes and everything here reads both, so a project
-migrates message by message:
+`main.msg` has two shapes and everything here reads both:
 
 ```
 # legacy CHAIN - the nesting IS the pattern, '$' escapes the leaf
 aim: web: { save: item: { '$': { file: './web_save_item' } } }
 
-# DECLARED (@voxgig/model 10.1.0) - one flat entry, the pattern as data
-save_item: { pat: [ {aim: web}, {save: item} ], doc: "Save an item" }
+# DECLARED (@voxgig/model 11) - a LIST of definitions, the pattern as data
+main: msg: [
+  { pat: [ {aim: todo}, {save: item} ] }
+  { pat: [ {aim: web}, {on: todo}, {save: item} ], file: "./web_save_item" }
+]
 ```
 
-- They are told apart by `pat` being a **list**: a chain node's values are
-  always maps, so even a legacy pair spelled `pat:` stays unambiguous.
+**A LIST, not a map keyed by message name.** A gateway proxy and the message
+it forwards to necessarily share their last pattern pair, so any key derived
+from that pair would collide and the two could not both be declared — which is
+exactly the pair above. A list has no key.
+
 - **Read messages through `util.ts`, never `dive()`.** `msgentries` is a
   drop-in for `dive()` over a message tree — same entries, same `'$'`
   handling, same even-length pair paths that `pinify` and the queue-name
-  builders assume — plus a branch for definitions. Fed a definition,
+  builders assume — plus a branch for a definition list. Fed a definition,
   `dive()` walks the METADATA and emits one entry per scalar field.
 - `aimmsgs(msg, name)` selects a service's messages **by pattern**, not by
-  indexing `main.msg.aim[name]`: a definition lives at `main.msg.<name>`
-  with `aim` as its first pattern pair, and is never under `main.msg.aim`.
-  `msgindex(msg)` keys metadata by pattern path, for looking a message up
-  from a service's `out` list.
-- `MsgMetaShape` sees a definition with `pat` already stripped (it is the
-  pattern, not metadata), and declares the flat fields as `Skip`.
-
-**A definition's key must equal its LAST pattern pair joined with `_`**
-(`@voxgig/model` enforces this). So two messages ending in the same pair
-cannot both be declared flat — notably a gateway proxy and its target
-(`aim:web,on:todo,save:item` and `aim:todo,save:item` both end `save:item`).
-Leave one of them as a chain until that rule is revisited upstream.
+  indexing `main.msg.aim[name]`: a definition is an element of `main.msg`, not
+  a node under `main.msg.aim`. `msgindex(msg)` keys metadata by pattern path,
+  for looking a message up from a service's `out` list.
+- The action file is unchanged: the last pattern pair, or `file` when
+  declared. `MsgMetaShape` sees a definition with `pat` already stripped (it is
+  the pattern, not metadata) and declares the flat fields as `Skip`.
 
 Still chain-only: `web.allow`-driven proxy generation and per-message
 `api.active` (see voxgig/build#17). Nothing reads `$.allow` or a per-message
-`api` today — the gateway allow-list is the hard literal in `web.ts.frag`,
-and widening it is a hard rule above.
+`api` today — the gateway allow-list is the hard literal in `web.ts.frag`, and
+widening it is a hard rule above.
 
 
 ## Model gotchas (recur constantly)

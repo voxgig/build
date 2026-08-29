@@ -158,28 +158,23 @@ describe('doc_gen', () => {
       Path.join(root, 'backend/src/srv/other/README.md')), false)
   })
 
-  // The declared message shape from @voxgig/model 10.1.0: a flat entry per
-  // message, keyed by name, with the pattern as data. Selection here is by
-  // PATTERN, so where a declaration lives in the model makes no difference to
-  // what the docs say.
-  test('reads declared-shape messages, and both shapes together', async () => {
+  // The declared message shape: main.msg is a LIST of definitions, each
+  // carrying its pattern as data. Selection here is by PATTERN, so where a
+  // declaration lives in the model makes no difference to what the docs say.
+  test('reads declared-shape messages', async () => {
     const model = makeModel()
-    model.main.msg = {
-      // Declared shape.
-      get_info: { pat: [{ aim: 'thing' }, { get: 'info' }] },
-      save_item: {
-        pat: [{ aim: 'thing' }, { save: 'item' }],
-        doc: 'Save an item',
+    model.main.msg = [
+      { pat: [{ aim: 'thing' }, { get: 'info' }] },
+      { pat: [{ aim: 'thing' }, { save: 'item' }], doc: 'Save an item' },
+      // A GATEWAY PROXY: it shares its last pattern pair (save:item) with the
+      // message above, and names its own action file. That pair is exactly
+      // what a name-keyed map would key on, so the two could not both be
+      // declared there; in a list there is no key and no collision.
+      {
+        pat: [{ aim: 'req' }, { on: 'thing' }, { save: 'item' }],
+        file: './web_save_item',
       },
-      // The gateway route stays a chain: its last pattern pair is save:item,
-      // so the declared shape would want the key `save_item` too, which the
-      // message above already holds. See AGENTS.md.
-      aim: {
-        req: {
-          on: { thing: { save: { item: { $: { file: './web_save_item' } } } } },
-        },
-      },
-    }
+    ]
 
     const root = tmpProject(['thing'])
     await Docs.doc_gen(model, { root })
@@ -188,7 +183,7 @@ describe('doc_gen', () => {
     // Identical rows to the chain fixture: same patterns, same action files.
     assert.ok((msgs).includes('`aim:thing,get:info` | `src/srv/thing/get_info.ts`'))
     assert.ok((msgs).includes('`aim:thing,save:item` | `src/srv/thing/save_item.ts`'))
-    // ...and the chain-declared gateway route alongside them.
+    // ...and the proxy, resolved to its own action file.
     assert.ok((msgs).includes('web_save_item'))
 
     const readme = read(root, 'backend/src/srv/thing/README.md')
@@ -199,12 +194,9 @@ describe('doc_gen', () => {
   // A definition may name its action file, exactly as a '$' leaf could.
   test('declared-shape file overrides the last-pair convention', async () => {
     const model = makeModel()
-    model.main.msg = {
-      get_info: {
-        pat: [{ aim: 'thing' }, { get: 'info' }],
-        file: './custom_info',
-      },
-    }
+    model.main.msg = [
+      { pat: [{ aim: 'thing' }, { get: 'info' }], file: './custom_info' },
+    ]
 
     const root = tmpProject(['thing'])
     await Docs.doc_gen(model, { root })
