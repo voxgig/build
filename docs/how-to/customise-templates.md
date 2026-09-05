@@ -1,7 +1,7 @@
 # How to customise generation templates
 
-*Diátaxis: how-to guide — steps to change what `@voxgig/build` generates
-for your project, without forking the package.*
+*Change what `@voxgig/build` generates for your project, without forking
+the package.*
 
 Templates are jostraca-style text **fragments** (`*.frag` files with
 `$$slot$$` placeholders) shipped under this package's `tm/` folder. They
@@ -36,9 +36,9 @@ voxgig-system template diff
 voxgig-system template eject srv_yml --code   # copy generator -> backend/src/gen/
 ```
 
-The copy imports its building blocks (`generate`, `TM`, shapes, ...) from
-`@voxgig/build`'s public API, so your project owns the generator from then
-on. After editing: `npm run build && npm run model-build`.
+The copy imports its building blocks (`generate`, `TM`, the shapes, and the
+rest) from `@voxgig/build`'s public API, so your project owns the generator
+from then on. After editing: `npm run build && npm run model-build`.
 
 ## EnvWeb fragments
 
@@ -47,4 +47,4 @@ project copy under `backend/tm/web/<same relative path>` and it wins.
 Note that all EnvWeb *output* is **create-once** — see
 [EnvWeb reference](../reference/envweb.md) — so editing the generated file
 directly is also a supported form of customisation; a changed fragment
-only affects files that do not exist yet (or a forced regen).
+only affects files that do not exist yet (or a forced regeneration).

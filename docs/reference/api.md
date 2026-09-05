@@ -1,7 +1,7 @@
 # Reference: public API
 
-*Diátaxis: reference — the package's exported surface. Import from
-`@voxgig/build` (main: `dist/build.js`; source of truth: `build.ts`).*
+*The package's exported surface. Import from `@voxgig/build` (main:
+`dist/build.js`; source of truth: `build.ts`).*
 
 ## Generator groups
 
@@ -11,7 +11,7 @@ AWS Lambda deployment templates. All generators are async.
 
 | Member | Generates |
 |---|---|
-| `srv_yml(model, spec)` | `gen/env/aws/srv.yml` — Serverless function defs, one per lambda-active service |
+| `srv_yml(model, spec)` | `gen/env/aws/srv.yml` — Serverless function definitions, one per lambda-active service |
 | `srv_handler(model, spec)` | `src/handler/lambda/<srv>.ts` — one handler per service |
 | `resources_yml(model, spec)` | `gen/env/aws/res.yml` — queues, DynamoDB tables, IAM role |
 
@@ -24,7 +24,7 @@ Per-environment artifacts from `main: env:` declarations.
 
 | Member | Description |
 |---|---|
-| `env_gen(model, spec)` | Generate `gen/env/<name>/` (regenerated) + `src/env/<name>/` (create-once) for each active env |
+| `env_gen(model, spec)` | Generate `gen/env/<name>/` (regenerated) + `src/env/<name>/` (create-once) for each active environment |
 | `files` | `ENV_FILES` — kind → fragment/output manifest |
 | `srcfiles` | `ENV_SRC` — create-once runtime entries per kind |
 | `kinds` | Known kinds: `local`, `basic`, `docker`, `vm`, `aws`, `azure`, `cloudflare`, `web` |
@@ -54,7 +54,7 @@ model-build.
 
 | Member | Description |
 |---|---|
-| `api_gen(model, spec)` | Generate `backend/gen/api/openapi.json` (OpenAPI 3.1; schemas from entity field definitions, uniform `list_<zone>_<name>`-style operation ids for SDK generation) and `backend/src/srv/api/valid_gen.ts` (closed gubu request-validation shapes per exposed entity: create = required fields enforced, update = partial). `spec: { root }`; no-op unless the model declares `main.api`. Exposure: app entities by default, never the sys zone, per-entity overrides under `main.api.ent` |
+| `api_gen(model, spec)` | Generate `backend/gen/api/openapi.json` (OpenAPI 3.1; schemas from entity field definitions, uniform `list_<zone>_<name>`-style operation ids for SDK generation) and `backend/src/srv/api/valid_gen.ts` (closed gubu request-validation shapes per exposed entity: create = required fields enforced, update = partial). `spec: { root }`; no-op unless the model declares `main.api`. Exposure: app entities by default, never the `sys` zone, per-entity overrides under `main.api.ent` |
 
 ### `Fragments`
 
@@ -82,6 +82,6 @@ Exported for ejected project generators (`voxgig-system template eject
 | Shape | Validates |
 |---|---|
 | `CoreConfShape` | `main.conf.core` (name, short, token) |
-| `CloudConfShape` | cloud/deployment config |
+| `CloudConfShape` | cloud/deployment configuration |
 | `MsgMetaShape` | message metadata |
 | `EntShape` (`shape/ent.ts`, internal) | entity definitions. Wrapped in `Open()`, so entities may carry extension attributes (e.g. `ux: { view: 'custom' }`) beyond the validated core |

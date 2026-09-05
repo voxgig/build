@@ -27,6 +27,8 @@ npm test        # node:test + coverage thresholds (test/*.test.ts)
 - `tm/` — jostraca text fragments (`*.frag`, `$$slot$$` placeholders):
   `tm/lambda/`, `tm/env/<kind>/`, `tm/web/`.
 - `test/fixture/` — pinned generator output (byte-exact).
+- `STYLE-GUIDE.md`, `.vale.ini`, `.vale/`, `tools/check_prose.py` — the
+  prose gate over the reader-facing pages (see below).
 
 ## Hard rules
 
@@ -88,6 +90,33 @@ npm test        # node:test + coverage thresholds (test/*.test.ts)
     project they do belong to, pass the membership check, and have owner
     refine the query by that same project — overwriting another
     project's row.
+
+## Prose follows STYLE-GUIDE.md
+
+[`STYLE-GUIDE.md`](STYLE-GUIDE.md) is normative for the reader-facing pages:
+the root `README.md` and every page under `docs/`. Two gates enforce it and
+both run in CI (`.github/workflows/docs.yml`):
+
+| Gate | Checks |
+|---|---|
+| `vale --minAlertLevel=error $(python3 tools/check_prose.py --files)` | Google's rules plus the banned list, at the levels in `.vale.ini` |
+| `python3 tools/check_prose.py` | the banned list across line wraps, em-dash spacing and ration, first person, no emoji, no citations of a working document, resolving relative links, a complete page set |
+
+`npm run scan-prose` runs the second locally; run Vale by hand where it is
+installed. Neither is chained into `npm test`, because the test matrix
+includes Windows. The banned list is
+`.vale/styles/config/vocabularies/Build/reject.txt`, read by both gates.
+The page set is the configuration block at the top of
+`tools/check_prose.py`; a new documentation page must be reachable from it
+or neither gate reads it. `ci/README.md` and `ci/COVERAGE.md` are working
+documents, not pages.
+
+Three things trip agents most often: a page must not name or link
+`AGENTS.md`, `CLAUDE.md` or `COVERAGE.md` (state the fact instead, and
+describe a generated `AGENTS.md` as an agent guide); the em dash is spaced
+(` — `) and rationed to one aside per line; and a word Vale's dictionary
+does not know goes into `accept.txt` one entry at a time, never as a suffix
+pattern.
 
 ## Message declarations: two shapes
 
