@@ -1,8 +1,8 @@
 # Tutorial: from model to generated app
 
-*Diátaxis: tutorial — a hands-on lesson. You will create a project, declare
-a model, and watch `@voxgig/build` generate a deployable backend and a
-working web app from it.*
+*A hands-on lesson: you create a project, declare a model, and watch
+`@voxgig/build` generate a deployable backend and a working web app from
+it.*
 
 `@voxgig/build` is almost always used indirectly, through a project
 created with `@voxgig/create-system`. This tutorial takes that path.

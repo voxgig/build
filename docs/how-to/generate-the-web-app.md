@@ -1,7 +1,7 @@
 # How to generate the web app (EnvWeb)
 
-*Diátaxis: how-to guide — activate EnvWeb and use its main capabilities:
-themes, customisation hooks, and custom entity views.*
+*Activate EnvWeb and use its main capabilities: themes, customisation
+hooks, and custom entity views.*
 
 ## Activate
 

@@ -1,7 +1,6 @@
 # How to add a target environment
 
-*Diátaxis: how-to guide — declare a deployment environment and generate
-its artifacts.*
+*Declare a deployment environment and generate its artifacts.*
 
 Environments are declared in the model under `main: env:` (scaffolded in
 `model/env.aontu`), one entry per target:

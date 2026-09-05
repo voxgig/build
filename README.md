@@ -6,7 +6,7 @@ deployment artifacts and application code with the
 [jostraca](https://github.com/jostraca/jostraca) templating library:
 
 - **EnvLambda** — AWS Lambda deployment templates (Serverless function
-  defs, per-service handlers, resources).
+  definitions, per-service handlers, resources).
 - **EnvGen** — per-environment deployment artifacts (`local`, `basic`,
   `docker`, `vm`, `aws`, `azure`, `cloudflare`, `web`) driven by the
   model's `main: env:` declarations.
@@ -27,7 +27,7 @@ directly.
 
 ## Documentation
 
-Organised by the [Diátaxis](https://diataxis.fr) framework:
+Organised by kind:
 
 - **Tutorial**: [From model to generated app](docs/tutorial.md)
 - **How-to guides**:
@@ -39,8 +39,6 @@ Organised by the [Diátaxis](https://diataxis.fr) framework:
   - [EnvWeb: files, slots, model inputs](docs/reference/envweb.md)
 - **Explanation**: [Design](docs/explanation/design.md)
 
-Working on this repo with an AI agent? See [AGENTS.md](AGENTS.md).
-
 ## Develop
 
 ```bash
@@ -48,6 +46,10 @@ npm install
 npm run build   # tsc -> dist/ (dist is committed; always rebuild before commit)
 npm test        # node:test + coverage thresholds
 ```
+
+Generator output is pinned byte-exact by `test/fixture`; an intentional
+output change refreshes the fixtures and says so in the commit. The
+documentation follows [the style guide](STYLE-GUIDE.md).
 
 ## License
 
