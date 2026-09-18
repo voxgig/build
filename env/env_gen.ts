@@ -1,16 +1,5 @@
 /* Copyright © 2026 Voxgig Ltd, MIT License. */
 
-// EnvGen: per-environment deployment artifact generation. The project
-// model declares its target environments under `main: env:`:
-//
-//   main: env: local: { active: true }
-//   main: env: aws: { active: true, region: 'eu-west-1', stage: 'dev' }
-//
-// For each active environment this generates gen/env/<name>/ from the
-// fragment set tm/env/<kind>/ (kind defaults to the env name, so a
-// project can declare e.g. `aws2: { kind: 'aws', region: ... }`).
-// Fragments are project-shadowable via spec.tm (the project's tm/env
-// folder), like the lambda templates.
 
 import Fs from 'fs'
 import Path from 'path'
@@ -58,13 +47,8 @@ const ENV_FILES: Record<string, { frag: string, out: string }[]> = {
   ],
 }
 
-// The runtime entry point + Seneca config setup each environment needs
-// under src/env/. These are generated ONCE (only when missing): after
-// creation the project owns them, like the scaffold's local entry. All
-// entries route Seneca configuration through src/env/shared/basic.ts.
-// `dir` is relative to the project src/env folder.
 const ENV_SRC: Record<string, { frag: string, dir: string, out: string }[]> = {
-  local: [], // scaffold provides src/env/local/local.ts
+  local: [],
   basic: [
     { frag: 'server.entry.ts.frag', dir: 'basic', out: 'basic.ts' },
   ],
@@ -95,7 +79,6 @@ const env_gen = async (model: any, spec: {
   src?: string       // project src/env folder: runtime entries generated
                      // here ONCE (existing files are never overwritten)
   root?: string      // project root (holds backend/ and web/) - required
-                     // for the 'web' kind (full frontend generation)
 }) => {
 
   const core = CoreConfShape(model.main.conf.core)

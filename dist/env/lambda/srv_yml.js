@@ -5,8 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.srv_yml = void 0;
-// gen/serverless/srv.yml template: one Serverless function definition per
-// lambda-active service, derived from the model.
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const util_1 = require("@voxgig/util");
@@ -43,7 +41,6 @@ const srv_yml = async (model, spec) => {
             let onEvents = srv.on;
             if (onEvents) {
                 Object.entries(onEvents).forEach((entry) => {
-                    // let name = entry[0]
                     let spec = entry[1];
                     if ('aws' === spec.provider) {
                         spec.events.forEach((ev) => {
@@ -101,7 +98,6 @@ ${recur}
                     }
                 });
             }
-            // TODO: move to `on`
             if (web.active) {
                 let prefix = web.path.prefix;
                 let suffix = web.path.suffix;
@@ -110,7 +106,6 @@ ${recur}
                 let corsflag = 'false';
                 let corsprops = '';
                 let methods = method.split(',');
-                // console.log('METHODS', methods)
                 if (web.cors.active) {
                     corsflag = 'true';
                     if (web.cors.props && !(0, generate_1.empty)(web.cors.props)) {

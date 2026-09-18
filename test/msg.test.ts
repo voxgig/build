@@ -1,14 +1,5 @@
 /* Copyright © 2026 Voxgig Ltd, MIT License */
 
-// The message declaration readers (util.ts). main.msg has two shapes and
-// everything that walks messages goes through these:
-//
-//   declared      main: msg: [ { pat: [ {aim: web}, {save: item} ] } ]
-//   legacy chain  aim: web: { save: item: { '$': { file: './web_save_item' } } }
-//
-// msgentries is a drop-in for @voxgig/util's dive() over a message tree, so
-// the chain cases below also pin the behaviour the generators relied on
-// before.
 
 import { describe, test } from 'node:test'
 import assert from 'node:assert'
@@ -39,7 +30,6 @@ describe('msg', () => {
       msgentries({ aim: { thing: { get: { info: {} } } } }),
       [[['aim', 'thing', 'get', 'info'], {}]])
 
-    // '$' contributes the metadata and does not appear in the path.
     assert.deepEqual(
       msgentries({ aim: { thing: { save: { item: { $: { file: './f' } } } } } }),
       [[['aim', 'thing', 'save', 'item'], { file: './f' }]])
@@ -54,7 +44,6 @@ describe('msg', () => {
       msgentries([{ pat: [{ aim: 'web' }, { save: 'item' }] }]),
       [[['aim', 'web', 'save', 'item'], {}]])
 
-    // meta is the definition without its pattern.
     assert.deepEqual(
       msgentries([{
         pat: [{ aim: 'web' }, { save: 'item' }],
@@ -83,9 +72,6 @@ describe('msg', () => {
       msgentries([null, 'nope', {}, { pat: [{ a: 'b' }] }]),
       [[['a', 'b'], {}]])
 
-    // Malformed pairs are dropped. A pair holding two keys is dropped whole:
-    // guessing which was meant would silently produce a pattern nobody
-    // declared.
     assert.deepEqual(
       msgentries([{ pat: [{ a: 'b' }, 'nope', null, [], { c: 'd', e: 'f' }] }]),
       [[['a', 'b'], {}]])

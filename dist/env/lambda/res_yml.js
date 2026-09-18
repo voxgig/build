@@ -37,10 +37,6 @@ const resources_yml = async (model, spec) => {
     content +=
         prefixContent +
             await (0, res_dynamo_yml_1.res_dynamo_yml)(model, { dynamoResources, region, accountid });
-    // content +=
-    // msgentries reads both message declaration shapes; dive() cannot, because
-    // fed a flat definition it walks the metadata and emits one entry per
-    // scalar field. See util.ts.
     let queueDefs = (0, util_2.msgentries)(model.main.msg).map((entry) => {
         var _a, _b, _c;
         let path = entry[0];
@@ -48,12 +44,9 @@ const resources_yml = async (model, spec) => {
         let pathname = path
             .map((p) => (p[0] + '').toUpperCase() + p.substring(1))
             .join('');
-        // console.log('MQ', pathname, msgMeta)
         if ((_b = (_a = msgMeta.transport) === null || _a === void 0 ? void 0 : _a.queue) === null || _b === void 0 ? void 0 : _b.active) {
-            // console.log('MM', path, msgMeta)
             let queue = msgMeta.transport.queue;
             let name = queue.name || pathname;
-            // TODO: aontu should do this, but needs recursive child conjuncts
             let stage_suffix = (false === ((_c = queue.stage) === null || _c === void 0 ? void 0 : _c.active)) ? '' : '-${self:provider.stage,"dev"}';
             let queue_suffix = (null == queue.suffix || '' == queue.suffix) ? '' :
                 '-' + queue.suffix;
@@ -72,7 +65,6 @@ const resources_yml = async (model, spec) => {
         }
         return '';
     }).filter(n => '' !== n).join('');
-    // console.log('queueDefs', queueDefs)
     content += '\n\n' + queueDefs;
     let customLambdaPolicyStatementPath = path_1.default.join(spec.folder, 'res.lambda.policy.statements.yml');
     let customLambdaPolicyStatementContent = fs_1.default.existsSync(customLambdaPolicyStatementPath) ?

@@ -5,17 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KINDS = exports.ENV_SRC = exports.ENV_FILES = exports.env_gen = void 0;
-// EnvGen: per-environment deployment artifact generation. The project
-// model declares its target environments under `main: env:`:
-//
-//   main: env: local: { active: true }
-//   main: env: aws: { active: true, region: 'eu-west-1', stage: 'dev' }
-//
-// For each active environment this generates gen/env/<name>/ from the
-// fragment set tm/env/<kind>/ (kind defaults to the env name, so a
-// project can declare e.g. `aws2: { kind: 'aws', region: ... }`).
-// Fragments are project-shadowable via spec.tm (the project's tm/env
-// folder), like the lambda templates.
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const util_1 = require("@voxgig/util");
@@ -57,13 +46,8 @@ const ENV_FILES = {
     ],
 };
 exports.ENV_FILES = ENV_FILES;
-// The runtime entry point + Seneca config setup each environment needs
-// under src/env/. These are generated ONCE (only when missing): after
-// creation the project owns them, like the scaffold's local entry. All
-// entries route Seneca configuration through src/env/shared/basic.ts.
-// `dir` is relative to the project src/env folder.
 const ENV_SRC = {
-    local: [], // scaffold provides src/env/local/local.ts
+    local: [],
     basic: [
         { frag: 'server.entry.ts.frag', dir: 'basic', out: 'basic.ts' },
     ],

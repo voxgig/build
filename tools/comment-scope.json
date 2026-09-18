@@ -1,0 +1,5 @@
+{
+  "exclude": {
+    "test/fixture": "Byte-exact generator output fixtures."
+  }
+}

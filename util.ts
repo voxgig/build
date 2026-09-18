@@ -40,21 +40,6 @@ function msgdefpairs(def: any): string[] {
 }
 
 
-// Flatten main.msg to [path, meta] entries, reading BOTH declaration shapes:
-//
-//   the DECLARED shape, a LIST of definitions whose `pat` list IS the pattern;
-//   the LEGACY chain, where the nesting is the pattern and '$' carries the
-//   metadata.
-//
-// A list rather than a map keyed by message name, because a gateway proxy and
-// the message it forwards to necessarily share their last pattern pair
-// (aim:web,on:todo,save:item proxies aim:todo,save:item), so any key derived
-// from that pair would collide and the two could not both be declared.
-//
-// This is a drop-in for @voxgig/util's dive() over a message tree - same entry
-// shape, same '$' handling, same even-length pair paths that pinify() and the
-// queue-name builders assume. dive() cannot be used directly any more: fed a
-// definition it would walk the metadata and emit one entry per scalar field.
 function msgentries(node: any, depth: number = 128): [string[], any][] {
   const out: [string[], any][] = []
   walkmsgs(node, [], depth, out)
@@ -69,7 +54,6 @@ function walkmsgs(
     return
   }
 
-  // The declared shape: each element carries its own pattern.
   if (Array.isArray(node)) {
     for (const def of node) {
       if (ismsgdef(def)) {
@@ -98,13 +82,6 @@ function walkmsgs(
 }
 
 
-// The messages aimed at one service, with the leading aim pair dropped so the
-// remaining path is the message's own pattern.
-//
-// Selecting by path rather than indexing main.msg.aim[name] is what makes the
-// declared shape work here at all: a definition lives at main.msg.<name> with
-// `aim` as its first pattern pair, not under main.msg.aim. It also stops a
-// service with no messages from throwing.
 function aimmsgs(msg: any, aim: string): [string[], any][] {
   return msgentries(msg)
     .filter((entry) => 'aim' === entry[0][0] && aim === entry[0][1])
@@ -112,8 +89,6 @@ function aimmsgs(msg: any, aim: string): [string[], any][] {
 }
 
 
-// Message metadata by pattern path, for looking up a message named elsewhere
-// in the model (a service's `out` list, say) in either shape.
 function msgindex(msg: any): Record<string, any> {
   const index: Record<string, any> = {}
   for (const entry of msgentries(msg)) {

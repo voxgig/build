@@ -5,28 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.api_gen = void 0;
-// Api: generation for the strict-JSON REST API (model main.api).
-// Regenerated on every model-build (pure functions of the model,
-// content-diffed, AUTO-GENERATED):
-//
-//   backend/gen/api/openapi.json      OpenAPI 3.1 spec; schemas from the
-//                                     entity field definitions (an entity
-//                                     response schema plus <Name>Create /
-//                                     <Name>Update request schemas, which
-//                                     mirror the gubu shapes below)
-//   backend/gen/api/openapi.yaml      the same spec in YAML - the format
-//                                     most SDK/codegen tools (incl.
-//                                     @voxgig/sdkgen) expect
-//   backend/src/srv/api/valid_gen.ts  gubu shapes per exposed entity op,
-//                                     used by the api service to validate
-//                                     request bodies (strict: closed)
-//
-// The JSON and YAML are the SAME object (openapi(model)), just serialized
-// twice - they never diverge.
-//
-// Exposure rules (same as the api service's expose.ts): application
-// entities are exposed by default, the sys zone never is, per-entity
-// overrides live under main.api.ent.
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const js_yaml_1 = __importDefault(require("js-yaml"));
@@ -164,22 +142,6 @@ function openapi(model) {
             properties,
             ...(required.length ? { required } : {}),
         };
-        // Request bodies are NOT the entity schema. The entity schema describes
-        // what comes back - it carries the server-managed fields, and its
-        // `required` list is the create contract. What the server ACCEPTS is
-        // narrower, and differs per op (see validGenTs, which derives the
-        // enforcing gubu shapes from these same fields):
-        //
-        //   create  managed fields rejected; required fields required
-        //   update  managed fields rejected; everything optional (partial)
-        //
-        // Marking the managed fields `readOnly` on the entity schema is not
-        // enough on its own. It is the correct OpenAPI signal, but a closed
-        // schema (`additionalProperties: false`) plus `readOnly` is a
-        // combination most codegen tools ignore - they emit a request type with
-        // every property - so a generated client sends `id` and the closed gubu
-        // shape rejects the whole body with 400. Separate request schemas say
-        // the same thing in a form every tool understands.
         const writable = flds.filter((f) => !f.managed);
         const writableProps = {};
         for (const f of writable) {
@@ -346,12 +308,6 @@ const api_gen = async (model, spec) => {
     if (writeIfChanged(path_1.default.join(spec.root, 'backend', 'gen', 'api', 'openapi.json'), spec_json)) {
         created.push('backend/gen/api/openapi.json');
     }
-    // YAML of the SAME object. noRefs is REQUIRED: the spec reuses $ref
-    // objects (the Error schema ref appears in every error response, each
-    // entity ref in several operations), and without noRefs js-yaml emits
-    // anchors/aliases (&ref_0 / *ref_0) that most OpenAPI codegen tools -
-    // including @voxgig/sdkgen - do not resolve. lineWidth:-1 stops long
-    // strings (descriptions, the server url) being line-folded.
     const spec_yaml = js_yaml_1.default.dump(doc, { noRefs: true, lineWidth: -1 });
     if (writeIfChanged(path_1.default.join(spec.root, 'backend', 'gen', 'api', 'openapi.yaml'), spec_yaml)) {
         created.push('backend/gen/api/openapi.yaml');
