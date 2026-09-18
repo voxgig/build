@@ -169,3 +169,11 @@ widening it is a hard rule above.
   itself in `main: theme:`.
 - Aontu/jsonic comments are `#` only; quote values containing `-`, `/`,
   or `#`.
+
+## Source code comments
+
+Follow [COMMENT-POLICY.md](COMMENT-POLICY.md): comments are sparse and terse,
+only for intricate or surprising code. Names carry intent; documents carry
+requirements. Run `make comments comments-test` after editing source.
+
+Durable implementation rationale is in [COMMENT-NOTES.md](COMMENT-NOTES.md).

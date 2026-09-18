@@ -44,18 +44,6 @@ const srv_handler = async (model: any, spec: {
       let handler = 'handler'
       let modify = ''
 
-      //       if (!srv.api.web.active) {
-      //         if (srv.on && 0 < Object.keys(srv.on).length) {
-      //           handler = 'eventhandler'
-      //           modify = `
-      // event = {
-      //   ...event,
-      //   // TODO: @voxgig/system? util needed to handle this dynamically
-      //   seneca$: { msg: '${srv.on[Object.keys(srv.on)[0]].events[0].msg}' },
-      // }
-      //         `
-      //         }
-      //       }
 
 
       let prepare = ''

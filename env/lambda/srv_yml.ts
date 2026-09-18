@@ -1,7 +1,5 @@
 /* Copyright © 2022-2026 Voxgig Ltd, MIT License. */
 
-// gen/serverless/srv.yml template: one Serverless function definition per
-// lambda-active service, derived from the model.
 
 import Fs from 'fs'
 import Path from 'path'
@@ -60,7 +58,6 @@ const srv_yml = async (model: any, spec: {
 
         if (onEvents) {
           Object.entries(onEvents).forEach((entry: any[]) => {
-            // let name = entry[0]
             let spec = entry[1]
 
             if ('aws' === spec.provider) {
@@ -125,7 +122,6 @@ ${recur}
           })
         }
 
-        // TODO: move to `on`
         if (web.active) {
           let prefix = web.path.prefix
           let suffix = web.path.suffix
@@ -135,7 +131,6 @@ ${recur}
           let corsprops = ''
 
           let methods = method.split(',')
-          // console.log('METHODS', methods)
 
           if (web.cors.active) {
             corsflag = 'true'

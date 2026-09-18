@@ -15,9 +15,6 @@ import Path from 'path'
 import { Docs, Api, EnvWeb } from '../build'
 
 
-// A compact model exercising the generator branches: two zones with a
-// ref relationship, a custom-view entity, a hidden entity, services with
-// own + gateway messages and deps, active envs, a theme, and an api.
 function makeModel(): any {
   return {
     main: {
@@ -245,11 +242,6 @@ describe('api_gen', () => {
     assert.strictEqual(schema.properties.price.type, 'number')
     assert.strictEqual(schema.properties.live.type, 'boolean')
     assert.strictEqual(schema.additionalProperties, false)
-    // Request schemas are NOT the entity schema: managed fields are gone
-    // (the server's closed shapes reject them outright), and update is
-    // wholly optional because it is a partial update. Regression: both
-    // bodies used to $ref the entity schema, so a generated SDK sent `id`
-    // in the PUT body and every update came back 400.
     const createSchema = spec.components.schemas.ShopProductCreate
     const updateSchema = spec.components.schemas.ShopProductUpdate
     assert.deepEqual(createSchema.required, ['title'])
@@ -291,13 +283,11 @@ describe('api_gen', () => {
     assert.ok(!(valid).includes("shapes['shop/order']"))
     assert.ok((valid).includes('title: String,'))
     assert.ok((valid).includes('price: Skip(Number),'))
-    // update shape: everything optional.
     assert.ok((valid).includes('title: Skip(String),'))
     // Server-managed fields excluded from the shapes (the header comment
     // names them, so check the shape-entry form).
     assert.ok(!(valid).includes('owner_id:'))
 
-    // Content-diff no-op.
     const again = await Api.api_gen(model, { root })
     assert.deepEqual(again.created, [])
   })
@@ -309,7 +299,7 @@ describe('api_gen', () => {
     assert.deepEqual((await Api.api_gen(model, { root })).created, [])
 
     const model2 = makeModel()
-    const root2 = tmpProject()  // no backend/src/srv/api folder
+    const root2 = tmpProject()
     const res2 = await Api.api_gen(model2, { root: root2 })
     assert.deepEqual(res2.created, [
       'backend/gen/api/openapi.json',
@@ -359,7 +349,6 @@ describe('web_gen model-driven outputs', () => {
     assert.ok(!(read(root, 'web/src/views.js')).includes('shop_product'))
     assert.ok(!(read(root, 'web/src/theme.css')).includes('dark'))
 
-    // force regenerates existing files.
     const res3 = await EnvWeb.web_gen(model2, { root, force: true })
     assert.ok((res3.created).includes('web/src/main.js'))
   })

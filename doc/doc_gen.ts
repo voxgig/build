@@ -1,16 +1,5 @@
 /* Copyright © 2026 Voxgig Ltd, MIT License. */
 
-// Docs: model-driven documentation generation - mermaid diagrams and
-// per-service READMEs derived from the compiled model. Everything here is
-// a pure function of the model, so (like theme.css and views.js) the
-// output is REGENERATED on every model-build, content-diffed to avoid
-// needless writes, and marked AUTO-GENERATED (never hand-edit).
-//
-// Outputs (paths relative to the project root):
-//   docs/reference/entities.md    entity tables + ER diagram (ref fields)
-//   docs/reference/messages.md    per-service message tables + flow diagram
-//   docs/reference/system-map.md  system architecture + dependency map
-//   backend/src/srv/<srv>/README.md   one per implemented service
 
 import Fs from 'fs'
 import Path from 'path'
@@ -33,7 +22,6 @@ const mid = (s: string) => String(s).replace(/[^A-Za-z0-9_]/g, '_')
 
 // ---- model walkers ----
 
-// Pattern string for a leaf under aim:<srv>: 'aim:todo,save:item'.
 const patstr = (aim: string, path: string[]) => {
   let s = 'aim:' + aim
   for (let i = 0; i < path.length; i += 2) {
@@ -52,13 +40,6 @@ const actfile = (path: string[], meta: any) => {
   return last.join('_')
 }
 
-// The services and their messages, from main.srv[].in + the messages aimed at
-// each service.
-//
-// Selection is by PATTERN (via aimmsgs), not by descending main.msg.aim, so
-// both message declaration shapes are read: a declared-shape definition lives
-// at main.msg.<name> with `aim` as its first pattern pair, and never under
-// main.msg.aim at all.
 function services(model: any) {
   const srvs = model.main.srv || {}
   const msg = (model.main && model.main.msg) || {}

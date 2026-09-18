@@ -24,7 +24,6 @@ async function res_dynamo_yml(model: any, spec: {
     let path = entry[0]
     let ent = EntShape(entry[1])
 
-    // console.log('DYNAMO', path, ent)
 
     if (ent && false !== ent.dynamo?.active) {
       let pathname = path

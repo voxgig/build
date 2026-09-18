@@ -10,18 +10,7 @@ import Path from 'path'
 import { Jostraca, Project, File, Content } from 'jostraca'
 
 
-// The text shape of each generated output lives in a jostraca-style
-// fragment file with $$slot$$ placeholders. Fragments ship with this
-// package under tm/lambda/, and a project can shadow any of them by
-// placing a same-named file in its own tm folder (passed as spec.tm by
-// the project's build actions). The fragment file's final newline is
-// dropped at load, so slot values fully control trailing bytes.
 
-// Package tm root: compiled code lives at <pkg>/dist/env/lambda (three
-// levels down), but test transforms run the source at <pkg>/env/lambda
-// (two levels down) - probe both. Areas (tm/<area>/...) group fragment
-// sets: 'lambda' (the EnvLambda templates) and 'env' (per-environment
-// deployment templates).
 const PKG_TM_ROOT = [
   Path.join(__dirname, '..', '..', '..', 'tm'),
   Path.join(__dirname, '..', '..', 'tm'),

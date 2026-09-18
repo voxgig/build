@@ -15,7 +15,6 @@ async function res_dynamo_yml(model, spec) {
         const entry = entries[i];
         let path = entry[0];
         let ent = (0, ent_1.EntShape)(entry[1]);
-        // console.log('DYNAMO', path, ent)
         if (ent && false !== ((_a = ent.dynamo) === null || _a === void 0 ? void 0 : _a.active)) {
             let pathname = path
                 .map((p) => (p[0] + '').toUpperCase() + p.substring(1))

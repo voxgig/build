@@ -69,7 +69,6 @@ describe('build', () => {
     const yml0 = await res_dynamo_yml(model,
       { dynamoResources: dr0, region: 'us-east-1', accountid: 'ACCID' })
 
-    // TODO: validate
     console.log(yml0, dr0)
   })
 })

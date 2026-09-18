@@ -1,12 +1,5 @@
 /* Copyright © 2026 Voxgig Ltd, MIT License */
 
-// Byte-identity fixtures for the jostraca-based EnvLambda templates.
-//
-// test/fixture holds the exact output of the pre-jostraca (3.1.0) generator
-// for test/richmodel.js — a model exercising every branch (sqs/s3/schedule
-// events, cors props, httpApi v2, gen.custom override, custom kind skip,
-// queue defs, dynamo tables, ts and js handler langs). The refactor must
-// reproduce it byte for byte.
 
 import { describe, test } from 'node:test'
 import assert from 'node:assert'

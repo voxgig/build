@@ -58,10 +58,6 @@ const resources_yml = async (model: any, spec: {
 
     await res_dynamo_yml(model, { dynamoResources, region, accountid })
 
-  // content +=
-  // msgentries reads both message declaration shapes; dive() cannot, because
-  // fed a flat definition it walks the metadata and emits one entry per
-  // scalar field. See util.ts.
   let queueDefs = msgentries(model.main.msg).map((entry: any) => {
     let path = entry[0]
     let msgMeta = MsgMetaShape(entry[1])
@@ -71,14 +67,11 @@ const resources_yml = async (model: any, spec: {
         (p[0] + '').toUpperCase() + p.substring(1))
       .join('')
 
-    // console.log('MQ', pathname, msgMeta)
 
     if (msgMeta.transport?.queue?.active) {
-      // console.log('MM', path, msgMeta)
       let queue = msgMeta.transport.queue
       let name = queue.name || pathname
 
-      // TODO: aontu should do this, but needs recursive child conjuncts
       let stage_suffix =
         (false === queue.stage?.active) ? '' : '-${self:provider.stage,"dev"}'
 
@@ -106,7 +99,6 @@ const resources_yml = async (model: any, spec: {
     return ''
   }).filter(n => '' !== n).join('')
 
-  // console.log('queueDefs', queueDefs)
 
   content += '\n\n' + queueDefs
 
