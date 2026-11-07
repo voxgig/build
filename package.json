@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/build",
-  "version": "4.16.2",
+  "version": "4.16.3",
   "main": "dist/build.js",
   "type": "commonjs",
   "types": "dist/build.d.ts",
@@ -48,7 +48,7 @@
     "env"
   ],
   "dependencies": {
-    "@voxgig/util": "0.5.4",
+    "@voxgig/util": "0.5.8",
     "gubu": "8.0.2",
     "jostraca": "0.41.0",
     "js-yaml": "^4.1.0"
